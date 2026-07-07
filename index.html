@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BotG Patrol: Spot the Contact Risk</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ HUD BAR ============ -->
+  <header id="hud">
+    <div class="hud-brand">BOTG PATROL</div>
+    <div class="hud-stats">
+      <div class="hud-item"><span class="hud-label">TIME</span><span id="hudTime">1:00</span></div>
+      <div class="hud-item"><span class="hud-label">SCORE</span><span id="hudScore">0</span></div>
+      <div class="hud-item"><span class="hud-label">HAZARDS</span><span id="hudFound">0</span>/<span id="hudTotal">8</span></div>
+    </div>
+    <button id="restartBtn" title="Restart patrol">&#8635; RESTART</button>
+  </header>
+
+  <!-- ============ GAME STAGE ============ -->
+  <div id="stage">
+    <canvas id="gameCanvas" width="480" height="760"></canvas>
+
+    <!-- Floating "press space" prompt & collision toast rendered as DOM for crisp text -->
+    <div id="promptBubble" class="hidden">SPACE to inspect</div>
+    <div id="toast" class="hidden"></div>
+
+    <!-- On-screen touch controls — shown only on touch devices (see script.js) -->
+    <div id="touchControls" class="touch-controls">
+      <div class="dpad">
+        <button id="btnUp" class="dpad-btn dpad-up" aria-label="Move up">&#9650;</button>
+        <button id="btnLeft" class="dpad-btn dpad-left" aria-label="Move left">&#9664;</button>
+        <button id="btnRight" class="dpad-btn dpad-right" aria-label="Move right">&#9654;</button>
+        <button id="btnDown" class="dpad-btn dpad-down" aria-label="Move down">&#9660;</button>
+      </div>
+      <button id="btnInspect" class="inspect-btn" aria-label="Inspect hazard">INSPECT</button>
+    </div>
+
+    <!-- ============ START SCREEN ============ -->
+    <div id="startScreen" class="overlay">
+      <div class="card wide">
+        <h1>BotG Patrol</h1>
+        <h2 class="subtitle">Spot the Contact Risk</h2>
+        <p class="lead">
+          Walk the data centre floor, spot <strong>Bodily Contact</strong> hazards before they cause harm,
+          and log the sharpest BotG observation for each one.
+        </p>
+
+        <div class="briefing-grid">
+          <div class="briefing-col">
+            <h3>Controls</h3>
+            <ul class="controls-list">
+              <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / Arrows / on-screen D-pad — move</li>
+              <li><kbd>SPACE</kbd> / <kbd>ENTER</kbd> / tap INSPECT — check a nearby hazard</li>
+              <li>Watch the <strong>Vehicle Pathway</strong> — moving forklifts &amp; vehicles cost you time if they hit you</li>
+            </ul>
+          </div>
+          <div class="briefing-col">
+            <h3>Zones on the Floor</h3>
+            <ul class="zone-legend">
+              <li><span class="dot dot-rack"></span> Server Rack Aisle</li>
+              <li><span class="dot dot-load"></span> Loading Area</li>
+              <li><span class="dot dot-maint"></span> Maintenance Area</li>
+              <li><span class="dot dot-chem"></span> Chemical Storage Corner</li>
+              <li><span class="dot dot-path"></span> Vehicle Pathway</li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="lead small">
+          8 hazards are hidden across the floor. For each one, pick the observation that best describes
+          the unsafe condition — vague answers earn partial credit, sharp and specific ones earn full marks.
+          You have <strong id="introTime">1:00</strong> to patrol the whole floor.
+        </p>
+
+        <button id="startBtn" class="btn-primary">Start Patrol</button>
+      </div>
+    </div>
+
+    <!-- ============ HAZARD INSPECT MODAL ============ -->
+    <div id="hazardModal" class="overlay hidden">
+      <div class="card">
+        <p class="hz-zone" id="hzZone">ZONE</p>
+        <h2 id="hzTitle">Hazard Name</h2>
+        <p id="hzScenario">Scenario text.</p>
+
+        <p class="hz-question">What should be logged in BotG?</p>
+        <div id="hzOptions" class="hz-options"></div>
+
+        <div id="hzFeedback" class="hz-feedback hidden">
+          <p id="hzFeedbackText"></p>
+          <p id="hzCategoryLine" class="hz-category"></p>
+          <p id="hzPoints"></p>
+          <button id="hzContinue" class="btn-primary">Continue Patrol</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ END SCREEN ============ -->
+    <div id="endScreen" class="overlay hidden">
+      <div class="card wide">
+        <h1 id="endHeadline">Patrol Complete</h1>
+        <p class="rating" id="endRating">Rating</p>
+
+        <div class="results-grid">
+          <div class="result-box">
+            <span class="result-label">Final Score</span>
+            <span class="result-value" id="endScore">0 / 80</span>
+          </div>
+          <div class="result-box">
+            <span class="result-label">Hazards Found</span>
+            <span class="result-value" id="endFound">0 / 8</span>
+          </div>
+          <div class="result-box">
+            <span class="result-label">Accuracy</span>
+            <span class="result-value" id="endAccuracy">0%</span>
+          </div>
+        </div>
+
+        <p class="lead small" id="endMessage"></p>
+        <button id="playAgainBtn" class="btn-primary">Play Again</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer id="controlsBar">
+    Move: <kbd>WASD</kbd>/<kbd>Arrows</kbd>/D-pad &nbsp;·&nbsp; Inspect: <kbd>SPACE</kbd>/INSPECT &nbsp;·&nbsp; Stay clear of moving vehicles
+  </footer>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

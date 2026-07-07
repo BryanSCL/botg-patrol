@@ -1,0 +1,447 @@
+/* ==========================================================================
+   BotG Patrol — Stylesheet
+   Mobile-first, clean visual language for a professional safety-campaign
+   audience. No external fonts/images — everything here is system fonts +
+   CSS/canvas shapes so the game stays fully self-contained.
+   ========================================================================== */
+
+:root {
+  --bg: #12141a;
+  --panel: #1b1f29;
+  --panel-border: #333a4a;
+  --text: #e8eaed;
+  --text-dim: #9aa1b2;
+
+  --blue: #4285F4;
+  --red: #EA4335;
+  --yellow: #FBBC05;
+  --green: #34A853;
+
+  --font: "Consolas", "Courier New", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  height: 100%;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 12px;
+  gap: 8px;
+}
+
+/* ---------------- HUD ---------------- */
+#hud {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hud-brand {
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--yellow);
+  font-size: 13px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+
+.hud-stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 50px;
+}
+
+.hud-label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.hud-item span:last-child {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#hudTime { color: var(--green); }
+#hudScore { color: var(--yellow); }
+#hudFound, #hudTotal { color: var(--blue); }
+
+#restartBtn {
+  background: var(--panel);
+  color: var(--text-dim);
+  border: 2px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+#restartBtn:hover { color: var(--text); border-color: var(--blue); }
+
+/* ---------------- STAGE ---------------- */
+#stage {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 480 / 760;
+  background: #000;
+  border: 3px solid var(--panel-border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  touch-action: none;
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: auto;
+}
+
+/* ---------------- TOUCH CONTROLS ---------------- */
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+  z-index: 4;
+}
+body.touch-mode .touch-controls { display: block; }
+
+.dpad {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  width: 128px;
+  height: 128px;
+}
+
+.dpad-btn {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  background: rgba(20, 22, 28, 0.55);
+  border: 2px solid rgba(232,234,237,0.35);
+  border-radius: 8px;
+  color: #e8eaed;
+  font-size: 16px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+.dpad-btn:active { background: rgba(66,133,244,0.55); border-color: var(--blue); }
+
+.dpad-up { left: 42px; top: 0; }
+.dpad-down { left: 42px; top: 84px; }
+.dpad-left { left: 0; top: 42px; }
+.dpad-right { left: 84px; top: 42px; }
+
+.inspect-btn {
+  position: absolute;
+  right: 18px;
+  bottom: 26px;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: rgba(251, 188, 5, 0.75);
+  border: 2px solid rgba(26,26,26,0.6);
+  color: #1a1a1a;
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.inspect-btn:active { background: rgba(251, 188, 5, 0.95); }
+
+#promptBubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  background: var(--yellow);
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 2px solid #1a1a1a;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+#toast {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--red);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  border: 2px solid #7a1c14;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.hidden { display: none !important; }
+
+/* ---------------- OVERLAYS / CARDS ---------------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 9, 12, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+
+.card {
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 24px 28px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  max-height: 92%;
+  overflow-y: auto;
+}
+
+.card.wide { max-width: 640px; }
+
+.card h1 {
+  margin: 0 0 2px 0;
+  font-size: 26px;
+  letter-spacing: 1px;
+  color: var(--yellow);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+}
+
+.subtitle {
+  margin: 0 0 14px 0;
+  color: var(--blue);
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+.lead {
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.lead.small { font-size: 12px; color: var(--text-dim); }
+
+.briefing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 16px 0;
+}
+@media (max-width: 560px) {
+  .briefing-grid { grid-template-columns: 1fr; }
+}
+
+.briefing-col h3 {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--green);
+  margin: 0 0 6px 0;
+}
+
+.controls-list, .zone-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--text-dim);
+}
+
+kbd {
+  background: #2a2f3d;
+  border: 1px solid var(--panel-border);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--text);
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 6px;
+}
+.dot-rack { background: var(--blue); }
+.dot-load { background: var(--yellow); }
+.dot-maint { background: #b48be0; }
+.dot-chem { background: var(--green); }
+.dot-path { background: var(--red); }
+
+.btn-primary {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 12px;
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-primary:hover { background: #5b95f5; }
+.btn-primary:active { background: #3367c9; }
+
+/* ---------------- HAZARD MODAL ---------------- */
+.hz-zone {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+#hzTitle {
+  margin: 2px 0 10px 0;
+  font-size: 20px;
+  color: var(--yellow);
+}
+
+#hzScenario {
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 0 14px 0;
+}
+
+.hz-question {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--blue);
+  margin: 0 0 8px 0;
+}
+
+.hz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hz-option-btn {
+  text-align: left;
+  background: #242a37;
+  border: 2px solid var(--panel-border);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 5px;
+  font-family: var(--font);
+  font-size: 12.5px;
+  line-height: 1.4;
+  cursor: pointer;
+  min-height: 44px;
+}
+.hz-option-btn:hover { border-color: var(--blue); background: #2a3140; }
+.hz-option-btn:disabled { cursor: default; opacity: 0.55; }
+
+.hz-option-btn.chosen-correct { border-color: var(--green); background: #1d3327; }
+.hz-option-btn.chosen-partial { border-color: var(--yellow); background: #332f1d; }
+.hz-option-btn.chosen-wrong { border-color: var(--red); background: #33201d; }
+
+.hz-feedback { margin-top: 14px; border-top: 1px dashed var(--panel-border); padding-top: 12px; }
+#hzFeedbackText { font-size: 13px; line-height: 1.5; }
+.hz-category { font-size: 11.5px; color: var(--text-dim); font-style: italic; }
+#hzPoints { font-size: 13px; font-weight: 700; color: var(--yellow); }
+
+/* ---------------- END SCREEN ---------------- */
+.rating {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+  margin-top: 0;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0;
+}
+@media (max-width: 560px) {
+  .results-grid { grid-template-columns: 1fr; }
+}
+
+.result-box {
+  background: #20242e;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.result-label { font-size: 10.5px; color: var(--text-dim); letter-spacing: 0.5px; }
+.result-value { font-size: 17px; font-weight: 700; color: var(--yellow); }
+
+/* ---------------- FOOTER ---------------- */
+#controlsBar {
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  padding: 4px 4px 0 4px;
+}
+body.touch-mode #controlsBar { display: none; }
+
+/* ---------------- SUCCESS (all hazards found) ---------------- */
+#endScreen.success .card {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px rgba(52,168,83,0.4), 0 10px 30px rgba(0,0,0,0.5);
+}
+#endScreen.success #endHeadline {
+  color: var(--green);
+}
