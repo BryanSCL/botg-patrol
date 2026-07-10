@@ -29,11 +29,12 @@
   /* ============================== CONFIG ============================== */
   const CANVAS_W = 480;
   const CANVAS_H = 760;
-  const GAME_DURATION = 60; // seconds — quick phone-friendly session
+  const GAME_DURATION = 40; // seconds — quick phone-friendly session
   const PLAYER_SPEED = 170; // px/sec
   const INTERACT_RADIUS = 48;
   const HAZARD_MARKER_R = 11;
-  const COLLISION_PENALTY = 2; // seconds lost when hit by moving equipment/vehicle
+  const COLLISION_PENALTY = 5; // seconds lost when struck by the forklift
+  const TRAP_PENALTY = 5; // seconds lost stepping on a floor trap
   const COLLISION_COOLDOWN = 1.2; // seconds of invulnerability after a hit
 
   const COLORS = {
@@ -77,7 +78,7 @@
     { name: "LOADING AREA", x: 264, y: 16, w: 200, h: 230, tint: "rgba(251,188,5,0.05)", edge: "rgba(251,188,5,0.3)" },
     { name: "MAINTENANCE", x: 16, y: 380, w: 200, h: 364, tint: "rgba(180,139,224,0.06)", edge: "rgba(180,139,224,0.3)" },
     { name: "CHEMICAL STORAGE", x: 264, y: 380, w: 200, h: 364, tint: "rgba(52,168,83,0.06)", edge: "rgba(52,168,83,0.3)" },
-    { name: "VEHICLE PATHWAY", x: 16, y: 280, w: 448, h: 60, tint: null, edge: null }
+    { name: "FORKLIFT ROUTE", x: 16, y: 280, w: 448, h: 60, tint: null, edge: null }
   ];
   const PATHWAY = ZONES[4];
 
@@ -102,9 +103,28 @@
   ];
 
   // Decorative-only figures (no collision) that help tell the story of a hazard.
+  // Both stand at the edge of the forklift route, about to step in.
   const PEDESTRIANS = [
-    { x: 202, y: 300, vest: "#c56f00", helmet: "#e8eaed", skin: "#c98a5b" }, // near forklift blind spot (H11)
-    { x: 278, y: 302, vest: "#8a56c9", helmet: "#FBBC05", skin: "#f0c39a" }  // near vehicle crossing (H12)
+    { x: 196, y: 342, vest: "#c56f00", helmet: "#e8eaed", skin: "#c98a5b" }, // near forklift blind spot (H11)
+    { x: 272, y: 252, vest: "#8a56c9", helmet: "#FBBC05", skin: "#f0c39a" }  // at the pedestrian crossing (H12)
+  ];
+
+  /* ------------------------------ FLOOR TRAPS ------------------------------
+     Walk over one of these and lose time. Each is a classic Bodily Contact
+     hazard found on data centre floors — the penalty message teaches the
+     sub-category on contact. They are visible, avoidable, and non-solid.
+  --------------------------------------------------------------------------- */
+  const TRAPS = [
+    { x: 178, y: 96, w: 30, h: 22, type: "sharpScrap",
+      msg: "Sharp sheet-metal offcut — contact with sharp objects!" },
+    { x: 272, y: 56, w: 36, h: 24, type: "nailPallet",
+      msg: "Nails protruding from a pallet!" },
+    { x: 300, y: 498, w: 38, h: 26, type: "chemSpill",
+      msg: "Chemical spill — skin contact hazard!" },
+    { x: 96, y: 636, w: 34, h: 24, type: "steamVent",
+      msg: "Hot steam vent — contact with hot surface!" },
+    { x: 222, y: 424, w: 38, h: 24, type: "toolsScatter",
+      msg: "Tripped over scattered tools — struck-by risk!" }
   ];
 
   /* ============================ HAZARD DATA ==============================
@@ -119,12 +139,12 @@
       x: 96, y: 54,
       scenario: "An open server rack panel has an exposed sharp metal edge at hand height, right where techs squeeze past in the aisle.",
       options: [
-        { type: "correct", text: "Rack panel has an exposed sharp edge at hand height in the aisle — laceration risk to anyone reaching past or walking by." },
-        { type: "partial", text: "Something looks sharp near the racks." },
-        { type: "wrong", text: "The rack fans are a bit noisy today." }
+        { type: "correct", text: "Open rack panel has an exposed sharp metal edge at hand height — laceration risk to anyone reaching past or brushing by." },
+        { type: "partial", text: "A rack panel has been left open in the aisle and should be closed once the work is finished." },
+        { type: "wrong", text: "Cable management inside the rack is untidy and could slow down future maintenance work." }
       ],
       feedbackCorrect: "This is a Bodily Contact risk because exposed edges can cut skin during ordinary foot traffic or reaching — especially when attention is on a laptop, not the rack.",
-      feedbackWrong: "Look again — the key risk is the exposed sharp edge on the rack panel, not the fan noise."
+      feedbackWrong: "Look again — the key risk is the exposed sharp edge at hand height, not the cable tidiness."
     },
     {
       id: "H2", name: "Missing Fan Guard",
@@ -132,12 +152,12 @@
       x: 145, y: 140,
       scenario: "A cooling fan at the end of the row is missing its protective guard — the blades are exposed and spinning within arm's reach.",
       options: [
-        { type: "correct", text: "Cooling fan guard is missing on the end-of-row unit — exposed rotating blades within reach of passing staff." },
-        { type: "partial", text: "The fan looks a bit off." },
-        { type: "wrong", text: "This rack row needs new asset labels." }
+        { type: "correct", text: "End-of-row cooling fan is running with its guard removed — exposed rotating blades within reach of passing staff." },
+        { type: "partial", text: "A cooling fan at the end of the row looks faulty and should be checked by the facilities team." },
+        { type: "wrong", text: "The end-of-row fan is running louder than normal, which points to worn bearings needing maintenance." }
       ],
       feedbackCorrect: "Bypassed or missing guards on fans, drills, and similar equipment can cause serious entanglement or laceration injuries.",
-      feedbackWrong: "Look again — the real hazard is the exposed, unguarded rotating fan blades."
+      feedbackWrong: "Look again — the real hazard is the missing guard exposing rotating blades, not how the fan sounds."
     },
     {
       id: "H3", name: "Standing Under a Suspended Load",
@@ -145,12 +165,12 @@
       x: 316, y: 148,
       scenario: "A pallet is raised overhead by a lift truck while a worker stands directly underneath it, looking at their phone.",
       options: [
-        { type: "correct", text: "Worker is standing under a raised load near the loading dock — struck-by/crush risk if the load shifts or drops." },
-        { type: "partial", text: "A lift truck is being used in the loading area." },
-        { type: "wrong", text: "The loading dock door is painted bright yellow." }
+        { type: "correct", text: "Worker is standing directly under a raised pallet — struck-by/crush risk if the load shifts or drops." },
+        { type: "partial", text: "A worker in the loading area is distracted on their phone and should stay aware of their surroundings." },
+        { type: "wrong", text: "The lift truck is parked at an angle across the dock lane and should be straightened to keep the area clear." }
       ],
       feedbackCorrect: "Working underneath suspended loads or inside a lift's working envelope is one of the most severe bodily contact hazards — a dropped load carries huge energy.",
-      feedbackWrong: "Look again — the hazard is the person standing directly under the raised load, not the door color."
+      feedbackWrong: "Look again — the critical hazard is the person positioned directly under the suspended load, not how the lift truck is parked."
     },
     {
       id: "H6", name: "No LOTO Before Repair",
@@ -158,12 +178,12 @@
       x: 172, y: 460,
       scenario: "A technician is reaching into a conveyor mechanism to clear a jam while the equipment is still powered and has not been locked out.",
       options: [
-        { type: "correct", text: "Technician is working inside the conveyor without LOTO applied — energy source isn't isolated, risking a caught-in/between injury if it restarts." },
-        { type: "partial", text: "Someone is fixing the conveyor belt." },
-        { type: "wrong", text: "The conveyor belt housing is painted blue." }
+        { type: "correct", text: "Technician is clearing a conveyor jam without LOTO applied — energy isn't isolated, caught-in/between risk if it restarts." },
+        { type: "partial", text: "A technician is repairing the conveyor, so the area should be kept clear until the work is done." },
+        { type: "wrong", text: "The conveyor's drive motor looks worn and should be added to the preventive maintenance schedule." }
       ],
       feedbackCorrect: "Working on equipment without Lockout/Tagout leaves stored or live energy in place, which can unexpectedly move and trap a hand, arm, or clothing.",
-      feedbackWrong: "Look again — the real risk is missing LOTO before reaching into machinery that can move."
+      feedbackWrong: "Look again — the real risk is reaching into powered machinery without LOTO, not the motor's maintenance schedule."
     },
     {
       id: "H7", name: "Unmarked Hot Pipe",
@@ -171,12 +191,12 @@
       x: 105, y: 560,
       scenario: "An exposed hot exhaust pipe near the maintenance bench carries no warning signage, and a technician's arm keeps brushing close to it.",
       options: [
-        { type: "correct", text: "Hot exhaust pipe in the maintenance area has no 'Hot Surface' warning signage — staff can unknowingly brush against it and suffer burns." },
-        { type: "partial", text: "There's a pipe near the workbench." },
-        { type: "wrong", text: "The workbench in this area could be tidier." }
+        { type: "correct", text: "Hot exhaust pipe has no 'Hot Surface' warning signage — burn risk to staff brushing against it unknowingly." },
+        { type: "partial", text: "The pipework runs close to the workbench, making the maintenance area a tight space to work in." },
+        { type: "wrong", text: "The pipe's protective coating is fading and should be repainted to prevent long-term corrosion." }
       ],
       feedbackCorrect: "Missing signage (e.g. 'Warning - Hot Surface') removes the early visual cue that would normally keep people a safe distance away.",
-      feedbackWrong: "Look again — the risk is the unmarked hot surface, not general workbench tidiness."
+      feedbackWrong: "Look again — the risk is the unmarked hot surface, not the condition of the paintwork."
     },
     {
       id: "H9", name: "Unlabeled Chemical Container",
@@ -184,38 +204,38 @@
       x: 335, y: 424,
       scenario: "A container on the chemical storage shelf has no label identifying its contents.",
       options: [
-        { type: "correct", text: "Unlabeled chemical container in the storage corner — contents unknown, risking incorrect handling and skin/eye exposure." },
-        { type: "partial", text: "There are chemicals stored in this corner." },
-        { type: "wrong", text: "There's a fire extinguisher mounted nearby." }
+        { type: "correct", text: "A container on the chemical shelf has no identifying label — unknown contents risk skin/eye exposure during handling." },
+        { type: "partial", text: "One of the containers on the shelf looks different from the rest and may be worth checking." },
+        { type: "wrong", text: "Chemical storage looks compliant — the drums sit on a spill tray with hazard diamonds displayed." }
       ],
       feedbackCorrect: "Missing labels mean anyone handling the container doesn't know what PPE or precautions are needed, which increases exposure risk.",
-      feedbackWrong: "Look again — the hazard is the unlabeled container itself, not the extinguisher."
+      feedbackWrong: "Look again — one drum has no label at all, so anyone handling it can't know the contents or the required PPE."
     },
     {
       id: "H11", name: "Blind Spot Near Moving Forklift",
-      zone: "Vehicle Pathway", category: "Contact with Moving Equipment",
+      zone: "Forklift Route", category: "Contact with Moving Equipment",
       x: 208, y: 300,
       scenario: "A pedestrian is about to cross directly behind a reversing forklift, right inside the operator's blind spot.",
       options: [
-        { type: "correct", text: "Pedestrian is walking into the forklift's rear blind spot on the pathway — the operator can't see them, high risk of being struck." },
-        { type: "partial", text: "There's a forklift moving around the pathway." },
-        { type: "wrong", text: "The vehicle pathway is marked out with floor paint." }
+        { type: "correct", text: "Pedestrian is stepping into the forklift's rear blind spot — the operator can't see them, high risk of being struck." },
+        { type: "partial", text: "A pedestrian is walking close to the forklift route and should keep more distance from operations." },
+        { type: "wrong", text: "The forklift's amber beacon is flashing correctly, showing its safety features are well maintained." }
       ],
       feedbackCorrect: "Blind spots between pedestrians and operators of forklifts, MEWPs, or lift trucks are a leading cause of struck-by incidents.",
-      feedbackWrong: "Look again — the hazard is the pedestrian entering the equipment's blind spot."
+      feedbackWrong: "Look again — a working beacon doesn't remove the blind spot the pedestrian is walking into."
     },
     {
       id: "H12", name: "Crossing Without Looking",
-      zone: "Vehicle Pathway", category: "Contact with Moving Vehicle",
+      zone: "Loading Dock Approach", category: "Contact with Moving Vehicle",
       x: 272, y: 302,
-      scenario: "A staff member steps into the vehicle pathway without checking for traffic, just as a people-carrier approaches.",
+      scenario: "A staff member steps onto the pedestrian crossing without checking, just as a delivery truck rolls in from the loading dock with an obstructed view.",
       options: [
-        { type: "correct", text: "Pedestrian entered the vehicle pathway without checking for traffic while a people-carrier was approaching — struck-by-vehicle risk." },
-        { type: "partial", text: "There's a vehicle driving through the pathway." },
-        { type: "wrong", text: "The pathway has clear floor markings." }
+        { type: "correct", text: "Pedestrian stepped onto the dock crossing without checking while a delivery truck approached — struck-by-vehicle risk." },
+        { type: "partial", text: "Delivery traffic is arriving at the dock, so pedestrians nearby need to take extra care when crossing." },
+        { type: "wrong", text: "The pedestrian crossing markings are clearly painted, so the traffic route is set up correctly." }
       ],
-      feedbackCorrect: "Failing to look before crossing a vehicle pathway is one of the most common precursors to vehicle-pedestrian incidents.",
-      feedbackWrong: "Look again — the hazard is the pedestrian crossing without checking for the approaching vehicle."
+      feedbackCorrect: "Failing to look before crossing a vehicle route is one of the most common precursors to vehicle-pedestrian incidents.",
+      feedbackWrong: "Look again — clear markings only help if people check for traffic; this pedestrian crossed without looking."
     }
   ];
   HAZARDS.forEach(h => { h.answered = false; h.resultType = null; });
@@ -260,10 +280,9 @@
     });
   }
 
-  // Moving hazards that patrol the vehicle pathway. Colliding costs time.
+  // The forklift patrols the full marked route. Colliding costs time.
   const movers = [
-    { type: "forklift", x: 30, y: 300, w: 44, h: 30, minX: 30, maxX: 190, dir: 1, speed: 62 },
-    { type: "vehicle", x: 300, y: 302, w: 48, h: 28, minX: 290, maxX: 440, dir: -1, speed: 82 }
+    { type: "forklift", x: 30, y: 300, w: 44, h: 30, minX: 30, maxX: 440, dir: 1, speed: 74 }
   ];
 
   /* ================================ INPUT ================================= */
@@ -396,10 +415,24 @@
         if (rectsOverlap(pBox, m)) {
           state.timeLeft = Math.max(0, state.timeLeft - COLLISION_PENALTY);
           player.hitCooldown = COLLISION_COOLDOWN;
-          showToast(`Contact! -${COLLISION_PENALTY}s — that's exactly the risk we're teaching about.`);
+          showToast(`Struck by the forklift! -${COLLISION_PENALTY}s — stay clear of its travel path.`);
           player.x += m.dir * -14;
           break;
         }
+      }
+    }
+  }
+
+  // Floor traps: stepping on one (feet only, so it feels fair) costs time.
+  function updateTraps() {
+    if (player.hitCooldown > 0) return;
+    const feet = { x: player.x + 3, y: player.y + player.h - 10, w: player.w - 6, h: 10 };
+    for (const t of TRAPS) {
+      if (rectsOverlap(feet, t)) {
+        state.timeLeft = Math.max(0, state.timeLeft - TRAP_PENALTY);
+        player.hitCooldown = COLLISION_COOLDOWN;
+        showToast(`${t.msg} -${TRAP_PENALTY}s`);
+        break;
       }
     }
   }
@@ -453,6 +486,7 @@
     if (state.started && !state.over && !state.paused) {
       updatePlayer(dt);
       updateMovers(dt);
+      updateTraps();
       state.timeLeft -= dt;
       if (state.timeLeft <= 0) {
         state.timeLeft = 0;
@@ -632,38 +666,49 @@
       g.fillRect(px - 120, py - 120, 240, 240);
     }
 
-    /* ---- vehicle pathway: asphalt, chevrons, zebra crossing, wear ---- */
+    /* ---- forklift route: taped-off floor lane like a real data centre.
+       The floor tiles stay visible — the lane is defined by yellow/black
+       hazard tape at the edges and painted legends/arrows, not asphalt. ---- */
     const p = PATHWAY;
-    const ag = g.createLinearGradient(0, p.y, 0, p.y + p.h);
-    ag.addColorStop(0, "#191b21");
-    ag.addColorStop(0.5, "#15161b");
-    ag.addColorStop(1, "#191b21");
-    g.fillStyle = ag;
+    // slight darkening from heavier traffic wear inside the lane
+    g.fillStyle = "rgba(0,0,0,0.16)";
     g.fillRect(p.x, p.y, p.w, p.h);
-    // asphalt speckle
-    for (let i = 0; i < 500; i++) {
-      const sx = p.x + rand() * p.w, sy = p.y + 6 + rand() * (p.h - 12);
-      g.fillStyle = rand() < 0.5 ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.25)";
+    for (let i = 0; i < 260; i++) {
+      const sx = p.x + rand() * p.w, sy = p.y + 8 + rand() * (p.h - 16);
+      g.fillStyle = rand() < 0.5 ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.18)";
       g.fillRect(sx, sy, 1.4, 1.4);
     }
-    // chevron hazard bands top & bottom
-    chevronBand(g, p.x, p.y, p.w, 6);
-    chevronBand(g, p.x, p.y + p.h - 6, p.w, 6);
-    // worn dashed centerline (dashes vary in alpha like real paint wear)
-    for (let dx = p.x + 6; dx < p.x + p.w; dx += 26) {
-      g.fillStyle = `rgba(251,188,5,${0.55 + rand() * 0.4})`;
-      g.fillRect(dx, p.y + p.h / 2 - 1.5, 15, 3);
+    // yellow/black hazard tape marking the lane edges
+    chevronBand(g, p.x, p.y, p.w, 5);
+    chevronBand(g, p.x, p.y + p.h - 5, p.w, 5);
+    // painted lane legends
+    g.fillStyle = "rgba(251,188,5,0.5)";
+    g.font = "bold 11px Consolas, monospace";
+    g.fillText("FORKLIFT", 50, p.y + 25);
+    g.fillText("ROUTE", 60, p.y + 39);
+    g.fillText("FORKLIFT", 340, p.y + 25);
+    g.fillText("ROUTE", 350, p.y + 39);
+    // painted direction arrows along the lane
+    g.fillStyle = "rgba(251,188,5,0.45)";
+    for (const ax of [150, 305, 420]) {
+      g.beginPath();
+      g.moveTo(ax, p.y + p.h / 2 - 5);
+      g.lineTo(ax + 12, p.y + p.h / 2);
+      g.lineTo(ax, p.y + p.h / 2 + 5);
+      g.lineTo(ax + 4, p.y + p.h / 2);
+      g.closePath();
+      g.fill();
     }
-    // zebra crossing where the centre corridor crosses the pathway
+    // pedestrian crossing where the centre corridor crosses the route
     for (let i = 0; i < 4; i++) {
       g.fillStyle = `rgba(226,229,236,${0.5 + rand() * 0.25})`;
       rr(g, 220, 288 + i * 12.5, 40, 7, 2);
       g.fill();
     }
-    // tire wear streaks
-    g.strokeStyle = "rgba(0,0,0,0.3)";
-    g.lineWidth = 5;
-    for (const [x1, x2, yy] of [[40, 200, 298], [40, 200, 320], [290, 440, 296], [290, 440, 318]]) {
+    // faint tire wear from forklift traffic
+    g.strokeStyle = "rgba(0,0,0,0.18)";
+    g.lineWidth = 4;
+    for (const [x1, x2, yy] of [[40, 200, 302], [280, 440, 316]]) {
       g.beginPath();
       g.moveTo(x1, yy);
       g.bezierCurveTo(x1 + 40, yy - 2, x2 - 40, yy + 2, x2, yy);
@@ -700,6 +745,9 @@
 
     /* ---- props (static geometry, soft shadows) ---- */
     for (const o of OBSTACLES) drawPropStatic(g, o);
+
+    /* ---- floor traps (stepping on these costs time) ---- */
+    for (const t of TRAPS) drawTrapStatic(g, t);
 
     /* ---- zone label chips ---- */
     g.font = "bold 9px Consolas, monospace";
@@ -1092,6 +1140,144 @@
     }
   }
 
+  /* ------------------------- floor trap drawing ------------------------- */
+  function drawTrapStatic(g, t) {
+    switch (t.type) {
+      case "sharpScrap": {
+        // jagged sheet-metal offcuts left on the floor
+        g.save();
+        g.translate(t.x, t.y);
+        g.fillStyle = "#8d949f";
+        g.beginPath();
+        g.moveTo(2, 14); g.lineTo(12, 2); g.lineTo(20, 8); g.lineTo(26, 4);
+        g.lineTo(24, 16); g.lineTo(12, 20); g.closePath();
+        g.fill();
+        g.fillStyle = "#6a7286";
+        g.beginPath();
+        g.moveTo(10, 18); g.lineTo(24, 10); g.lineTo(30, 18); g.lineTo(18, 22); g.closePath();
+        g.fill();
+        g.strokeStyle = "rgba(255,255,255,0.5)";
+        g.lineWidth = 1;
+        g.beginPath(); g.moveTo(12, 2); g.lineTo(20, 8); g.lineTo(26, 4); g.stroke();
+        g.restore();
+        break;
+      }
+      case "nailPallet": {
+        // flattened pallet board with nails sticking up
+        const wg = g.createLinearGradient(t.x, t.y, t.x, t.y + t.h);
+        wg.addColorStop(0, "#8a5c33");
+        wg.addColorStop(1, "#5f3d1f");
+        g.fillStyle = wg;
+        rr(g, t.x, t.y, t.w, t.h, 2);
+        g.fill();
+        g.strokeStyle = "rgba(58,35,15,0.8)";
+        g.lineWidth = 1.5;
+        for (let i = 1; i < 3; i++) {
+          g.beginPath();
+          g.moveTo(t.x, t.y + (t.h / 3) * i);
+          g.lineTo(t.x + t.w, t.y + (t.h / 3) * i);
+          g.stroke();
+        }
+        g.fillStyle = "#d7dbe2";
+        for (const [nx, ny] of [[6, 5], [16, 9], [27, 4], [10, 17], [22, 15], [31, 18]]) {
+          g.fillRect(t.x + nx, t.y + ny - 3, 1.6, 4);
+          g.beginPath(); g.arc(t.x + nx + 0.8, t.y + ny - 3, 1.2, 0, Math.PI * 2); g.fill();
+        }
+        break;
+      }
+      case "chemSpill": {
+        // glossy chemical puddle spreading across the tiles
+        g.save();
+        g.translate(t.x + t.w / 2, t.y + t.h / 2);
+        g.fillStyle = "rgba(64,190,110,0.45)";
+        g.beginPath(); g.ellipse(0, 0, t.w / 2, t.h / 2, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "rgba(64,190,110,0.55)";
+        g.beginPath(); g.ellipse(-6, 2, t.w / 3, t.h / 3, 0.3, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(t.w / 2 - 3, -4, 4, 3, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "rgba(255,255,255,0.25)";
+        g.beginPath(); g.ellipse(-4, -3, 7, 3, -0.4, 0, Math.PI * 2); g.fill();
+        g.restore();
+        break;
+      }
+      case "steamVent": {
+        // floor grate venting hot steam (puffs animated per frame)
+        g.fillStyle = "#23262e";
+        rr(g, t.x, t.y, t.w, t.h, 3);
+        g.fill();
+        g.strokeStyle = "#454c5c";
+        g.lineWidth = 1.5;
+        rr(g, t.x + 1, t.y + 1, t.w - 2, t.h - 2, 2);
+        g.stroke();
+        g.fillStyle = "#0d0e12";
+        for (let i = 0; i < 4; i++) g.fillRect(t.x + 5, t.y + 4 + i * 5, t.w - 10, 2.4);
+        break;
+      }
+      case "toolsScatter": {
+        // dropped tools left across the walkway
+        g.save();
+        g.translate(t.x, t.y);
+        g.strokeStyle = "#c9cfda";
+        g.lineWidth = 3;
+        g.beginPath(); g.moveTo(4, 16); g.lineTo(16, 6); g.stroke();
+        g.beginPath(); g.arc(3, 17, 3.4, 0.8, 5.2); g.stroke();
+        g.strokeStyle = "#d99a2b";
+        g.lineWidth = 2.6;
+        g.beginPath(); g.moveTo(20, 18); g.lineTo(32, 12); g.stroke();
+        g.strokeStyle = "#9aa1b2";
+        g.lineWidth = 1.6;
+        g.beginPath(); g.moveTo(30, 13); g.lineTo(37, 9.5); g.stroke();
+        g.fillStyle = "#7d8494";
+        for (const [bx, by] of [[12, 20], [26, 6], [34, 18]]) {
+          g.beginPath(); g.arc(bx, by, 1.8, 0, Math.PI * 2); g.fill();
+        }
+        g.restore();
+        break;
+      }
+    }
+  }
+
+  function drawTrapAnimated(t, now) {
+    switch (t.type) {
+      case "steamVent": {
+        for (let i = 0; i < 3; i++) {
+          const ph = ((now / 1400) + i * 0.33) % 1;
+          const wx = t.x + 7 + i * 10 + Math.sin(now / 300 + i * 2) * 2;
+          ctx.fillStyle = `rgba(230,238,248,${(1 - ph) * 0.22})`;
+          ctx.beginPath();
+          ctx.ellipse(wx, t.y + 4 - ph * 20, 3 + ph * 4, 5 + ph * 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case "chemSpill": {
+        // slow expanding shimmer ring
+        const ph = (now / 1100) % 1;
+        ctx.strokeStyle = `rgba(110,230,150,${(1 - ph) * 0.35})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(
+          t.x + t.w / 2, t.y + t.h / 2,
+          (t.w / 2) * (0.6 + ph * 0.5), (t.h / 2) * (0.6 + ph * 0.5),
+          0, 0, Math.PI * 2
+        );
+        ctx.stroke();
+        break;
+      }
+      default: {
+        // periodic glint so sharp/trip traps catch the eye
+        const ph = ((now / 1600) + t.x * 0.31) % 1;
+        if (ph < 0.12) {
+          const a = (1 - ph / 0.12) * 0.8;
+          const gx = t.x + t.w * 0.6, gy = t.y + t.h * 0.3;
+          ctx.strokeStyle = `rgba(255,255,255,${a})`;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(gx - 4, gy); ctx.lineTo(gx + 4, gy); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(gx, gy - 4); ctx.lineTo(gx, gy + 4); ctx.stroke();
+        }
+      }
+    }
+  }
+
   /* ----------------------- animated per-frame details ----------------------- */
   function drawPropAnimated(o, now) {
     switch (o.type) {
@@ -1307,57 +1493,6 @@
       ctx.fillStyle = blink ? "#ff9614" : "#7a4a00";
       rr(ctx, m.x + m.w * 0.34 - 3, m.y - 9, 6, 5, 2);
       ctx.fill();
-    } else {
-      // people-carrier / van
-      const frontX = m.dir > 0 ? m.x + m.w : m.x;
-      // headlight cone
-      const vg2 = ctx.createLinearGradient(frontX, 0, frontX + m.dir * 42, 0);
-      vg2.addColorStop(0, "rgba(255,246,200,0.15)");
-      vg2.addColorStop(1, "rgba(255,246,200,0)");
-      ctx.fillStyle = vg2;
-      ctx.beginPath();
-      ctx.moveTo(frontX, m.y + 4);
-      ctx.lineTo(frontX + m.dir * 42, m.y - 5);
-      ctx.lineTo(frontX + m.dir * 42, m.y + m.h + 8);
-      ctx.lineTo(frontX, m.y + m.h - 2);
-      ctx.closePath();
-      ctx.fill();
-      // body
-      const vb = ctx.createLinearGradient(m.x, m.y, m.x, m.y + m.h);
-      vb.addColorStop(0, "#6ba1f8");
-      vb.addColorStop(0.45, "#4285F4");
-      vb.addColorStop(1, "#2a5fc4");
-      ctx.fillStyle = vb;
-      rr(ctx, m.x, m.y, m.w, m.h, 5);
-      ctx.fill();
-      // roof highlight
-      ctx.fillStyle = "rgba(255,255,255,0.3)";
-      rr(ctx, m.x + 4, m.y + 1.5, m.w - 8, 3, 1.5);
-      ctx.fill();
-      // windows with sky reflection
-      const win = ctx.createLinearGradient(m.x, m.y + 5, m.x, m.y + 13);
-      win.addColorStop(0, "#e2eeff");
-      win.addColorStop(1, "#9cc0f5");
-      ctx.fillStyle = win;
-      rr(ctx, m.x + 6, m.y + 5, m.w - 12, 8, 2);
-      ctx.fill();
-      ctx.fillStyle = "rgba(42,95,196,0.8)";
-      ctx.fillRect(m.x + m.w * 0.44, m.y + 5, 2.4, 8);
-      // hi-vis stripe
-      ctx.fillStyle = "rgba(251,188,5,0.85)";
-      ctx.fillRect(m.x + 2, m.y + m.h - 9, m.w - 4, 2.6);
-      // lights
-      ctx.fillStyle = "#fff2b8";
-      ctx.fillRect(m.dir > 0 ? m.x + m.w - 3.5 : m.x, m.y + 5, 3.5, 4);
-      ctx.fillStyle = "#ff5548";
-      ctx.fillRect(m.dir > 0 ? m.x : m.x + m.w - 3.5, m.y + 5, 3.5, 4);
-      // wheels
-      for (const wx of [m.x + 11, m.x + m.w - 11]) {
-        ctx.fillStyle = "#101215";
-        ctx.beginPath(); ctx.arc(wx, m.y + m.h - 1, 5.5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#8d949f";
-        ctx.beginPath(); ctx.arc(wx, m.y + m.h - 1, 2.4, 0, Math.PI * 2); ctx.fill();
-      }
     }
     ctx.restore();
   }
@@ -1538,6 +1673,7 @@
     const now = performance.now();
     ctx.drawImage(staticLayer, 0, 0);
     for (const o of OBSTACLES) drawPropAnimated(o, now);
+    for (const t of TRAPS) drawTrapAnimated(t, now);
     for (const p of PEDESTRIANS) drawPedestrian(p, now);
     for (const m of movers) drawMover(m, now);
     drawPlayer(now);
@@ -1647,7 +1783,6 @@
     HAZARDS.forEach(h => { h.answered = false; h.resultType = null; });
     player.x = 232; player.y = 255; player.facing = "down";
     movers[0].x = 30; movers[0].dir = 1;
-    movers[1].x = 300; movers[1].dir = -1;
   }
 
   function startGame() {

@@ -35,7 +35,7 @@ Files:
 ## Game mechanics
 
 - **Goal:** patrol a data centre floor, find all 8 Bodily Contact hazards,
-  and log the sharpest BotG observation for each before the 1-minute timer
+  and log the sharpest BotG observation for each before the 40-second timer
   runs out.
 - **Movement:** `WASD`/Arrow Keys on desktop, or the on-screen D-pad on
   touch devices — 8-directional, with collision against walls, server
@@ -51,12 +51,17 @@ Files:
   - Instant feedback explains *why* it's a Bodily Contact risk (or what the
     real risk was), plus which official sub-category it maps to.
   - Answered hazards turn into a green checkmark and can't be re-inspected.
-- **Vehicle Pathway:** a forklift and a people-carrier continuously patrol a
-  strip across the middle of the map. Walking into one costs 2 seconds off
-  the clock — a small, on-theme penalty that reinforces "if energy can
-  reach you, you're too close," with a brief invulnerability window so it
-  never feels unfair.
-- **Timer & scoring:** 1:00 countdown (pauses while a hazard card is open,
+- **Forklift Route:** a forklift continuously patrols a taped-off,
+  floor-marked lane across the middle of the map (yellow/black hazard tape,
+  painted legends and direction arrows, and a pedestrian crossing — like a
+  real data centre traffic route). Getting struck costs 5 seconds off the
+  clock, with a brief invulnerability window so it never feels unfair.
+- **Floor traps (-5s each):** five visible, avoidable floor hazards themed
+  on Bodily Contact are scattered across the zones — a sharp sheet-metal
+  offcut, a pallet with protruding nails, a chemical spill puddle, a hot
+  steam vent, and scattered tools. Stepping on one costs 5 seconds and shows
+  a message naming the hazard, so the penalty itself teaches.
+- **Timer & scoring:** 0:40 countdown (pauses while a hazard card is open,
   so reading time isn't punished), live score, and hazards-found counter in
   the HUD.
 - **Congratulations screen:** if you log all 8 hazards before time runs out,
@@ -80,8 +85,8 @@ fast phone session — no two hazards teach the same lesson.
 | H6 | Equipment not locked out (LOTO) before repair | Maintenance Area | Caught In/Between Objects |
 | H7 | Hot exhaust pipe with no warning signage | Maintenance Area | Contact with Hot/Cold Objects |
 | H9 | Chemical container missing a label | Chemical Storage Corner | Contact with Chemical |
-| H11 | Pedestrian in a forklift's blind spot | Vehicle Pathway | Contact with Moving Equipment |
-| H12 | Pedestrian crossing without checking traffic | Vehicle Pathway | Contact with Moving Vehicle |
+| H11 | Pedestrian in a forklift's blind spot | Forklift Route | Contact with Moving Equipment |
+| H12 | Pedestrian crossing without checking for a dock truck | Loading Dock Approach | Contact with Moving Vehicle |
 
 ## Educational goals reinforced
 
@@ -101,5 +106,6 @@ All game content lives in arrays near the top of `script.js`:
 - `HAZARDS` — each hazard's scenario, zone, sub-category, and 3 answer
   options with feedback text.
 
-`GAME_DURATION`, `PLAYER_SPEED`, and `COLLISION_PENALTY` are top-level
-constants in `script.js` if you want to retune difficulty or pacing.
+`GAME_DURATION`, `PLAYER_SPEED`, `COLLISION_PENALTY`, and `TRAP_PENALTY` are
+top-level constants in `script.js` if you want to retune difficulty or
+pacing, and the `TRAPS` array defines the floor traps and their messages.
