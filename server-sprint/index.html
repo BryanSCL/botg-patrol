@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Server Sprint: Race the Risk — BotG Safety Campaign</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 16:9 stage that letterboxes to any screen -->
+  <div id="stage">
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <!-- ===================== MENU ===================== -->
+    <div id="menu" class="overlay">
+      <div class="panel">
+        <div class="title-badge" data-i18n="menuBadge">BotG SAFETY CAMPAIGN</div>
+        <h1 class="game-title">SERVER SPRINT</h1>
+        <div class="subtitle" data-i18n="subtitle">RACE THE RISK</div>
+        <p class="tagline" data-i18n="tagline">Urgent server alert. Sprint the site — spot every Bodily&nbsp;Contact risk on the way.</p>
+
+        <div id="langRow">
+          <button data-lang="en">EN</button>
+          <button data-lang="zh">繁體中文</button>
+          <button data-lang="th">ไทย</button>
+          <button data-lang="ja">日本語</button>
+        </div>
+
+        <div class="name-row">
+          <label for="playerName" data-i18n="opId">OPERATOR ID</label>
+          <input id="playerName" maxlength="10" placeholder="AAA" autocomplete="off" spellcheck="false">
+        </div>
+
+        <button id="startBtn" class="big-btn" data-i18n="start">&#9654; START SPRINT</button>
+
+        <div class="controls-hint">
+          <div data-i18n="hint1"><span class="key">&#9664;</span><span class="key">&#9654;</span> or <span class="key">A</span><span class="key">D</span> change lane</div>
+          <div data-i18n="hint2"><span class="key">&#9650;</span> or <span class="key">W</span> jump &nbsp;&nbsp; <span class="key">&#9660;</span> or <span class="key">S</span> duck</div>
+          <div data-i18n="hint3"><span class="key">1</span><span class="key">2</span><span class="key">3</span> rapid decisions</div>
+        </div>
+
+        <div class="menu-legend">
+          <span class="lgd lane" data-i18n="lgdLane">FALLING LOAD &rarr; SWITCH LANE</span>
+          <span class="lgd duck" data-i18n="lgdDuck">LOW DOOR &rarr; DUCK</span>
+          <span class="lgd jump" data-i18n="lgdJump">SHARP EDGE &rarr; JUMP</span>
+          <span class="lgd veh" data-i18n="lgdVeh">VEHICLE &rarr; TIME IT</span>
+          <span class="lgd pinch" data-i18n="lgdPinch">PINCH POINT &rarr; STAY CLEAR</span>
+        </div>
+
+        <button id="menuBoardBtn" class="link-btn" data-i18n="viewBoard">VIEW LEADERBOARD</button>
+      </div>
+    </div>
+
+    <!-- ===================== RESULTS ===================== -->
+    <div id="results" class="overlay hidden">
+      <div class="panel wide">
+        <div class="title-badge" data-i18n="reportBadge">BotG PERFORMANCE REPORT</div>
+        <div id="reportName" class="report-name">AAA</div>
+        <div id="ratingLine" class="rating">RISK SPOTTER</div>
+        <div id="finalScore" class="final-score">000000</div>
+        <div id="statGrid" class="stat-grid"><!-- filled by JS --></div>
+        <div class="btn-row">
+          <button id="againBtn" class="big-btn" data-i18n="again">&#8635; PLAY AGAIN</button>
+          <button id="resultsBoardBtn" class="link-btn" data-i18n="board">LEADERBOARD</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== VIDEO QUIZ ===================== -->
+    <div id="quiz" class="overlay hidden">
+      <div class="panel wide">
+        <div class="title-badge" data-i18n="quizBadge">VIDEO QUIZ &mdash; PRECAUTIONS FOR MACHINERY HAZARDS</div>
+        <div class="quiz-video-ref">
+          <img src="quiz-video.jpg" alt="Title screen of the Precautions for Machinery Hazards video (B.2 Caught in Machinery)">
+          <p data-i18n="quizRef">These 3 questions are based on the <strong>&ldquo;Precautions for Machinery Hazards&rdquo;</strong> video sent to all participants before the campaign.</p>
+        </div>
+        <div id="quizProgress" class="quiz-progress">QUESTION 1 OF 3</div>
+        <p id="quizQ" class="quiz-q"></p>
+        <div id="quizOpts" class="quiz-opts"></div>
+        <div id="quizFeedback" class="quiz-feedback"></div>
+        <button id="quizNext" class="big-btn hidden">NEXT QUESTION &#9654;</button>
+      </div>
+    </div>
+
+    <!-- ===================== LEADERBOARD ===================== -->
+    <div id="board" class="overlay hidden">
+      <div class="panel wide">
+        <div class="title-badge" data-i18n="boardTitle">SITE LEADERBOARD &mdash; TOP 10</div>
+        <table id="boardTable">
+          <thead><tr><th data-i18n="thRank">#</th><th data-i18n="thName">NAME</th><th data-i18n="thScore">SCORE</th><th data-i18n="thAcc">ACC</th><th data-i18n="thStreak">STREAK</th></tr></thead>
+          <tbody><!-- filled by JS --></tbody>
+        </table>
+        <div class="btn-row">
+          <button id="boardBackBtn" class="big-btn" data-i18n="back">BACK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== HUD BUTTONS ===================== -->
+    <button id="muteBtn" class="icon-btn" title="Mute / unmute">&#128266;</button>
+    <button id="fsBtn" class="icon-btn" title="Full screen">&#x26F6;</button>
+
+    <!-- ===================== TOUCH CONTROLS ===================== -->
+    <div id="touch" class="hidden">
+      <button data-act="left">&#9664;</button>
+      <button data-act="jump">&#9650;</button>
+      <button data-act="duck">&#9660;</button>
+      <button data-act="right">&#9654;</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
