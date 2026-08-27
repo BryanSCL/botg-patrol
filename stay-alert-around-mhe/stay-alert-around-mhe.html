@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Stay Alert Around MHE</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+      user-select:none; -webkit-user-select:none; touch-action:none; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0b1220;
+      font-family:'Segoe UI',system-ui,-apple-system,sans-serif; }
+  #c3d { position:fixed; inset:0; display:block; }
+
+  /* ============ generic overlay screens ============ */
+  .screen { position:fixed; inset:0; z-index:100; display:none; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      background:
+        radial-gradient(900px 420px at 82% -8%, rgba(77,141,240,.16), transparent 60%),
+        radial-gradient(760px 420px at 4% 108%, rgba(255,176,32,.13), transparent 60%),
+        linear-gradient(160deg,#101b30 0%,#182a4a 60%,#12203a 100%);
+      color:#fff; }
+  .screen.show { display:flex; }
+  .hazardBar { width:min(520px,70vw); height:8px; border-radius:5px; margin-top:20px; opacity:.85;
+      background:repeating-linear-gradient(-45deg,#e6b800 0 18px,#15161a 18px 36px); }
+  /* title & finish let the live 3D warehouse show through behind a dark scrim */
+  #titleScreen, #finishScreen { background:
+      linear-gradient(180deg, rgba(9,15,28,.80) 0%, rgba(9,15,28,.52) 46%, rgba(10,16,30,.88) 100%); }
+  .titleBadge { width:112px; height:112px; border-radius:28px; margin-bottom:18px;
+      background:linear-gradient(180deg,#f6b23a,#c98708);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 14px 34px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.4); }
+  .titleBadge svg { width:74px; height:74px; }
+  .chipRow { display:flex; gap:12px; margin-top:24px; flex-wrap:wrap; justify-content:center; }
+  .tchip { font-size:min(2vw,19px); font-weight:700; color:#e6eefc; padding:9px 20px;
+      border-radius:999px; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.2);
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+
+  /* ============ big tap buttons ============ */
+  .btn { border:none; cursor:pointer; font-family:inherit; font-weight:800; color:#fff;
+      border-radius:26px; letter-spacing:1px;
+      box-shadow:inset 0 2px 0 rgba(255,255,255,.28), 0 9px 0 rgba(0,0,0,.4), 0 14px 28px rgba(0,0,0,.45);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .btn:active { transform:translateY(5px); box-shadow:0 3px 0 rgba(0,0,0,.4); }
+  .btn:focus-visible { outline:4px solid #fff; outline-offset:3px; }
+  .btn.green { background:linear-gradient(180deg,#3fae6a,#2c8a50); }
+  .btn.red   { background:linear-gradient(180deg,#e05450,#c03531); }
+  .btn.amber { background:linear-gradient(180deg,#f2a41c,#d3860a); color:#231a00; }
+  .btn.blue  { background:linear-gradient(180deg,#3f7bd9,#2c5cb0); }
+  .btn.grey  { background:linear-gradient(180deg,#5c6b82,#46536a); }
+  .pulse { animation:pulse 1.05s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { box-shadow:0 9px 0 rgba(0,0,0,.4), 0 0 0 0 rgba(255,255,255,.8); }
+    50%     { box-shadow:0 9px 0 rgba(0,0,0,.4), 0 0 0 24px rgba(255,255,255,0); } }
+
+  /* ============ title screen ============ */
+  #titleScreen h1 { font-size:min(7.2vw,84px); font-weight:900; line-height:1.05;
+      letter-spacing:1px; text-shadow:0 4px 26px rgba(0,0,0,.75), 0 2px 6px rgba(0,0,0,.6); }
+  #titleScreen h1 .hl { color:#ffcc00; }
+  #titleScreen .theme { font-size:min(3vw,34px); font-weight:600; color:#cfe0ff; margin-top:14px; }
+  #startRow { display:flex; gap:28px; margin-top:44px; flex-wrap:wrap; justify-content:center; }
+  #startRow .btn { font-size:min(3.4vw,38px); padding:20px 38px; }
+  #startRow .btn small { font-size:min(1.9vw,20px); font-weight:700; opacity:.92; }
+  #titleFoot { position:absolute; bottom:22px; width:100%; text-align:center;
+      font-size:min(1.8vw,20px); color:#8fa3c8; font-weight:600; }
+  .titleIcon { font-size:min(9vw,96px); line-height:1; margin-bottom:10px;
+      filter:drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
+
+  /* ============ how-to screen ============ */
+  #howtoScreen h2 { font-size:min(4.6vw,50px); font-weight:900; margin-bottom:26px; }
+  .howRow { display:flex; align-items:center; gap:26px; margin:12px 0; }
+  .howPic { display:flex; gap:10px; }
+  .demoBtn { width:110px; height:86px; border-radius:20px; font-size:30px; font-weight:900;
+      color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      box-shadow:0 6px 0 rgba(0,0,0,.4); }
+  .demoBtn small { font-size:16px; font-weight:700; }
+  .howTxt { font-size:min(3vw,32px); font-weight:700; text-align:left; min-width:280px; }
+  #goBtn { margin-top:34px; font-size:min(4.6vw,50px); padding:22px 110px; }
+
+  /* ============ HUD ============ */
+  #hud { position:fixed; inset:0; z-index:50; display:none; pointer-events:none; }
+  #hud.show { display:block; }
+  #banner { position:fixed; top:14px; left:50%; transform:translateX(-50%);
+      background:rgba(10,17,30,.72); border:2px solid rgba(255,255,255,.28);
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      color:#fff; font-size:min(3.4vw,36px); font-weight:800; padding:12px 34px;
+      border-radius:50px; white-space:nowrap; z-index:55; max-width:92vw; }
+  #banner .em { color:#ffcc00; }
+  #banner.urgent { border-color:#ffcc00; background:rgba(120,40,10,.9); }
+
+  /* speed panel */
+  #speedPanel { position:fixed; left:18px; top:14px; z-index:55;
+      background:rgba(10,17,30,.66); border-radius:20px; padding:10px 18px 12px; width:190px;
+      border:2px solid rgba(255,255,255,.22); text-align:center;
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  #speedNum { font-size:52px; font-weight:900; color:#fff; line-height:1; }
+  #speedNum small { font-size:18px; font-weight:700; color:#9fb2d4; }
+  #speedBarWrap { height:16px; border-radius:8px; background:#22304a; margin-top:8px; overflow:hidden;
+      border:1px solid rgba(255,255,255,.25); }
+  #speedBar { height:100%; width:0%; border-radius:8px;
+      background:linear-gradient(90deg,#3fae6a 0%,#f2a41c 60%,#e05450 100%);
+      background-size:170px 100%; transition:width .1s; }
+  #speedTags { display:flex; justify-content:space-between; font-size:13px; font-weight:800;
+      color:#9fb2d4; margin-top:3px; }
+  #limiterTag { font-size:14px; font-weight:900; color:#ffcc00; height:18px; margin-top:2px; }
+
+  /* progress dots */
+  #dots { position:fixed; top:20px; right:22px; display:flex; gap:10px; z-index:55; }
+  #dots .dot { width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,.25);
+      border:3px solid rgba(255,255,255,.45); }
+  #dots .dot.done { background:#3fae6a; border-color:#fff; }
+  #dots .dot.now  { background:#ffcc00; border-color:#fff; transform:scale(1.25); }
+
+  /* control clusters */
+  .ctl { position:fixed; z-index:60; pointer-events:auto; }
+  #steerL { left:20px;  bottom:24px; width:150px; height:140px; font-size:64px; }
+  #steerR { left:186px; bottom:24px; width:150px; height:140px; font-size:64px; }
+  #goPedal    { right:20px;  bottom:24px; width:170px; height:170px; font-size:40px; border-radius:50%; }
+  #brakePedal { right:206px; bottom:24px; width:170px; height:170px; font-size:32px; border-radius:50%; }
+  #hornBtn { right:20px; bottom:214px; width:130px; height:130px; border-radius:50%; font-size:24px; }
+  #hornBtn .ico { font-size:48px; }
+  #revBtn { right:206px; bottom:214px; width:130px; height:74px; font-size:24px; display:none; }
+  #actionBtn { left:50%; bottom:46px; transform:translateX(-50%); min-width:340px; height:110px;
+      font-size:min(4vw,40px); padding:0 44px; display:none; }
+  .ctl small { font-size:16px; font-weight:700; opacity:.9; }
+  .ctl .ico { font-size:52px; line-height:1; }
+
+  /* subtle cinematic vignette while playing */
+  #camVignette { position:fixed; inset:0; z-index:40; pointer-events:none;
+      background:radial-gradient(ellipse at center, rgba(0,0,0,0) 56%, rgba(0,0,0,.36) 100%); }
+
+  /* seatbelt strap (visible once buckled) */
+  #beltStrap { position:fixed; z-index:52; left:-12%; bottom:-30%; width:130%; height:26%;
+      transform:rotate(-14deg); display:none; pointer-events:none;
+      background:linear-gradient(180deg, rgba(30,34,40,0) 0%, rgba(30,34,40,0) 34%,
+        #262b33 35%, #3a414d 48%, #262b33 62%, rgba(30,34,40,0) 63%); }
+  #beltStrap.show { display:block; }
+
+  /* toast nudge */
+  #toast { position:fixed; left:50%; bottom:200px; transform:translateX(-50%) scale(0);
+      background:#ffcc00; color:#1c2536; font-size:min(3.2vw,34px); font-weight:800;
+      text-align:center; padding:16px 38px; border-radius:22px; max-width:80vw;
+      border:4px solid #1c2536; z-index:90; transition:transform .22s cubic-bezier(.34,1.56,.64,1);
+      pointer-events:none; }
+  #toast.show { transform:translateX(-50%) scale(1); }
+
+  /* impact flash + blood vignette + blood-on-lens droplets */
+  #flash { position:fixed; inset:0; z-index:80; background:#fff; opacity:0; pointer-events:none; }
+  #vignette { position:fixed; inset:0; z-index:81; opacity:0; pointer-events:none;
+      background:radial-gradient(ellipse at center, rgba(120,0,0,0) 36%, rgba(110,0,0,.95) 100%); }
+  #bloodCam { position:fixed; inset:0; z-index:82; opacity:0; pointer-events:none; transition:opacity .25s;
+      background:
+        radial-gradient(circle at 22% 28%, rgba(150,5,8,.9) 0 2.2%, rgba(150,5,8,0) 4.5%),
+        radial-gradient(circle at 68% 16%, rgba(130,4,7,.85) 0 1.5%, rgba(130,4,7,0) 3.2%),
+        radial-gradient(circle at 46% 58%, rgba(145,4,8,.95) 0 3.2%, rgba(145,4,8,0) 7%),
+        radial-gradient(circle at 81% 52%, rgba(120,3,6,.8) 0 1.9%, rgba(120,3,6,0) 4.2%),
+        radial-gradient(circle at 12% 66%, rgba(140,4,8,.85) 0 2.6%, rgba(140,4,8,0) 5.4%),
+        radial-gradient(circle at 33% 82%, rgba(150,5,8,.85) 0 2.4%, rgba(150,5,8,0) 5%); }
+
+  /* ============ teaching card ============ */
+  #cardWrap { position:fixed; inset:0; z-index:110; display:none; align-items:center;
+      justify-content:center; background:rgba(8,13,24,.78); }
+  #cardWrap.show { display:flex; }
+  #card { background:#fff; border-radius:26px; padding:36px 48px 34px; width:min(860px,92vw);
+      text-align:center; animation:popin .32s cubic-bezier(.34,1.56,.64,1);
+      box-shadow:0 34px 90px rgba(0,0,0,.55); }
+  #card.bad  { border-top:12px solid #e05450; }
+  #card.good { border-top:12px solid #3fae6a; }
+  @keyframes popin { from { transform:scale(.65); opacity:0; } to { transform:scale(1); opacity:1; } }
+  #cardIcon { font-size:84px; line-height:1; }
+  #cardTitle { font-size:min(5vw,46px); font-weight:900; color:#1c2536; margin-top:8px; line-height:1.15; }
+  #cardFact { margin-top:20px; border-radius:18px; font-size:min(3.2vw,30px); font-weight:700;
+      padding:18px 26px; line-height:1.35; }
+  #card.bad  #cardFact { background:#fdeeee; border:4px solid #e05450; color:#5c1a18; }
+  #card.good #cardFact { background:#eaf6ef; border:4px solid #3fae6a; color:#1e4d33; }
+  #cardBtn { margin:26px auto 0; font-size:min(4vw,40px); padding:18px 64px; }
+
+  /* ============ finish screen ============ */
+  #finishScreen h2 { font-size:min(5.4vw,56px); font-weight:900; }
+  #finishScreen .sub { font-size:min(3vw,30px); color:#cfe0ff; font-weight:600; margin-top:8px; }
+  #rules { margin-top:26px; display:flex; flex-direction:column; gap:10px; width:min(820px,92vw); }
+  .rule { background:rgba(255,255,255,.09); border:2px solid rgba(255,255,255,.22);
+      border-radius:16px; padding:12px 22px; font-size:min(2.6vw,26px); font-weight:700;
+      text-align:left; display:flex; align-items:center; gap:16px; }
+  .rule .ric { font-size:34px; }
+  #againBtn { margin-top:32px; font-size:min(4.6vw,48px); padding:22px 90px; }
+
+  /* rotate-device overlay — touch devices only (never block a desktop window) */
+  #rotate { position:fixed; inset:0; z-index:300; background:#0b1220; color:#fff; display:none;
+      align-items:center; justify-content:center; font-size:34px; font-weight:800; text-align:center; }
+  @media (orientation:portrait) and (pointer:coarse) { #rotate { display:flex; } }
+
+  /* recovery controls (always visible during play) */
+  #resetBtn { position:fixed; right:22px; top:58px; z-index:56; pointer-events:auto;
+      font-size:20px; padding:10px 18px; border-radius:16px; box-shadow:0 5px 0 rgba(0,0,0,.4); }
+  #resetBtn small { font-size:13px; font-weight:700; opacity:.9; }
+  #exitBtn { position:fixed; left:18px; top:148px; z-index:56; pointer-events:auto;
+      font-size:16px; padding:8px 16px; border-radius:14px; box-shadow:0 4px 0 rgba(0,0,0,.4); }
+
+  /* fatal error screen */
+  #errScreen { position:fixed; inset:0; z-index:400; display:none; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center; gap:18px;
+      background:#101b30; color:#fff; padding:24px; }
+  #errScreen.show { display:flex; }
+  #errScreen h2 { font-size:min(5vw,42px); font-weight:900; }
+  #errScreen p { font-size:min(3vw,24px); color:#cfe0ff; font-weight:600; max-width:640px; }
+  #errScreen .btn { font-size:min(4vw,34px); padding:16px 60px; }
+</style>
+</head>
+<body>
+<canvas id="c3d"></canvas>
+
+<div id="hud">
+  <div id="camVignette" aria-hidden="true"></div>
+  <div id="banner">Get ready…</div>
+  <div id="speedPanel">
+    <div id="speedNum">0<small> km/h</small></div>
+    <div id="speedBarWrap"><div id="speedBar"></div></div>
+    <div id="speedTags"><span>SLOW</span><span>FAST</span></div>
+    <div id="limiterTag"></div>
+  </div>
+  <div id="dots"></div>
+  <div id="beltStrap"></div>
+  <button class="btn blue ctl"  id="steerL"><span>&#9664;</span><small>LEFT</small></button>
+  <button class="btn blue ctl"  id="steerR"><span>&#9654;</span><small>RIGHT</small></button>
+  <button class="btn green ctl" id="goPedal"><span class="ico">&#9650;</span>GO</button>
+  <button class="btn red ctl"   id="brakePedal"><span class="ico">&#9632;</span>BRAKE<small>/ STOP</small></button>
+  <button class="btn amber ctl" id="hornBtn"><span class="ico">&#128226;</span>HORN</button>
+  <button class="btn grey ctl"  id="revBtn">REVERSE</button>
+  <button class="btn amber ctl" id="actionBtn">ACTION</button>
+  <button class="btn grey" id="resetBtn" aria-label="Reset to last safe point">&#10226; RESET<small>back to safe point</small></button>
+  <button class="btn grey" id="exitBtn" aria-label="Exit to title screen">&#10005; EXIT</button>
+</div>
+
+<div id="toast"></div>
+<div id="flash"></div>
+<div id="vignette"></div>
+<div id="bloodCam"></div>
+
+<div class="screen show" id="titleScreen">
+  <div class="titleBadge" aria-hidden="true">
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <g fill="#241a02">
+        <rect x="3" y="45" width="22" height="3.4" rx="1.2"/>
+        <rect x="10" y="12" width="3.6" height="34" rx="1.2"/>
+        <rect x="15" y="26" width="28" height="17" rx="3"/>
+        <path d="M19 27V17.5A2.5 2.5 0 0 1 21.5 15H35a2.5 2.5 0 0 1 2.5 2.5V27h-3.6v-8.4H22.6V27Z"/>
+        <circle cx="22" cy="47" r="6.4"/>
+        <circle cx="41" cy="47" r="5.2"/>
+      </g>
+      <circle cx="22" cy="47" r="2.6" fill="#f2a41c"/>
+      <circle cx="41" cy="47" r="2.2" fill="#f2a41c"/>
+      <rect x="25" y="9" width="7" height="4.4" rx="1.6" fill="#c62f28"/>
+    </svg>
+  </div>
+  <h1>STAY ALERT<br>AROUND <span class="hl">MHE</span></h1>
+  <div class="theme">Drive the pallet jack. Walk the floor. Keep everyone safe.</div>
+  <div class="hazardBar" aria-hidden="true"></div>
+  <div class="chipRow" aria-hidden="true">
+    <span class="tchip">&#128666; First-person 3D</span>
+    <span class="tchip">&#128100; Two roles &mdash; driver &amp; pedestrian</span>
+    <span class="tchip">&#9201; About 5 minutes</span>
+  </div>
+  <div id="startRow">
+    <button class="btn green pulse" id="startDriveBtn">&#128666; ON THE JACK<small>drive the pallet jack</small></button>
+    <button class="btn blue pulse" id="startWalkBtn">&#128694; ON FOOT<small>walk the warehouse</small></button>
+  </div>
+  <div id="titleFoot">AnjouHealth &times; SATS &nbsp;&bull;&nbsp; Tackling SIF Promotion Campaign FY26&ndash;27 &nbsp;&bull;&nbsp; Booth 2</div>
+</div>
+
+<div class="screen" id="howtoScreen">
+  <h2>HOW TO PLAY &mdash; just tap!</h2>
+  <div class="howRow">
+    <div class="howPic">
+      <div class="demoBtn" style="background:#2c8a50;">&#9650;<small>GO</small></div>
+      <div class="demoBtn" style="background:#c03531;">&#9632;<small>BRAKE</small></div>
+    </div>
+    <div class="howTxt">Hold <b>GO</b> to move.<br>Hold <b>BRAKE</b> to stop.</div>
+  </div>
+  <div class="howRow">
+    <div class="howPic">
+      <div class="demoBtn" style="background:#2c5cb0;">&#9664;<small>LEFT</small></div>
+      <div class="demoBtn" style="background:#2c5cb0;">&#9654;<small>RIGHT</small></div>
+    </div>
+    <div class="howTxt">Hold to steer.</div>
+  </div>
+  <div class="howRow">
+    <div class="howPic">
+      <div class="demoBtn" style="background:#d3860a; border-radius:50%;">&#128226;<small>HORN</small></div>
+    </div>
+    <div class="howTxt">Tap the horn near corners<br>and people.</div>
+  </div>
+  <div style="margin-top:14px; font-size:min(2vw,22px); color:#9fb2d4; font-weight:700;">
+    Keyboard: W or &#8593; = GO &nbsp;&middot;&nbsp; A D or &#8592; &#8594; = steer &nbsp;&middot;&nbsp; X or &#8595; = BRAKE
+    &nbsp;&middot;&nbsp; H = HORN &nbsp;&middot;&nbsp; R = REVERSE &nbsp;&middot;&nbsp; C = RESET</div>
+  <div style="margin-top:6px; font-size:min(2vw,22px); color:#9fb2d4; font-weight:700;">
+    &#127918; Controller: left stick steers &nbsp;&middot;&nbsp; A / RT = GO &nbsp;&middot;&nbsp; B / LT = BRAKE
+    &nbsp;&middot;&nbsp; X = HORN &nbsp;&middot;&nbsp; Y = REVERSE</div>
+  <div style="margin-top:8px; font-size:min(2vw,20px); color:#7d90b5; font-weight:700;">
+    Stuck? Tap &#10226; RESET (top right) any time &mdash; you go back to the last safe point.</div>
+  <button class="btn green pulse" id="goBtn">GO</button>
+</div>
+
+<div id="cardWrap">
+  <div id="card" class="bad">
+    <div id="cardIcon">&#9888;&#65039;</div>
+    <div id="cardTitle">Too fast to stop.</div>
+    <div id="cardFact">At speed, a loaded pallet jack cannot stop in time. Stopping distance grows with speed.</div>
+    <button class="btn green" id="cardBtn">TRY AGAIN</button>
+  </div>
+</div>
+
+<div class="screen" id="finishScreen">
+  <h2>&#127942; You stayed alert.</h2>
+  <div class="sub">Five safeguards kept people safe today:</div>
+  <div id="rules">
+    <div class="rule"><span class="ric">&#128694;</span>Stay in the yellow walkway. Stop and look at crossings.</div>
+    <div class="rule"><span class="ric">&#128678;</span>Control your speed &mdash; the limiter helps, but stopping is on you.</div>
+    <div class="rule"><span class="ric">&#128226;</span>Sound the horn at corners. Make eye contact before you pass.</div>
+    <div class="rule"><span class="ric">&#128260;</span>Never walk or drive behind a turning pallet jack &mdash; the tail swings wide.</div>
+    <div class="rule"><span class="ric">&#128309;</span>Respect the beacon and the belt &mdash; buckle up, watch the amber light.</div>
+  </div>
+  <button class="btn green pulse" id="againBtn">PLAY AGAIN</button>
+</div>
+
+<div id="rotate">&#128241;&#8635;<br>Please turn the screen sideways<br>(landscape)</div>
+
+<div id="errScreen">
+  <h2>&#9888;&#65039; Something went wrong</h2>
+  <p id="errMsg">The game hit an unexpected problem.</p>
+  <button class="btn green" onclick="location.reload()">RELOAD GAME</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+/* ================================================================
+   STAY ALERT AROUND MHE — first-person pallet-jack safety kiosk game
+   AnjouHealth x SATS — Tackling SIF Promotion Campaign FY26-27
+   ================================================================ */
+
+/* ---- TONE DIAL ---- */
+const CONSEQUENCE_MODE = "GRAPHIC";   // "GRAPHIC" = knockdown + blood + impact
+                                      // "MODERATE" = knockdown + red flash, no blood
+
+/* ---- tuning ---- */
+const TUNE = {
+  maxFwd: 5.0,          // m/s — speed limiter cap (still fast enough to hurt)
+  maxRev: 2.2,
+  accel: 2.4,           // m/s^2
+  brake: 2.6,           // m/s^2 — stopping distance = v^2 / (2*brake)
+  drag: 0.7,            // natural rolloff
+  steerMax: 0.49,       // rad — full lock turns a ~3.2 m radius (a wide, realistic swing)
+  steerRate: 1.9,       // rad/s
+  wheelBase: 1.7,
+  walkSpeed: 2.0,
+  strikeSpeed: 1.0,     // m/s — contact above this = struck
+  hornSafeSpeed: 2.6    // slow enough at blind corner
+};
+
+/* ---- tiny helpers ---- */
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => v<a?a:(v>b?b:v);
+const lerp = (a,b,t) => a+(b-a)*t;
+const TAU = Math.PI*2;
+
+/* ---- fatal error handling: never fail silently ---- */
+function fatal(msg, detail){
+  console.error('[MHE] FATAL:', msg, detail||'');
+  $('errMsg').textContent = msg;
+  $('errScreen').classList.add('show');
+}
+if(typeof THREE === 'undefined'){
+  fatal('The 3D engine could not load. Check the internet connection, then reload.');
+  throw new Error('THREE failed to load from CDN');
+}
+let bootDone = false;   // set true after the first successful frame
+window.addEventListener('error', e => {
+  console.error('[MHE] Uncaught error:', e.message, e.filename+':'+e.lineno);
+  if(!bootDone) fatal('The game failed to start. Please reload. ('+e.message+')');
+});
+
+/* =========================================================
+   AUDIO — all sounds generated in code (Web Audio API)
+   ========================================================= */
+const AudioSys = (() => {
+  let ctx=null, master=null;
+  let engOsc=null, engOsc2=null, engGain=null, engFilter=null;
+  let beepTimer=0, beeping=false;
+
+  function init(){
+    if(ctx) return;
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+    // engine hum: two detuned saws through a lowpass
+    engOsc = ctx.createOscillator(); engOsc.type='sawtooth'; engOsc.frequency.value=52;
+    engOsc2 = ctx.createOscillator(); engOsc2.type='triangle'; engOsc2.frequency.value=104;
+    engFilter = ctx.createBiquadFilter(); engFilter.type='lowpass'; engFilter.frequency.value=240;
+    engGain = ctx.createGain(); engGain.gain.value=0;
+    engOsc.connect(engFilter); engOsc2.connect(engFilter);
+    engFilter.connect(engGain); engGain.connect(master);
+    engOsc.start(); engOsc2.start();
+  }
+  function resume(){ if(ctx && ctx.state==='suspended') ctx.resume(); }
+
+  function engine(speedRatio, on){
+    if(!ctx) return;
+    const t = ctx.currentTime;
+    const target = on ? 0.05 + speedRatio*0.06 : 0;
+    engGain.gain.setTargetAtTime(target, t, 0.12);
+    engOsc.frequency.setTargetAtTime(48 + speedRatio*70, t, 0.15);
+    engOsc2.frequency.setTargetAtTime(96 + speedRatio*140, t, 0.15);
+    engFilter.frequency.setTargetAtTime(220 + speedRatio*500, t, 0.15);
+  }
+  function blip(freq, dur, type, vol, when=0, slide=0){
+    if(!ctx) return;
+    const t = ctx.currentTime + when;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type||'square'; o.frequency.setValueAtTime(freq, t);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide), t+dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0008, t+dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.05);
+  }
+  // reverse beep — call every frame while reversing; dist = 0(near)..1(far)
+  function reverseBeep(dt, active, vol=0.14){
+    if(!ctx || !active) { beepTimer=0; return; }
+    beepTimer -= dt;
+    if(beepTimer<=0){ blip(1150, 0.16, 'square', vol); beepTimer = 0.55; }
+  }
+  function horn(){ if(!ctx) return;
+    blip(410, 0.55, 'sawtooth', 0.22); blip(322, 0.55, 'sawtooth', 0.18); }
+  function hornFar(){ if(!ctx) return;
+    blip(410, 0.5, 'sawtooth', 0.07); blip(322, 0.5, 'sawtooth', 0.05); }
+  function click(){ blip(880, 0.06, 'triangle', 0.12); }
+  function buckle(){ blip(320, 0.05, 'square', 0.2); blip(1200, 0.07, 'square', 0.14, 0.06); }
+  function thud(){ if(!ctx) return;
+    const t = ctx.currentTime;
+    // low body-hit
+    blip(70, 0.5, 'sine', 0.8, 0, -40);
+    // noise crunch
+    const len = ctx.sampleRate*0.25;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/len,2.2);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900;
+    const g = ctx.createGain(); g.gain.value=0.55;
+    src.connect(f); f.connect(g); g.connect(master); src.start(t);
+  }
+  function chime(){ blip(660,0.14,'sine',0.16); blip(880,0.16,'sine',0.16,0.13); blip(1320,0.26,'sine',0.14,0.27); }
+  function alarm(){ blip(950,0.12,'square',0.1); blip(950,0.12,'square',0.1,0.18); }
+  return { init, resume, engine, reverseBeep, horn, hornFar, click, buckle, thud, chime, alarm };
+})();
+/* =========================================================
+   PROCEDURAL TEXTURES (canvas — no asset files)
+   ========================================================= */
+const Tex = (() => {
+  function canvas(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; }
+  function noise(ctx,w,h,alpha,dark){
+    for(let i=0;i<w*h/28;i++){
+      const s = Math.random()*2.2+0.4;
+      ctx.fillStyle = `rgba(${dark?0:255},${dark?0:255},${dark?0:255},${Math.random()*alpha})`;
+      ctx.fillRect(Math.random()*w, Math.random()*h, s, s);
+    }
+  }
+  function make(fn,w,h,repX,repY){
+    const c = canvas(w,h); fn(c.getContext('2d'),w,h);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    if(repX) t.repeat.set(repX,repY||repX);
+    return t;
+  }
+  // worn concrete
+  const concrete = make((g,w,h)=>{
+    g.fillStyle='#8d8f90'; g.fillRect(0,0,w,h);
+    for(let i=0;i<60;i++){ // patchy stains
+      g.fillStyle=`rgba(${60+Math.random()*30|0},${60+Math.random()*30|0},${60+Math.random()*25|0},${0.05+Math.random()*0.1})`;
+      const r=8+Math.random()*46;
+      g.beginPath(); g.arc(Math.random()*w,Math.random()*h,r,0,TAU); g.fill();
+    }
+    noise(g,w,h,0.10,true); noise(g,w,h,0.06,false);
+    // expansion joints
+    g.strokeStyle='rgba(40,42,44,0.55)'; g.lineWidth=3;
+    g.beginPath(); g.moveTo(0,h/2); g.lineTo(w,h/2); g.moveTo(w/2,0); g.lineTo(w/2,h); g.stroke();
+    // tyre scuffs
+    g.strokeStyle='rgba(30,30,32,0.14)';
+    for(let i=0;i<14;i++){ g.lineWidth=4+Math.random()*7;
+      g.beginPath(); const y=Math.random()*h;
+      g.moveTo(Math.random()*w*0.3, y); g.bezierCurveTo(w*0.4,y+30, w*0.6,y-30, w*(0.7+Math.random()*0.3), y+(Math.random()*60-30)); g.stroke(); }
+  },512,512, 18,24);
+
+  // painted yellow walkway (worn)
+  const walkway = make((g,w,h)=>{
+    g.fillStyle='#d8a712'; g.fillRect(0,0,w,h);
+    noise(g,w,h,0.13,true); noise(g,w,h,0.10,false);
+    g.fillStyle='rgba(120,90,10,0.25)';
+    for(let i=0;i<24;i++){ g.beginPath(); g.arc(Math.random()*w,Math.random()*h,4+Math.random()*20,0,TAU); g.fill(); }
+  },256,256, 1,8);
+
+  // hazard stripes (black/yellow)
+  const hazard = make((g,w,h)=>{
+    g.fillStyle='#e6b800'; g.fillRect(0,0,w,h);
+    g.fillStyle='#15161a';
+    for(let x=-h;x<w+h;x+=64){ g.beginPath();
+      g.moveTo(x,0); g.lineTo(x+32,0); g.lineTo(x+32+h,h); g.lineTo(x+h,h); g.closePath(); g.fill(); }
+    noise(g,w,h,0.08,true);
+  },256,128, 1,1);
+
+  // shrink-wrapped pallet boxes
+  const wrap = make((g,w,h)=>{
+    g.fillStyle='#9aa7ad'; g.fillRect(0,0,w,h);
+    // stacked box lines under the wrap
+    g.strokeStyle='rgba(70,78,86,0.65)'; g.lineWidth=3;
+    for(let y=0;y<h;y+=42){ g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke(); }
+    for(let x=0;x<w;x+=54){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke(); }
+    // plastic sheen
+    for(let i=0;i<10;i++){ g.fillStyle='rgba(255,255,255,0.10)';
+      g.beginPath(); g.ellipse(Math.random()*w,Math.random()*h,6+Math.random()*26,40+Math.random()*60,0.4,0,TAU); g.fill(); }
+    noise(g,w,h,0.05,false);
+  },256,256, 1,1);
+
+  // corrugated container / ULD wall
+  const corrugated = make((g,w,h)=>{
+    g.fillStyle='#7f8a94'; g.fillRect(0,0,w,h);
+    for(let x=0;x<w;x+=24){
+      g.fillStyle='rgba(255,255,255,0.13)'; g.fillRect(x,0,7,h);
+      g.fillStyle='rgba(0,0,0,0.20)'; g.fillRect(x+14,0,7,h);
+    }
+    noise(g,w,h,0.07,true);
+  },256,256, 2,1);
+
+  // warehouse wall panels
+  const wall = make((g,w,h)=>{
+    g.fillStyle='#b9c1c9'; g.fillRect(0,0,w,h);
+    g.fillStyle='#a6afb8';
+    for(let y=0;y<h;y+=64) g.fillRect(0,y,w,5);
+    noise(g,w,h,0.05,true);
+  },256,256, 8,3);
+
+  // blood pool decal (GRAPHIC mode)
+  function bloodCanvas(){
+    const c = canvas(256,256); const g = c.getContext('2d');
+    const cx=128, cy=128;
+    for(let i=0;i<36;i++){
+      const a=Math.random()*TAU, d=Math.random()*54;
+      const r=14+Math.random()*44;
+      const grd=g.createRadialGradient(cx+Math.cos(a)*d, cy+Math.sin(a)*d, 2, cx+Math.cos(a)*d, cy+Math.sin(a)*d, r);
+      grd.addColorStop(0,'rgba(96,6,8,0.95)');
+      grd.addColorStop(0.7,'rgba(120,10,12,0.8)');
+      grd.addColorStop(1,'rgba(120,10,12,0)');
+      g.fillStyle=grd; g.beginPath(); g.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d, r, 0, TAU); g.fill();
+    }
+    // spatter + streaks
+    for(let i=0;i<90;i++){
+      g.fillStyle=`rgba(${90+Math.random()*40|0},6,9,${0.5+Math.random()*0.45})`;
+      const a=Math.random()*TAU, d=55+Math.random()*70;
+      g.beginPath(); g.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d, 1.5+Math.random()*6.5, 0, TAU); g.fill();
+    }
+    for(let i=0;i<10;i++){
+      const a=Math.random()*TAU;
+      g.strokeStyle=`rgba(${85+Math.random()*35|0},5,8,${0.55+Math.random()*0.3})`;
+      g.lineWidth=2+Math.random()*4;
+      g.beginPath(); g.moveTo(cx+Math.cos(a)*30, cy+Math.sin(a)*30);
+      g.lineTo(cx+Math.cos(a)*(80+Math.random()*44), cy+Math.sin(a)*(80+Math.random()*44)); g.stroke();
+    }
+    const t = new THREE.CanvasTexture(c); return t;
+  }
+  return { concrete, walkway, hazard, wrap, corrugated, wall, bloodCanvas };
+})();
+
+/* =========================================================
+   SCENE / RENDERER
+   ========================================================= */
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas:$('c3d'), antialias:true });
+} catch(err){
+  fatal('3D graphics are not available in this browser. Try Chrome, or enable hardware acceleration.');
+  throw err;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;   // filmic response = softer highlights, richer colour
+renderer.toneMappingExposure = 1.25;
+// sharp floor/wall textures at grazing angles
+{
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  for(const t of [Tex.concrete, Tex.walkway, Tex.hazard, Tex.wrap, Tex.corrugated, Tex.wall]){
+    t.anisotropy = maxAniso; t.needsUpdate = true;
+  }
+}
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x2b3644);
+scene.fog = new THREE.Fog(0x2b3644, 26, 78);
+
+const camera = new THREE.PerspectiveCamera(72, 2, 0.1, 140);
+
+const hemi = new THREE.HemisphereLight(0xcfd8e6, 0x32383f, 0.66); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2dd, 1.2);
+sun.position.set(14, 26, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left=-40; sun.shadow.camera.right=40;
+sun.shadow.camera.top=45;  sun.shadow.camera.bottom=-45;
+sun.shadow.camera.far=90;  sun.shadow.bias=-0.0018;
+scene.add(sun);
+
+let viewW=0, viewH=0;
+function onResize(){
+  if(!window.innerWidth || !window.innerHeight) return;   // ignore transient 0-size
+  viewW=window.innerWidth; viewH=window.innerHeight;
+  renderer.setSize(viewW, viewH);
+  camera.aspect = viewW/viewH;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize); onResize();
+// watchdog: some environments miss the resize event — check each frame
+function checkResize(){
+  if(window.innerWidth!==viewW || window.innerHeight!==viewH) onResize();
+}
+
+/* =========================================================
+   WORLD — air-cargo warehouse
+   Layout: main aisle along Z (x -3..3), from dock z=+26 to z=-26.
+   Cross-aisle along X at z = 4..10. Walkway at x=-10.5 along Z.
+   ========================================================= */
+const world = new THREE.Group(); scene.add(world);
+const colliders = [];   // {minX,maxX,minZ,maxZ} boxes that block driving/walking
+
+function box(w,h,d,mat,x,y,z,ry=0,shadow=true){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
+  m.position.set(x,y,z); m.rotation.y=ry;
+  m.castShadow=shadow; m.receiveShadow=true;
+  world.add(m); return m;
+}
+function collide(x,z,w,d){ colliders.push({minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2}); }
+
+const M = {
+  concrete: new THREE.MeshStandardMaterial({ map:Tex.concrete, roughness:0.94, metalness:0.02 }),
+  walkway:  new THREE.MeshStandardMaterial({ map:Tex.walkway, roughness:0.9 }),
+  line:     new THREE.MeshStandardMaterial({ color:0xd8a712, roughness:0.9 }),
+  lineWhite:new THREE.MeshStandardMaterial({ color:0xd6d9dc, roughness:0.9 }),
+  hazard:   new THREE.MeshStandardMaterial({ map:Tex.hazard, roughness:0.8 }),
+  rack:     new THREE.MeshStandardMaterial({ color:0xc96f16, roughness:0.55, metalness:0.35 }),
+  rackBeam: new THREE.MeshStandardMaterial({ color:0x2e6db4, roughness:0.5, metalness:0.35 }),
+  wrap:     new THREE.MeshStandardMaterial({ map:Tex.wrap, roughness:0.65 }),
+  palletWd: new THREE.MeshStandardMaterial({ color:0x9c7a4e, roughness:0.9 }),
+  wall:     new THREE.MeshStandardMaterial({ map:Tex.wall, roughness:0.95 }),
+  uld:      new THREE.MeshStandardMaterial({ map:Tex.corrugated, roughness:0.6, metalness:0.4 }),
+  steel:    new THREE.MeshStandardMaterial({ color:0x8a929c, roughness:0.5, metalness:0.5 }),
+  dark:     new THREE.MeshStandardMaterial({ color:0x22262c, roughness:0.7 }),
+  bollard:  new THREE.MeshStandardMaterial({ color:0xd8a712, roughness:0.6 }),
+};
+
+// floor
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(64,86), M.concrete);
+floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; world.add(floor);
+
+// painted aisle edge lines (main aisle x=±3)
+function paint(w,d,mat,x,z,ry=0){
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(w,d), mat);
+  p.rotation.x=-Math.PI/2; p.rotation.z=ry; p.position.set(x,0.012,z);
+  p.receiveShadow=true; world.add(p); return p;
+}
+paint(0.14,60,M.line,-3.1,0); paint(0.14,60,M.line,3.1,0);
+// cross-aisle lines z=4..10
+paint(40,0.14,M.line,0,3.9); paint(40,0.14,M.line,0,10.1);
+// pedestrian walkway at x=-10.5 (width 1.6) full length + crossing over main aisle at z=7
+paint(1.6,66,M.walkway,-10.5,0);
+paint(0.1,66,M.lineWhite,-11.35,0); paint(0.1,66,M.lineWhite,-9.65,0);
+// walkway crossing (zebra) across the cross-aisle leading to x=+ side at z=7
+for(let x=-9.2;x<=9.2;x+=1.3) paint(0.75,1.6,M.lineWhite,x,7);
+// stop bar on walkway before crossing
+paint(1.6,0.28,M.lineWhite,-10.5,10.9);
+
+// ================= racking rows =================
+function rackBay(x,z,ry,bays=4,levels=3){
+  const g = new THREE.Group(); g.position.set(x,0,z); g.rotation.y=ry; world.add(g);
+  const bayW=2.6, depth=1.15, lvlH=1.9;
+  for(let b=0;b<=bays;b++){
+    for(const dz of [-depth/2,depth/2]){
+      const up = new THREE.Mesh(new THREE.BoxGeometry(0.12,lvlH*levels+0.4,0.12), M.rack);
+      up.position.set(b*bayW - bays*bayW/2, (lvlH*levels+0.4)/2, dz);
+      up.castShadow=true; g.add(up);
+    }
+  }
+  for(let l=1;l<=levels;l++){
+    for(const dz of [-depth/2,depth/2]){
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(bays*bayW,0.14,0.1), M.rackBeam);
+      beam.position.set(0,l*lvlH,dz); g.add(beam);
+    }
+  }
+  // pallets with wrapped loads
+  for(let b=0;b<bays;b++) for(let l=0;l<=levels;l++){
+    if(Math.random()<0.18) continue;
+    const px = b*bayW - bays*bayW/2 + bayW/2;
+    const py = l===0 ? 0 : l*lvlH+0.07;
+    const pal = new THREE.Mesh(new THREE.BoxGeometry(2.1,0.14,1.05), M.palletWd);
+    pal.position.set(px,py+0.07,0); pal.castShadow=true; g.add(pal);
+    const ld = new THREE.Mesh(new THREE.BoxGeometry(1.9,1.1+Math.random()*0.4,0.95), M.wrap);
+    ld.position.set(px,py+0.14+ (1.1+0.2)/2,0); ld.castShadow=true; g.add(ld);
+  }
+  return g;
+}
+// racking flanking the main aisle (gaps at cross-aisle z=4..10)
+const bayLen = 4*2.6;
+for(const side of [-1,1]){
+  const rx = side*5.5;
+  // west side opens into a staging floor south of z≈-15 (seg-2 work area + crossing)
+  const zcs = side<0 ? [-10.2,-4.9, 13.5,18.8,24.1]
+                     : [-20.8,-15.5,-10.2,-4.9, 13.5,18.8,24.1];
+  for(const zc of zcs){
+    rackBay(rx, zc, Math.PI/2, 4, 3);
+    collide(rx, zc, 1.4, bayLen+0.3);
+  }
+}
+// far racking along cross-aisle (kept west of the walkway — walkway stays clear)
+rackBay(-16.5, 1.8, 0, 3, 3);  collide(-16.5,1.8, 3*2.6+0.3, 1.4);
+rackBay(14, 1.8, 0, 5, 3);     collide(14,1.8, 5*2.6+0.3, 1.4);
+rackBay(-16.5, 12.2, 0, 3, 3); collide(-16.5,12.2, 3*2.6+0.3, 1.4);
+rackBay(14, 12.2, 0, 5, 3);    collide(14,12.2, 5*2.6+0.3, 1.4);
+// walkway crossing stripes where the cross-aisle cuts the walkway
+for(let z=4.6; z<=9.4; z+=1.2) paint(1.7,0.6,M.lineWhite,-10.5,z);
+
+// ================= walls / dock / ULDs / columns =================
+const wallN = box(64,10,0.5, M.wall, 0,5,-32); collide(0,-32,64,3);
+const wallS = box(64,10,0.5, M.wall, 0,5, 34); collide(0, 34,64,3);
+box(0.5,10,86, M.wall, -21,5,0); collide(-21,0,3,86);
+box(0.5,10,86, M.wall,  21,5,0); collide( 21,0,3,86);
+// dock doors on south wall
+for(const x of [-8,0,8]){
+  box(5.2,4.4,0.3, M.uld, x,2.2,33.7);
+  box(5.6,0.5,0.3, M.hazard, x,4.7,33.65);
+}
+// ULD containers near dock
+for(const [ux,uz,ry] of [[-16,26,0.2],[-15.5,29.5,-0.1],[16,27,0],[15,30.5,0.15]]){
+  const u = box(3,2.4,3, M.uld, ux,1.2,uz, ry);
+  // sloped ULD corner
+  collide(ux,uz,3.4,3.4);
+}
+// hazard-striped structural columns at the intersection corners
+for(const [cx,cz] of [[-8,3.1],[8,3.1],[-8,10.9],[8,10.9]]){
+  box(0.7,5.2,0.7, M.steel, cx,3.4,cz);
+  const hz = box(0.78,1.5,0.78, M.hazard, cx,0.75,cz);
+  collide(cx,cz,0.9,0.9);
+}
+// bollards guarding rack ends at the cross-aisle
+for(const [bx,bz] of [[-4.6,3.4],[4.6,3.4],[-4.6,10.6],[4.6,10.6]]){
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.11,0.85,10), M.bollard);
+  b.position.set(bx,0.42,bz); b.castShadow=true; world.add(b);
+}
+// high-bay light fixtures
+const lightMat = new THREE.MeshStandardMaterial({ color:0xf5f5e8, emissive:0xfff8dd, emissiveIntensity:2.2 });
+for(let z=-24; z<=28; z+=13){
+  for(const x of [-10,0,10]){
+    const f = box(1.6,0.15,0.5, lightMat, x,8.6,z,0,false);
+  }
+}
+// ceiling hint (dark plane high up)
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(64,86),
+  new THREE.MeshStandardMaterial({ color:0x1c2229, roughness:1 }));
+ceil.rotation.x = Math.PI/2; ceil.position.y=9.2; world.add(ceil);
+// roof structure: cross trusses + long purlins for real overhead depth
+const trussMat = new THREE.MeshStandardMaterial({ color:0x39424e, roughness:0.6, metalness:0.4 });
+for(let z=-28; z<=32; z+=6.5){
+  box(42,0.3,0.16, trussMat, 0,8.95,z,0,false);
+  box(42,0.16,0.3, trussMat, 0,8.6,z,0,false);
+}
+for(const px of [-15,-5,5,15]) box(0.14,0.24,84, trussMat, px,8.78,0,0,false);
+// soft light shafts under each high-bay fixture (additive, fake volumetrics)
+const shaftTex = (()=>{
+  const c=document.createElement('canvas'); c.width=64; c.height=256;
+  const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'rgba(255,244,200,0.55)'); gr.addColorStop(1,'rgba(255,244,200,0)');
+  g.fillStyle=gr; g.fillRect(0,0,64,256);
+  return new THREE.CanvasTexture(c);
+})();
+const shaftMat = new THREE.MeshBasicMaterial({ map:shaftTex, transparent:true, opacity:0.10,
+  blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide });
+for(let z=-24; z<=28; z+=13){
+  for(const x of [-10,0,10]){
+    for(const ry of [0, Math.PI/2]){
+      const s = new THREE.Mesh(new THREE.PlaneGeometry(2.4,6.4), shaftMat);
+      s.position.set(x, 5.3, z); s.rotation.y = ry; world.add(s);
+    }
+  }
+}
+// slow-drifting dust motes — makes the air feel real
+const dust = (()=>{
+  const N=260, pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()*2-1)*20;
+    pos[i*3+1]=Math.random()*7.5+0.3;
+    pos[i*3+2]=(Math.random()*2-1)*30;
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const m=new THREE.PointsMaterial({ color:0xcfd8ea, size:0.055, transparent:true,
+    opacity:0.45, sizeAttenuation:true, depthWrite:false });
+  const p=new THREE.Points(g,m); scene.add(p);
+  return { pos, geo:g };
+})();
+function updateDust(dt){
+  const a=dust.pos;
+  for(let i=1;i<a.length;i+=3){ a[i]-=dt*0.12; if(a[i]<0.2) a[i]=7.8; }
+  dust.geo.attributes.position.needsUpdate=true;
+}
+/* =========================================================
+   PALLET JACK — rider (stand-on) powered pallet truck, procedural.
+   Origin at the drive-wheel centre, faces -Z (forks at -Z).
+   Returns the same shape as before, so the beacon / reverse-light
+   helpers and every caller stay unchanged.
+   ========================================================= */
+const pjMat = {
+  body:  new THREE.MeshStandardMaterial({ color:0xd8a712, roughness:0.42, metalness:0.25 }),
+  black: new THREE.MeshStandardMaterial({ color:0x1d2126, roughness:0.7 }),
+  steel: new THREE.MeshStandardMaterial({ color:0x777f88, roughness:0.35, metalness:0.7 }),
+  fork:  new THREE.MeshStandardMaterial({ color:0x30343a, roughness:0.45, metalness:0.6 }),
+  seat:  new THREE.MeshStandardMaterial({ color:0x24282e, roughness:0.9 }),
+  beaconOn:  new THREE.MeshStandardMaterial({ color:0xffb300, emissive:0xff9900, emissiveIntensity:2.2 }),
+  beaconOff: new THREE.MeshStandardMaterial({ color:0x8a6200, emissive:0x000000 }),
+  revOn:  new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xffffff, emissiveIntensity:1.6 }),
+  revOff: new THREE.MeshStandardMaterial({ color:0xcccccc }),
+  // operator
+  skin:    new THREE.MeshStandardMaterial({ color:0xc98e6b, roughness:0.8 }),
+  vest:    new THREE.MeshStandardMaterial({ color:0xd6e021, emissive:0x6a7207, emissiveIntensity:0.55, roughness:0.6 }),
+  vestBand:new THREE.MeshStandardMaterial({ color:0xd9d9d9, emissive:0x888888, emissiveIntensity:0.4 }),
+  sleeve:  new THREE.MeshStandardMaterial({ color:0x38607a, roughness:0.85 }),
+  trouser: new THREE.MeshStandardMaterial({ color:0x2c3138, roughness:0.9 }),
+  hat:     new THREE.MeshStandardMaterial({ color:0xf5f5f5, roughness:0.5 }),
+};
+/* An operator standing on the deck with both hands on the tiller. Only added to
+   vehicles you SEE from outside — your own machine is driven first-person. */
+function addOperator(g, add, B){
+  const F = 0.29, Z = 0.74;                         // deck top, and where they stand
+  add(B(0.16,0.70,0.17,pjMat.trouser), -0.12, F+0.35, Z);      // legs
+  add(B(0.16,0.70,0.17,pjMat.trouser),  0.12, F+0.35, Z);
+  add(B(0.18,0.09,0.26,pjMat.black),   -0.12, F+0.045, Z-0.03); // boots
+  add(B(0.18,0.09,0.26,pjMat.black),    0.12, F+0.045, Z-0.03);
+  add(B(0.44,0.54,0.25,pjMat.vest),     0,    F+0.99, Z);       // torso + hi-vis
+  add(B(0.46,0.09,0.27,pjMat.vestBand), 0,    F+0.94, Z);       // reflective band
+  for(const sx of [-0.26,0.26])                                  // arms out to the tiller
+    add(B(0.11,0.11,0.40,pjMat.sleeve), sx,   F+1.20, Z-0.20);
+  add(B(0.22,0.24,0.22,pjMat.skin),     0,    F+1.40, Z);       // head
+  add(B(0.28,0.11,0.28,pjMat.hat),      0,    F+1.57, Z);       // hard hat
+  add(B(0.31,0.04,0.31,pjMat.hat),      0,    F+1.50, Z);       // brim
+}
+function buildPalletJack(withOperator){
+  const g = new THREE.Group();
+  const add=(mesh,x,y,z)=>{ mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; g.add(mesh); return mesh; };
+  const B=(w,h,d,m)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+
+  /* ---- forks: two low blades running forward along -Z ---- */
+  for(const fx of [-0.29,0.29]){
+    add(B(0.18,0.10,2.25,pjMat.fork), fx,0.09,-1.62);          // blade
+    const tip = add(B(0.18,0.09,0.36,pjMat.fork), fx,0.07,-2.90);
+    tip.rotation.x = 0.07;                                     // tapered nose
+    add(B(0.20,0.22,0.16,pjMat.steel), fx,0.17,-0.52);         // blade root
+  }
+  add(B(0.94,0.34,0.14,pjMat.steel), 0,0.30,-0.48);            // fork carriage plate
+
+  /* ---- power unit / battery housing ---- */
+  add(B(0.78,0.82,0.86,pjMat.body),  0,0.56,-0.02);            // main housing
+  add(B(0.84,0.12,0.92,pjMat.black), 0,1.00,-0.02);            // top cap
+  add(B(0.60,0.26,0.06,pjMat.black), 0,0.62,-0.47);            // front panel
+  add(B(0.30,0.18,0.24,pjMat.black), 0,1.14,-0.10);            // control pod
+
+  /* ---- tiller arm angled back to the operator, with a T grip ---- */
+  const tiller = add(B(0.12,0.78,0.12,pjMat.steel), 0,1.32,0.16);
+  tiller.rotation.x = 0.42;
+  add(B(0.66,0.11,0.11,pjMat.black), 0,1.62,0.42);             // cross grip
+  for(const hx of [-0.26,0.26])
+    add(B(0.13,0.15,0.15,pjMat.black), hx,1.62,0.42);          // butterfly controls
+
+  /* ---- stand-on platform + side restraint arms ---- */
+  add(B(0.72,0.09,0.50,pjMat.steel), 0,0.24,0.72);             // deck
+  for(const sx of [-0.41,0.41])
+    add(B(0.08,0.78,0.46,pjMat.steel), sx,0.66,0.72);          // side arms
+  add(B(0.72,0.09,0.06,pjMat.black), 0,0.24,0.98);             // deck lip
+
+  /* ---- wheels ---- */
+  const wheel=(x,z,r,w)=>{ const k=new THREE.Mesh(new THREE.CylinderGeometry(r,r,w,14), pjMat.black);
+    k.rotation.z=Math.PI/2; add(k,x,r,z); };
+  wheel(0,0.16,0.26,0.24);            // single drive wheel under the power unit
+  wheel(-0.40,0.74,0.11,0.09);        // castors under the deck
+  wheel( 0.40,0.74,0.11,0.09);
+  wheel(-0.29,-2.62,0.09,0.13);       // load wheels at the fork tips
+  wheel( 0.29,-2.62,0.09,0.13);
+
+  /* ---- amber beacon on a short mast, clear of the operator's eyeline ---- */
+  add(B(0.05,0.50,0.05,pjMat.steel), 0,1.28,0.60);
+  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.16,10), pjMat.beaconOff);
+  add(beacon, 0,1.60,0.60);
+  const beaconLight = new THREE.PointLight(0xffa000, 0, 9);
+  beaconLight.position.set(0,1.72,0.60); g.add(beaconLight);
+
+  /* ---- reverse lights on the rear face of the power unit ---- */
+  const rev1 = new THREE.Mesh(new THREE.BoxGeometry(0.13,0.09,0.05), pjMat.revOff);
+  const rev2 = rev1.clone();
+  add(rev1,-0.26,0.86,0.43); add(rev2,0.26,0.86,0.43);
+
+  if(withOperator) addOperator(g, add, B);
+
+  return { group:g, beacon, beaconLight, rev1, rev2, beaconPhase:Math.random()*TAU };
+}
+function setBeacon(fk,on,t){
+  const flash = on && (Math.sin(t*9+fk.beaconPhase)>0);
+  fk.beacon.material = flash ? pjMat.beaconOn : pjMat.beaconOff;
+  fk.beaconLight.intensity = flash ? 1.6 : 0;
+}
+function setRevLights(fk,on){
+  fk.rev1.material = on?pjMat.revOn:pjMat.revOff;
+  fk.rev2.material = on?pjMat.revOn:pjMat.revOff;
+}
+
+/* =========================================================
+   PEDESTRIAN — hi-vis worker with walk + knockdown
+   Origin at feet, faces -Z by default.
+   ========================================================= */
+const pdMat = {
+  vest: new THREE.MeshStandardMaterial({ color:0xd6e021, emissive:0x6a7207, emissiveIntensity:0.55, roughness:0.6 }),
+  stripe: new THREE.MeshStandardMaterial({ color:0xd9d9d9, emissive:0x888888, emissiveIntensity:0.4 }),
+  shirt: new THREE.MeshStandardMaterial({ color:0x38607a, roughness:0.85 }),
+  pants: new THREE.MeshStandardMaterial({ color:0x2c3138, roughness:0.9 }),
+  skin:  new THREE.MeshStandardMaterial({ color:0xc98e6b, roughness:0.8 }),
+  hat:   new THREE.MeshStandardMaterial({ color:0xf5f5f5, roughness:0.5 }),
+};
+function buildPed(){
+  const g = new THREE.Group();
+  const body = new THREE.Group(); g.add(body);
+  const B=(w,h,d,m)=>{ const x=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); x.castShadow=true; return x; };
+  // torso + vest + stripe
+  const torso=B(0.42,0.55,0.24,pdMat.vest); torso.position.y=1.18; body.add(torso);
+  const stripe=B(0.44,0.09,0.26,pdMat.stripe); stripe.position.y=1.18; body.add(stripe);
+  const hips=B(0.38,0.18,0.22,pdMat.pants); hips.position.y=0.86; body.add(hips);
+  // head + hard hat
+  const head=B(0.24,0.26,0.24,pdMat.skin); head.position.y=1.63; body.add(head);
+  const hat=B(0.28,0.1,0.28,pdMat.hat); hat.position.y=1.79; body.add(hat);
+  // limbs (pivot at top)
+  function limb(w,len,m,x,y,z){
+    const pivot=new THREE.Group(); pivot.position.set(x,y,z);
+    const seg=B(w,len,w,m); seg.position.y=-len/2; pivot.add(seg); body.add(pivot); return pivot;
+  }
+  const armL=limb(0.11,0.52,pdMat.shirt,-0.28,1.42,0);
+  const armR=limb(0.11,0.52,pdMat.shirt, 0.28,1.42,0);
+  const legL=limb(0.14,0.78,pdMat.pants,-0.11,0.78,0);
+  const legR=limb(0.14,0.78,pdMat.pants, 0.11,0.78,0);
+  return { group:g, body, armL, armR, legL, legR,
+           walkPh:Math.random()*TAU, state:'idle', downT:0 };
+}
+function pedWalkAnim(p,t,speed){
+  const s = Math.sin(t*7*speed + p.walkPh)*0.55;
+  p.legL.rotation.x =  s; p.legR.rotation.x = -s;
+  p.armL.rotation.x = -s*0.7; p.armR.rotation.x = s*0.7;
+}
+function pedIdleAnim(p,t){
+  p.legL.rotation.x = p.legR.rotation.x = 0;
+  p.armL.rotation.x = Math.sin(t*1.4+p.walkPh)*0.06;
+  p.armR.rotation.x = -Math.sin(t*1.4+p.walkPh)*0.06;
+}
+// knockdown: body pitches to floor over ~0.5s, limbs splay
+function pedKnockdown(p,dt,dirX,dirZ){
+  p.downT = Math.min(1, p.downT + dt*2.4);
+  const k = p.downT, e = 1-Math.pow(1-k,3);
+  p.body.rotation.x = -Math.PI/2 * e;             // fall onto back
+  p.body.position.y = 0.18*e;
+  p.group.position.x += dirX * dt * (1-e) * 3.2;  // shoved along strike dir
+  p.group.position.z += dirZ * dt * (1-e) * 3.2;
+  p.armL.rotation.z = 1.1*e; p.armR.rotation.z = -1.2*e;
+  p.legL.rotation.x = 0.35*e; p.legR.rotation.x = -0.25*e;
+}
+
+/* ---- blood decal (GRAPHIC mode only) ---- */
+const bloodDecals = [];
+function spawnBlood(x,z,dx=0,dz=0){
+  if(CONSEQUENCE_MODE!=='GRAPHIC') return;
+  const drop=(px,pz,size,delay)=>{
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(size,size),
+      new THREE.MeshBasicMaterial({ map:Tex.bloodCanvas(), transparent:true, opacity:0, depthWrite:false }));
+    m.rotation.x=-Math.PI/2; m.rotation.z=Math.random()*TAU;
+    m.position.set(px, 0.02+bloodDecals.length*0.0015, pz);
+    scene.add(m); bloodDecals.push({mesh:m, age:-delay});
+  };
+  drop(x,z,2.7,0);                                     // main pool
+  drop(x+dx*1.5+(Math.random()-0.5)*0.6, z+dz*1.5+(Math.random()-0.5)*0.6, 1.4, 0.22);
+  drop(x+dx*2.5+(Math.random()-0.5)*0.9, z+dz*2.5+(Math.random()-0.5)*0.9, 0.95, 0.42);
+}
+function updateBlood(dt){
+  for(const b of bloodDecals){
+    b.age += dt;
+    if(b.age<0){ b.mesh.material.opacity=0; continue; }
+    b.mesh.material.opacity = Math.min(0.96, b.age*1.6);
+    const s = Math.min(1.25, 0.4 + b.age*0.9); b.mesh.scale.set(s,s,1);
+  }
+}
+function clearBlood(){
+  for(const b of bloodDecals){ scene.remove(b.mesh); b.mesh.material.dispose(); }
+  bloodDecals.length = 0;
+}
+/* =========================================================
+   INPUT — tap/hold buttons (multi-touch, pointer events)
+   ========================================================= */
+const held = { go:false, brake:false, left:false, right:false };
+function clearHeld(){ held.go=held.brake=held.left=held.right=false; }
+// stuck keys / touches: if the page loses focus mid-hold, release everything
+window.addEventListener('blur', clearHeld);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) clearHeld(); });
+function bindHold(el, key){
+  let pd=0;
+  const on = e=>{ e.preventDefault(); pd=performance.now(); held[key]=true; noteInput(); el.setPointerCapture&&e.pointerId!=null&&el.setPointerCapture(e.pointerId); };
+  const off= e=>{ e.preventDefault(); held[key]=false; };
+  el.addEventListener('pointerdown',on);
+  el.addEventListener('pointerup',off);
+  el.addEventListener('pointercancel',off);
+  el.addEventListener('lostpointercapture',()=>held[key]=false);
+  // fallback for environments without pointer events: click = short pulse
+  el.addEventListener('click', ()=>{ if(performance.now()-pd>500){
+    noteInput(); held[key]=true; setTimeout(()=>held[key]=false,350); } });
+}
+bindHold($('goPedal'),'go'); bindHold($('brakePedal'),'brake');
+bindHold($('steerL'),'left'); bindHold($('steerR'),'right');
+
+function bindTap(el, fn){
+  let pd=0;
+  el.addEventListener('pointerdown', e=>{ e.preventDefault(); pd=performance.now(); noteInput(); fn(); });
+  el.addEventListener('click', ()=>{ if(performance.now()-pd>500){ noteInput(); fn(); } });
+}
+
+/* idle nudge */
+let lastInput = 0, nudgeShown = false;
+function noteInput(){ lastInput = clockNow; nudgeShown=false; }
+
+/* =========================================================
+   HUD helpers
+   ========================================================= */
+function banner(html, urgent){
+  const b=$('banner'); b.innerHTML=html;
+  b.classList.toggle('urgent', !!urgent);
+}
+let toastTimer=null;
+function toast(msg, ms=2600){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), ms);
+}
+function setDots(total, current){
+  const d=$('dots'); d.innerHTML='';
+  for(let i=0;i<total;i++){
+    const s=document.createElement('div'); s.className='dot'+(i<current?' done':i===current?' now':'');
+    d.appendChild(s);
+  }
+}
+function showBtns(map){   // {goPedal:1, revBtn:0, ...}
+  for(const id of ['steerL','steerR','goPedal','brakePedal','hornBtn','revBtn','actionBtn'])
+    $(id).style.display = map[id] ? 'flex' : 'none';
+}
+function setAction(label, visible){
+  const a=$('actionBtn');
+  a.style.display = visible?'flex':'none';
+  if(label) a.innerHTML=label;
+  a.classList.toggle('pulse', !!visible);
+}
+
+/* screen shake + flash */
+let shakeT=0, shakeAmp=0;
+function shake(amp){ shakeAmp=amp; shakeT=0.55; }
+function flash(color,peak,fade){
+  const f=$('flash'); f.style.background=color; f.style.transition='none';
+  f.style.opacity=peak;
+  requestAnimationFrame(()=>{ f.style.transition=`opacity ${fade}s`; f.style.opacity=0; });
+}
+function bloodVignette(on){
+  $('vignette').style.transition='opacity .3s';
+  $('vignette').style.opacity = on ? (CONSEQUENCE_MODE==='GRAPHIC'?1:0.55) : 0;
+  $('bloodCam').style.opacity = (on && CONSEQUENCE_MODE==='GRAPHIC') ? 0.95 : 0;
+}
+
+/* teaching card */
+let cardCb=null;
+function showCard(kind, icon, title, fact, btnLabel, cb){
+  const c=$('card'); c.className=kind;                  // 'bad' | 'good'
+  $('cardIcon').textContent=icon;
+  $('cardTitle').textContent=title;
+  $('cardFact').textContent=fact;
+  const b=$('cardBtn'); b.textContent=btnLabel;
+  b.className='btn '+(kind==='bad'?'green':'green');
+  cardCb=cb; $('cardWrap').classList.add('show');
+  player.frozen=true; held.go=held.brake=held.left=held.right=false;
+}
+bindTap($('cardBtn'), ()=>{
+  $('cardWrap').classList.remove('show');
+  AudioSys.click();
+  player.frozen=false;
+  const cb=cardCb; cardCb=null; if(cb) cb();
+});
+
+/* =========================================================
+   PLAYER — one controller for driving & walking
+   ========================================================= */
+const player = {
+  mode:'drive',            // 'drive' | 'walk'
+  x:0, z:24, heading:Math.PI,   // heading: 0 = facing -Z? (see fwd())
+  speed:0, steer:0, gear:1,     // gear 1 fwd, -1 rev
+  belted:false, frozen:true,
+  bobT:0
+};
+// heading convention: forward vector = (sin(h), 0, -cos(h)); h=0 faces -Z (north)
+function fwdX(){ return Math.sin(player.heading); }
+function fwdZ(){ return -Math.cos(player.heading); }
+
+// no operator model: this one is driven first-person, so YOU are the operator
+const playerTruck = buildPalletJack();
+scene.add(playerTruck.group);
+
+function collideCircle(x,z,r){
+  for(const c of colliders){
+    const nx = clamp(x, c.minX, c.maxX), nz = clamp(z, c.minZ, c.maxZ);
+    const dx=x-nx, dz=z-nz;
+    if(dx*dx+dz*dz < r*r) return true;
+  }
+  return false;
+}
+
+function updateDrive(dt){
+  const t = TUNE;
+  // steering — self-centering
+  const target = held.left ? -t.steerMax : held.right ? t.steerMax : 0;
+  const rate = (held.left||held.right) ? t.steerRate : t.steerRate*1.6;
+  player.steer += clamp(target-player.steer, -rate*dt, rate*dt);
+  // speed
+  if(!player.frozen){
+    if(held.go && player.belted){
+      const cap = player.gear>0 ? t.maxFwd : t.maxRev;
+      player.speed = Math.min(cap, player.speed + t.accel*dt);
+    } else if(held.brake){
+      player.speed = Math.max(0, player.speed - t.brake*dt);
+    } else {
+      player.speed = Math.max(0, player.speed - t.drag*dt);
+    }
+    if(held.go && !player.belted){ nudgeBelt(); }
+  } else {
+    player.speed = Math.max(0, player.speed - t.brake*dt);
+  }
+  // kinematics (rear-axle bicycle model → tail swings on turns)
+  const v = player.speed * player.gear;
+  const prevHeading = player.heading;
+  player.heading += (v / t.wheelBase) * Math.tan(player.steer) * dt;
+  const nx = player.x + fwdX()*v*dt;
+  const nz = player.z + fwdZ()*v*dt;
+  // truck body = three circles along the chassis (rear overhang, rear axle, front/forks)
+  const blocked = (x,z) =>
+    collideCircle(x - fwdX()*0.75, z - fwdZ()*0.75, 0.7) ||
+    collideCircle(x, z, 0.95) ||
+    collideCircle(x + fwdX()*1.9, z + fwdZ()*1.9, 0.85);
+  if(!blocked(nx,nz)){
+    player.x=nx; player.z=nz;
+  } else if(!blocked(nx,player.z)){
+    player.x=nx;                                    // slide along Z-facing surface
+    player.speed = Math.max(0, player.speed - 5*dt); // scrape friction
+  } else if(!blocked(player.x,nz)){
+    player.z=nz;                                    // slide along X-facing surface
+    player.speed = Math.max(0, player.speed - 5*dt);
+  } else {
+    player.speed = 0;                               // solid head-on contact
+    player.heading = prevHeading;                   // don't rotate into the obstacle
+  }
+  // place truck (origin at rear axle, faces -Z locally; our fwd = -Z rotated by heading)
+  playerTruck.group.position.set(player.x, 0, player.z);
+  playerTruck.group.rotation.y = -player.heading;
+  // beacon: flashes whenever turning or moving (swing-radius warning)
+  const turning = Math.abs(player.steer)>0.14 && player.speed>0.25;
+  setBeacon(playerTruck, turning || player.speed>0.1, clockNow);
+  setRevLights(playerTruck, player.gear<0 && player.speed>0.05);
+  // audio
+  AudioSys.engine(player.speed/t.maxFwd, player.belted && !player.frozen);
+  AudioSys.reverseBeep(dt, player.gear<0 && player.speed>0.1);
+  // camera — driver eye height inside the cab
+  const backOff = 0.35;   // sit slightly behind origin
+  const camX = player.x + fwdX()*-backOff, camZ = player.z + fwdZ()*-backOff;
+  let lookH = player.heading;
+  if(player.gear<0){      // look over shoulder in reverse (limited view)
+    lookH = player.heading + Math.PI*0.82;
+  }
+  camera.position.set(camX, 1.95, camZ);
+  const lx = camX + Math.sin(lookH)*6, lz = camZ - Math.cos(lookH)*6;
+  camera.lookAt(lx, 1.55, lz);
+  camera.rotateZ(player.steer*0.03);
+}
+
+function updateWalk(dt){
+  const t=TUNE;
+  const turnRate = 1.7;
+  if(held.left)  player.heading -= turnRate*dt;
+  if(held.right) player.heading += turnRate*dt;
+  if(!player.frozen){
+    if(held.go) player.speed = Math.min(t.walkSpeed, player.speed + 5*dt);
+    else player.speed = Math.max(0, player.speed - 8*dt);
+    if(held.brake) player.speed = 0;
+  } else player.speed=0;
+  const nx = player.x + fwdX()*player.speed*dt;
+  const nz = player.z + fwdZ()*player.speed*dt;
+  if(!collideCircle(nx,nz,0.35)){ player.x=nx; player.z=nz; }
+  else if(!collideCircle(nx,player.z,0.35)){ player.x=nx; }   // slide
+  else if(!collideCircle(player.x,nz,0.35)){ player.z=nz; }
+  else player.speed=0;
+  // camera bob
+  player.bobT += dt * (2 + player.speed*4.2);
+  const bob = Math.sin(player.bobT)*0.045*Math.min(1,player.speed/1.2);
+  camera.position.set(player.x, 1.62+bob, player.z);
+  const lx = player.x + fwdX()*6, lz = player.z + fwdZ()*6;
+  camera.lookAt(lx, 1.5 + bob*0.4, lz);
+  AudioSys.engine(0,false);
+}
+
+/* speed HUD */
+function updateSpeedHUD(){
+  const kmh = Math.round(player.speed*3.6);
+  $('speedNum').innerHTML = kmh+'<small> km/h</small>';
+  const r = player.speed / (player.mode==='drive' ? TUNE.maxFwd : TUNE.walkSpeed);
+  $('speedBar').style.width = (r*100)+'%';
+  $('limiterTag').textContent =
+    player.mode==='drive' && player.speed>=TUNE.maxFwd-0.05 ? '⚠ LIMITER: at cap' : '';
+}
+/* =========================================================
+   MOMENT / CONSEQUENCE ENGINE
+   ========================================================= */
+const seg = { mode:'title', moment:0, state:'', t:0, d:{} };
+const activePeds = [];          // {ped, update(dt)}
+let lastHorn = -99;
+
+function addPed(x,z,face){ const p = buildPed();
+  p.group.position.set(x,0,z); p.group.rotation.y = face||0;
+  scene.add(p.group); activePeds.push(p); return p; }
+function removePeds(){ for(const p of activePeds) scene.remove(p.group); activePeds.length=0; }
+
+// truck-frame test of a point (drive mode). Returns {lf, lr}
+function truckLocal(px,pz){
+  const dx=px-player.x, dz=pz-player.z;
+  const rx=Math.cos(player.heading), rz=Math.sin(player.heading);
+  return { lf: dx*fwdX() + dz*fwdZ(), lr: dx*rx + dz*rz };
+}
+function truckHitsPed(p, padFront=0.2){
+  const {lf,lr} = truckLocal(p.group.position.x, p.group.position.z);
+  return lf > -1.5 && lf < 2.45+padFront && Math.abs(lr) < 0.9;
+}
+function tailCorners(){
+  const rx=Math.cos(player.heading), rz=Math.sin(player.heading);
+  const bx = player.x - fwdX()*1.35, bz = player.z - fwdZ()*1.35;
+  return [[bx+rx*0.72, bz+rz*0.72],[bx-rx*0.72, bz-rz*0.72]];
+}
+
+/* strike sequence — the consequence. mode 'drive' (you hit someone)
+   or 'walk' (you are hit). */
+let strikeAnim = null;
+function strike(ped, cardTitle, cardFact){
+  if(seg.state==='struck') return;
+  seg.state='struck';
+  player.frozen = true; player.speed = Math.min(player.speed, 0.4);
+  AudioSys.thud(); AudioSys.engine(0,false);
+  shake(player.mode==='drive'?0.10:0.16);
+  flash(CONSEQUENCE_MODE==='GRAPHIC'?'#a00000':'#d33', 0.75, 0.9);
+  if(ped){
+    ped.state='down';
+    const dx = fwdX()*(player.mode==='drive'?1:0), dz = fwdZ()*(player.mode==='drive'?1:0);
+    strikeAnim = { ped, dx, dz };
+    spawnBlood(ped.group.position.x + dx*0.9, ped.group.position.z + dz*0.9, dx, dz);
+  }
+  if(player.mode==='walk'){
+    bloodVignette(true);
+    strikeAnim = strikeAnim || {};
+    strikeAnim.camFall = 0;
+    spawnBlood(player.x, player.z, Math.sin(player.heading), -Math.cos(player.heading));
+  }
+  banner('&#9888;&#65039; <span class="em">STRUCK</span>', true);
+  setTimeout(()=>{
+    if(seg.mode!=='seg1' && seg.mode!=='seg2') return;   // player exited meanwhile
+    showCard('bad','⚠️',cardTitle,cardFact,'TRY AGAIN', ()=>{ bloodVignette(false); resetMoment(); });
+  }, 1700);
+}
+function safeMoment(title, fact, cb){
+  if(seg.state==='struck'||seg.state==='cleared') return;
+  seg.state='cleared';
+  AudioSys.chime();
+  banner('&#10004;&#65039; <span class="em">SAFE</span>');
+  setTimeout(()=>{
+    if(seg.mode!=='seg1' && seg.mode!=='seg2') return;
+    showCard('good','✅',title,fact,'CONTINUE', cb);
+  }, 900);
+}
+
+/* gear changes always go through here so the button label stays in sync */
+function setGear(g){
+  player.gear = g;
+  $('revBtn').textContent = g<0 ? 'FORWARD' : 'REVERSE';
+}
+
+/* checkpoints — where TRY AGAIN / RESET puts you */
+let checkpoint = null;
+function setCheckpoint(x,z,heading,moment){
+  checkpoint = {x,z,heading,moment,belted:player.belted,gear:player.gear};
+}
+function resetMoment(){
+  if(!checkpoint){ console.error('[MHE] resetMoment with no checkpoint'); return; }
+  console.info('[MHE] reset to checkpoint — moment', checkpoint.moment);
+  clearBlood(); removePeds(); clearAI(); strikeAnim=null;
+  bloodVignette(false); setAction(null,false);
+  player.x=checkpoint.x; player.z=checkpoint.z; player.heading=checkpoint.heading;
+  player.speed=0; player.steer=0; player.frozen=false;
+  setGear(checkpoint.gear);
+  player.belted=checkpoint.belted;
+  $('beltStrap').classList.toggle('show', player.belted && player.mode==='drive');
+  seg.moment=checkpoint.moment; seg.state='enter'; seg.t=0; seg.d={};
+  clearHeld();
+  stuckT=0;
+}
+
+/* ---- manual recovery: RESET button (and C key) ---- */
+bindTap($('resetBtn'), ()=>{
+  if(seg.mode!=='seg1' && seg.mode!=='seg2') return;
+  if(seg.mode==='seg1' && seg.moment===0) return;        // nothing to reset before moving off
+  if($('cardWrap').classList.contains('show')) return;   // a card already offers the way out
+  if(seg.state==='struck' || seg.state==='cleared') return;
+  AudioSys.click();
+  resetMoment();
+  toast('↩ Back at the last safe point.', 2200);
+});
+
+/* ---- exit to title: double-tap to confirm ---- */
+let exitArmed = 0;
+bindTap($('exitBtn'), ()=>{
+  if(clockNow - exitArmed < 3){
+    exitArmed = 0; AudioSys.click(); resetAll();
+  } else {
+    exitArmed = clockNow;
+    toast('Tap EXIT again to end and return to the title.', 2600);
+  }
+});
+
+/* ---- automatic stuck detection + position sanity guard ---- */
+let stuckT = 0, stuckPrev = {x:0,z:0};
+function updateStuckGuard(dt){
+  // invalid / out-of-bounds position → recover immediately
+  if(!isFinite(player.x) || !isFinite(player.z) ||
+     player.x<-22 || player.x>22 || player.z<-33 || player.z>35){
+    console.error('[MHE] invalid player position', player.x, player.z, '— auto reset');
+    resetMoment();
+    toast('↩ Position reset — back at the last safe point.', 2600);
+    return;
+  }
+  // pushing GO but not actually moving → offer the reset button
+  const moved = Math.hypot(player.x-stuckPrev.x, player.z-stuckPrev.z);
+  stuckPrev.x=player.x; stuckPrev.z=player.z;
+  const trying = held.go && !player.frozen && (player.mode==='walk' || player.belted);
+  if(trying && moved < 0.004){
+    stuckT += dt;
+    if(stuckT > 3){
+      stuckT = -5;   // cooldown before re-prompting
+      toast('Stuck? Tap ↩ RESET (top right) — or try REVERSE.', 3200);
+      $('resetBtn').classList.add('pulse');
+      setTimeout(()=>$('resetBtn').classList.remove('pulse'), 3200);
+    }
+  } else if(moved > 0.02) stuckT = 0;
+}
+
+/* horn */
+bindTap($('hornBtn'), ()=>{ AudioSys.horn(); lastHorn = clockNow; });
+function hornedRecently(win=3){ return clockNow-lastHorn < win; }
+
+/* =========================================================
+   SEGMENT 1 — IN THE SEAT (driver)
+   Moments: 0 belt · 1 blind corner · 2 pallet+reverse ·
+            3 swing radius · 4 speed run · 5 done
+   ========================================================= */
+/* Swing-radius moment uses two pads. The aisle is only clear between the
+   racking at x=±4.8, and the truck's turning radius is ~2.4 m — so a LEFT
+   swing only fits if you start over on the RIGHT. Amber pad = line up here,
+   green box = where the left swing lands you. */
+const SWING_R = 3.2;                  // matches the truck's full-lock radius
+const PAD  = { x: 3.6, z:-18.6 };     // line-up pad, right of the aisle
+const BOXP = { x: PAD.x - 2*SWING_R, z:-16.5 };   // landing box, left (x = -2.8)
+
+// flat ribbon following a list of {x,z} centre points
+function makePathRibbon(points, width, mat){
+  const half = width/2, verts = [], idx = [];
+  for(let i=0;i<points.length;i++){
+    const p = points[i];
+    const a = points[Math.max(0,i-1)], b = points[Math.min(points.length-1,i+1)];
+    let tx = b.x-a.x, tz = b.z-a.z;
+    const len = Math.hypot(tx,tz) || 1; tx/=len; tz/=len;
+    const nx = -tz, nz = tx;                       // left normal in the floor plane
+    verts.push(p.x+nx*half, 0.02, p.z+nz*half, p.x-nx*half, 0.02, p.z-nz*half);
+  }
+  for(let i=0;i<points.length-1;i++){
+    const a=i*2, b=a+1, c=a+2, d=a+3;
+    idx.push(a,c,b, b,c,d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, mat); world.add(m);
+  return m;
+}
+const pathMat = new THREE.MeshBasicMaterial({ color:0x35d97f, transparent:true,
+  opacity:0.42, depthWrite:false, side:THREE.DoubleSide });
+const swingPath = (()=>{
+  const pts = [];
+  // lead-in: ease across from the aisle onto the line-up pad, still facing south
+  for(let i=0;i<=16;i++){
+    const t=i/16, s=t*t*(3-2*t);
+    pts.push({ x: 0.3 + (PAD.x-0.3)*s, z: -13.6 + (PAD.z+13.6)*t });
+  }
+  // the swing: a 180° left arc
+  const cx = PAD.x - SWING_R, cz = PAD.z;
+  for(let i=1;i<=36;i++){
+    const phi = -Math.PI*(i/36);
+    pts.push({ x: cx + Math.cos(phi)*SWING_R, z: cz + Math.sin(phi)*SWING_R });
+  }
+  // exit straight north into the green box
+  for(let i=1;i<=6;i++) pts.push({ x: BOXP.x, z: PAD.z + (BOXP.z-PAD.z)*(i/6) });
+  const m = makePathRibbon(pts, 2.4, pathMat);
+  m.visible = false; return m;
+})();
+const stagePad = paint(3.2,3.6, new THREE.MeshStandardMaterial({
+  color:0xf2a41c, transparent:true, opacity:0.45 }), PAD.x,PAD.z);
+stagePad.visible=false;
+// elongated along the exit so parking anywhere at the end of the swing counts
+const turnBox = paint(4.0,5.2, new THREE.MeshStandardMaterial({
+  color:0x2fae6a, transparent:true, opacity:0.45 }), BOXP.x,BOXP.z);
+turnBox.visible=false;
+const bayMark = paint(3.6,4.2, new THREE.MeshStandardMaterial({
+  color:0x2fae6a, transparent:true, opacity:0.4 }), 0,-19.5);
+bayMark.visible=false;
+
+/* floating guide arrow — always shows where to go next */
+const guide = (()=>{
+  const g = new THREE.Group();
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5,1.0,12),
+    new THREE.MeshStandardMaterial({ color:0x35d97f, emissive:0x1d7a45, emissiveIntensity:1.3 }));
+  cone.rotation.x = Math.PI; cone.position.y = 2.7; g.add(cone);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.55,0.85,26),
+    new THREE.MeshBasicMaterial({ color:0x35d97f, transparent:true, opacity:0.55, side:THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI/2; ring.position.y = 0.03; g.add(ring);
+  g.visible = false; scene.add(g); return g;
+})();
+function setGuide(x,z){ guide.visible=true; guide.position.set(x,0,z); }
+function hideGuide(){ guide.visible=false; }
+
+function startSeg1(){
+  seg.mode='seg1'; seg.moment=0; seg.state='enter'; seg.t=0; seg.d={};
+  player.mode='drive'; player.x=0; player.z=24; player.heading=0;
+  player.speed=0; player.steer=0; player.belted=false; player.frozen=true;
+  setGear(1);
+  playerTruck.group.visible=true;
+  setAmbient(false); setTagsVisible(false);
+  $('beltStrap').classList.remove('show');
+  $('hud').classList.add('show');
+  hideGuide();
+  setDots(5,0);
+  setCheckpoint(0,24,0,1);
+  checkpoint.belted = true;   // moment 1 always begins buckled
+}
+let beltNudgeT = -99;
+function nudgeBelt(){
+  if(clockNow - beltNudgeT < 4) return;
+  beltNudgeT = clockNow;
+  toast('🛡 Buckle up first — tap the amber button.', 2400);
+}
+
+function updateSeg1(dt){
+  seg.t += dt;
+  const m = seg.moment;
+
+  /* ---- moment 0: seatbelt interlock ---- */
+  if(m===0){
+    if(seg.state==='enter'){
+      seg.state='wait';
+      banner('You are in the seat. <span class="em">Buckle up first.</span>');
+      showBtns({});
+      setAction('&#128737;&#65039; TAP TO BUCKLE SEATBELT', true);
+    }
+    return;
+  }
+
+  /* ---- moment 1: blind corner ---- */
+  if(m===1){
+    if(seg.state==='enter'){
+      seg.state='drive'; setDots(5,1); player.frozen=false;
+      banner('Drive ahead. <span class="em">Blind corner</span> coming &mdash; slow down + tap HORN.');
+      showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1,hornBtn:1,revBtn:1});
+      seg.d.ped = addPed(-4.5,7, Math.PI/2); seg.d.ped.state='idle';
+      seg.d.horned=false;
+      setGuide(0,2.5);   // target sits PAST the crossing, so reaching it completes the moment
+    }
+    // horn acknowledged anywhere on the approach, right up to the crossing itself
+    if(!seg.d.horned && hornedRecently(0.4) && player.z<20 && player.z>4){
+      seg.d.horned=true; toast('Good — they heard you!',1800);
+    }
+    /* They step out of the blind corner, walk into the middle of YOUR lane and
+       stand there. The only way through is a full stop — steering around them
+       is caught too, because the test is on the crossing line, not on x. */
+    const p = seg.d.ped;
+    if(p && p.state==='idle'){
+      pedIdleAnim(p, clockNow);
+      if(player.z < 16){
+        p.state='stepOut';
+        AudioSys.alarm();
+        toast('⚠ Someone has stepped out in front of you — STOP!', 2800);
+        banner('&#9940; <span class="em">STOP</span> &mdash; person crossing ahead.', true);
+      }
+    }
+    if(p && p.state==='stepOut'){
+      pedWalkAnim(p, clockNow, 1);
+      p.group.position.x += 1.35*dt;
+      if(p.group.position.x >= -0.2){ p.state='blocking'; p.group.rotation.y = Math.PI; }
+    }
+    if(p && p.state==='blocking'){
+      pedIdleAnim(p, clockNow);
+      if(player.speed < 0.3){                       // an actual, full stop
+        seg.d.stopped = true;
+        p.state='crossing'; p.group.rotation.y = Math.PI/2;
+        AudioSys.chime();
+        banner('&#128077; They are crossing. <span class="em">Wait until they are clear.</span>');
+        toast(seg.d.horned ? '👍 Horn AND a full stop — textbook.' : '👍 Good stop. Let them clear.', 2600);
+      }
+    }
+    if(p && p.state==='crossing'){
+      pedWalkAnim(p, clockNow, 1);
+      p.group.position.x += 1.5*dt;
+      if(p.group.position.x > 4.6){
+        p.state='done'; AudioSys.chime();
+        banner('&#9989; <span class="em">Clear</span> &mdash; drive on to the green ring.');
+      }
+    }
+    /* drove past without ever stopping — swerving wide counts, it is a line test */
+    if(p && (p.state==='stepOut' || p.state==='blocking') && !seg.d.stopped && player.z < 6.4){
+      seg.state='failed'; player.frozen = true;
+      AudioSys.alarm(); flash('#d33',0.55,0.8); shake(0.07);
+      banner('&#9888;&#65039; <span class="em">You did not stop.</span>', true);
+      setTimeout(()=>{
+        if(seg.mode!=='seg1') return;
+        showCard('bad','⚠️','You drove past without stopping.',
+          'Someone stepped into your path and you kept moving. Steering around a person is not a substitute for stopping — you cannot know which way they will step. Come to a full stop, let them clear, then move off.',
+          'TRY AGAIN', ()=>resetMoment());
+      }, 900);
+      return;
+    }
+    // hitting them is still possible at any point
+    if(p && (p.state==='stepOut'||p.state==='blocking'||p.state==='crossing')
+       && truckHitsPed(p) && player.speed>TUNE.strikeSpeed){
+      strike(p,'Too fast for a blind corner.',
+        'A person stepped out — at speed, the pallet jack could not stop. Slow right down and sound your horn at every blind corner.');
+      return;
+    }
+    // passed the corner having stopped for them (straight on, or off into the cross-aisle)
+    const pastCorner = player.z<4.5 || (player.z<10.5 && Math.abs(player.x)>5.5);
+    if(seg.state==='drive' && pastCorner && seg.d.stopped){
+      if(seg.d.horned) safeMoment('Horn, then a full stop — textbook.',
+        'You warned them before the corner and stopped to let them cross. That is exactly how to take a blind corner.',
+        ()=>advanceSeg1(2));
+      else safeMoment('You stopped and let them cross.',
+        'Stopping was the right call. Next time sound the horn BEFORE the corner as well, so people know you are coming before they step out.',
+        ()=>advanceSeg1(2));
+    }
+    return;
+  }
+
+  /* ---- moment 2: reach pallet bay, then reverse ---- */
+  if(m===2){
+    if(seg.state==='enter'){
+      seg.state='drive'; setDots(5,2); player.frozen=false;
+      banner('Drive to the <span class="em">green bay</span> and STOP on it.');
+      bayMark.visible=true;
+      showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1,hornBtn:1,revBtn:1});
+      setGuide(0,-19.5);
+    }
+    if(seg.state==='drive'){
+      // forgiving: the bay counts if the truck body OR the forks are on it
+      const fx = player.x + fwdX()*2.1, fz = player.z + fwdZ()*2.1;
+      const onBay = (x,z)=> Math.abs(x)<2.6 && Math.abs(z+19.5)<3.0;
+      if((onBay(player.x,player.z) || onBay(fx,fz)) && player.speed<0.35){
+        seg.state='loaded'; AudioSys.click(); hideGuide();
+        banner('Forks in. Now <span class="em">REVERSE</span> out &mdash; check behind you.');
+        $('revBtn').style.display='flex'; $('revBtn').classList.add('pulse');
+      } else if(player.speed<0.35 && Math.abs(player.x)<4.5 && Math.abs(player.z+19.5)<10){
+        // stopped near the bay but not on it — coach instead of staying silent
+        seg.d.hintT = (seg.d.hintT||0) + dt;
+        if(seg.d.hintT > 2){
+          seg.d.hintT = -7;   // cooldown before the next hint
+          if(player.z < -21.5) toast('⬅ The green bay is BEHIND you — tap REVERSE and back onto it.', 3200);
+          else toast('Not on the bay yet — stop with the green square under your forks.', 3200);
+        }
+      } else if(player.speed>1) seg.d.hintT = 0;
+    }
+    if(seg.state==='loaded' && player.gear<0){
+      seg.state='reversing'; $('revBtn').classList.remove('pulse');
+      banner('Reversing. <span class="em">Your view behind is limited.</span> Go slow.');
+      setCheckpoint(0,-19.5,0,2); checkpoint.gear=-1; seg.d.revStart=true;
+      setGuide(0,-11.5);
+      // ped will cross behind, from the right of the aisle
+    }
+    if(seg.state==='reversing'){
+      if(!seg.d.ped && player.z>-18){
+        const crossZ = player.z + 4.5;   // behind the reversing truck
+        seg.d.ped = addPed(2.8, crossZ, -Math.PI/2); seg.d.ped.state='cross';
+        seg.d.crossZ = crossZ;
+        toast('Someone is behind you!',1500);
+      }
+      const p = seg.d.ped;
+      if(p && p.state==='cross'){
+        p.group.position.x -= 1.3*dt;
+        pedWalkAnim(p, clockNow, 0.9);
+        if(hornedRecently(0.4)){ p.state='stopped'; toast('They stopped — horn works.',1600); }
+        if(p.group.position.x<-4) p.state='done';
+        if(truckHitsPed(p) && player.speed>TUNE.strikeSpeed){
+          strike(p,'Struck while reversing.',
+            'A loaded pallet jack’s rear view is poor. Reverse at creep speed, look over your shoulder, and use the horn.');
+        } else if(truckHitsPed(p,0.4)){ player.speed=0; }
+      }
+      if(p && p.state==='stopped') pedIdleAnim(p, clockNow);
+      if(player.z>-13.6 && seg.state==='reversing'){
+        safeMoment('Backed out safely.',
+          'Slow, checked, warned. Reversing causes many struck-by injuries — creep speed saves lives.',
+          ()=>advanceSeg1(3));
+      }
+    }
+    return;
+  }
+
+  /* ---- moment 3: swing radius U-turn ----
+     Follow the painted green route: ease onto the amber pad, then swing wide
+     LEFT through the open staging floor and park in the green box. */
+  if(m===3){
+    if(seg.state==='enter'){
+      seg.state='lineup'; setDots(5,3); player.frozen=false; setGear(1);
+      bayMark.visible=false;
+      banner('Follow the <span class="em">green path</span> &mdash; line up on the amber pad first.');
+      swingPath.visible=true; stagePad.visible=true; turnBox.visible=false;
+      setGuide(PAD.x, PAD.z);
+      seg.d.worker = addPed(3.9,-22.4, Math.PI/2);   // stands just outside the tail's sweep
+      seg.d.entryHeading = player.heading;
+      seg.d.startHeading = player.heading;
+      seg.d.lineT = 0;
+      setCheckpoint(player.x, player.z, player.heading, 3);
+      toast('Watch the amber beacon — it warns of the swing.',2600);
+    }
+    const w = seg.d.worker;
+    pedIdleAnim(w, clockNow);
+    // tail sweep check
+    for(const [cx,cz] of tailCorners()){
+      const dx=cx-w.group.position.x, dz=cz-w.group.position.z;
+      if(dx*dx+dz*dz < 0.42 && player.speed>0.45 && Math.abs(player.steer)>0.12){
+        strike(w,'The tail swung into a person.',
+          'When a pallet jack turns, its rear end sweeps WIDE the other way. Keep clear of the swing zone — driver and walker both.');
+        return;
+      }
+    }
+    // front hit also possible
+    if(truckHitsPed(w) && player.speed>TUNE.strikeSpeed){
+      strike(w,'Struck the worker.', 'Slow down around people. If someone is close, stop and let them move first.');
+      return;
+    }
+    let dh = Math.abs(((player.heading - seg.d.startHeading) % TAU + TAU) % TAU);
+    if(dh>Math.PI) dh = TAU-dh;
+
+    /* beat 1 — line up on the amber pad, pointing down the aisle */
+    if(seg.state==='lineup'){
+      const onArea  = Math.abs(player.x-PAD.x)<1.6 && Math.abs(player.z-PAD.z)<1.9;
+      const aligned = fwdZ() < -0.85;          // nose genuinely pointing down the aisle
+      const onPad   = onArea && aligned;
+      // signed turn since entry — only a LEFT swing counts (steering right to
+      // reach the pad must not trip the swing early)
+      let dSign = ((player.heading - seg.d.entryHeading) % TAU + TAU) % TAU;
+      if(dSign > Math.PI) dSign -= TAU;
+      seg.d.lineT += dt;
+      // never dead-end: lined up, already swinging left, or waited too long
+      if(onPad || dSign < -1.2 || seg.d.lineT>22){
+        seg.state='turn';
+        seg.d.startHeading = onPad ? player.heading : seg.d.entryHeading;
+        stagePad.visible=false; turnBox.visible=true;
+        setGuide(BOXP.x, BOXP.z);
+        banner('Now hold <span class="em">LEFT + GO</span> &mdash; follow the path round and park in the green box. Watch your TAIL!');
+        AudioSys.click();
+        if(onPad) setCheckpoint(player.x, player.z, player.heading, 3);
+      } else if(onArea && !aligned && !seg.d.alignHint){
+        seg.d.alignHint = true;
+        toast('↩ Straighten up along the path first, then swing LEFT.',3000);
+      } else if(seg.d.lineT>8 && !seg.d.padHint){
+        seg.d.padHint = true;
+        toast('👉 Follow the green path onto the amber pad on your right.',3000);
+      }
+      return;
+    }
+
+    /* beat 2 — swing left into the green box */
+    seg.d.turnT = (seg.d.turnT||0) + dt;
+    const inBox = Math.abs(player.x-BOXP.x)<2.0 && Math.abs(player.z-BOXP.z)<2.6;
+    if(inBox) hideGuide(); else setGuide(BOXP.x, BOXP.z);
+    // parking in the box is the goal; the rest are anti-dead-end fallbacks
+    if(seg.state==='turn' && ((inBox && dh>1.6) || (seg.d.turnT>35 && fwdZ()>0.5))){
+      turnBox.visible=false; stagePad.visible=false; swingPath.visible=false; hideGuide();
+      safeMoment('Clean turn — tail stayed clear.',
+        'You swung wide into open floor instead of cutting it tight. A pallet jack needs that room, because the rear end sweeps out the opposite way — never stand beside a turning pallet jack.',
+        ()=>advanceSeg1(4));
+    }
+    return;
+  }
+
+  /* ---- moment 4: the speed run home ---- */
+  if(m===4){
+    if(seg.state==='enter'){
+      seg.state='run'; setDots(5,4); player.frozen=false;
+      removePeds(); swingPath.visible=false; stagePad.visible=false; turnBox.visible=false;
+      banner('Head back to the dock. <span class="em">Sound the horn</span> near people &mdash; and keep a speed you can stop from.');
+      setCheckpoint(player.x, player.z, player.heading, 4);
+      showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1,hornBtn:1,revBtn:1});
+      seg.d.ped = addPed(4.2,18, -Math.PI/2); seg.d.ped.state='idle';
+      setGuide(0,23);
+    }
+    const p = seg.d.ped;
+    /* the horn is the point of this run: warn them and they keep clear.
+       Sounded early they never step out; sounded mid-crossing they step back. */
+    if(p && (p.state==='idle' || p.state==='cross') && hornedRecently(0.4) && player.z>0 && player.z<20){
+      const wasCrossing = p.state==='cross';
+      p.state = wasCrossing ? 'retreat' : 'waiting';
+      seg.d.hornSafe = true;
+      toast(wasCrossing ? '👍 They heard the horn — stepping back out of your way.'
+                        : '👍 Horn heard — they are holding back to let you pass.', 2400);
+    }
+    if(p && p.state==='retreat'){                 // back out of the lane, then wait at the edge
+      p.group.position.x += 1.8*dt;
+      pedWalkAnim(p, clockNow, 0.9);
+      if(p.group.position.x >= 3.6) p.state='waiting';
+    }
+    if(p && p.state==='waiting'){                 // stands clear and waves you through
+      pedIdleAnim(p, clockNow);
+      p.armR.rotation.z = -2.4 + Math.sin(clockNow*6)*0.3;
+    }
+    // worker waits near the racking at z=18; steps out based on your speed
+    if(p && p.state==='idle' && player.z>2 && player.z<16){
+      const dist = 18 - player.z;
+      if(player.speed>3.4 && (dist-2.45)/player.speed < 1.5){
+        p.state='cross'; seg.d.fast=true;
+        const offset = Math.max(1.2, 3.3 - player.x);    // ped walks -X into the truck's lane
+        p.spd = clamp(offset/Math.max(0.35,(dist-2.45)/player.speed), 1.0, 2.6);
+      } else if(player.z>12 && player.speed<=3.4){
+        p.state='cross'; seg.d.fast=false; p.spd = 1.3;
+      }
+    }
+    if(p && p.state==='idle') pedIdleAnim(p, clockNow);
+    if(p && p.state==='cross'){
+      p.group.position.x -= (p.spd||1.3)*dt;
+      pedWalkAnim(p, clockNow, 1);
+      if(p.group.position.x<-4) p.state='done';
+    }
+    // a horn does not excuse driving into someone — they can still be struck
+    if(p && (p.state==='cross' || p.state==='retreat')){
+      if(truckHitsPed(p) && player.speed>TUNE.strikeSpeed){
+        strike(p,'Speed made it unstoppable.',
+          'Stopping distance grows massively with speed. The limiter caps the pallet jack — but a SAFE speed is the driver’s choice.');
+      } else if(truckHitsPed(p,0.5) && player.speed<=TUNE.strikeSpeed){
+        player.speed=0;
+        safeMoment('You could stop — because you were slow.',
+          'At low speed you stop in under a metre. At full speed you need many metres. Choose the speed that lets you stop.',
+          ()=>advanceSeg1(5));
+      }
+    }
+    // anyone not standing in the lane counts as clear, so this can never dead-end
+    const pedClear = !p || p.state==='done' || p.state==='waiting' ||
+                     p.state==='retreat' || p.state==='idle';
+    if(seg.state==='run' && player.z>21 && pedClear){
+      if(seg.d.hornSafe) safeMoment('Horn used — and they stayed clear.',
+        'You warned them before you got there, so they held back and you passed safely. Sound the horn at crossings and blind spots every time — do not wait to be seen.',
+        ()=>advanceSeg1(5));
+      else safeMoment('Back at the dock — everyone safe.',
+        'You controlled your speed the whole way. That is what keeps stopping distance short. Next time sound the horn too, so people know you are coming.',
+        ()=>advanceSeg1(5));
+    }
+    return;
+  }
+
+  /* ---- moment 5: segment complete → handover ---- */
+  if(m===5){
+    setDots(5,5); showBtns({}); hideGuide();
+    showCard('good','🔄','Now see it from the ground.',
+      'You drove the pallet jack. Next: walk the same warehouse on foot — and stay safe around one you do NOT control.',
+      'CONTINUE', startSeg2);
+    seg.moment=99; // prevent re-fire
+    return;
+  }
+}
+function advanceSeg1(nextMoment){
+  console.info('[MHE] seg1 → moment', nextMoment);
+  removePeds(); clearBlood();
+  seg.moment=nextMoment; seg.state='enter'; seg.t=0; seg.d={};
+  if(nextMoment===2) setCheckpoint(player.x,player.z,player.heading,2);
+}
+
+/* seatbelt tap */
+bindTap($('actionBtn'), ()=>{ if(actionCb) actionCb(); });
+let actionCb = null;
+function onAction(cb){ actionCb=cb; }
+/* =========================================================
+   AI PALLET JACKS (segment 2)
+   ========================================================= */
+const aiTrucks = [];
+function approachAngle(cur, target, maxStep){
+  let d = ((target-cur) % TAU + TAU) % TAU; if(d>Math.PI) d-=TAU;
+  return cur + clamp(d, -maxStep, maxStep);
+}
+function addAI(x,z,heading){
+  const fk = buildPalletJack(true);      // seen from outside — needs a visible operator
+  const a = { fk, x, z, heading, speed:0, script:[], idx:0, wait:0,
+              reversing:false, circling:null, done:false };
+  scene.add(fk.group); aiTrucks.push(a); return a;
+}
+function clearAI(){ for(const a of aiTrucks) scene.remove(a.fk.group); aiTrucks.length=0; }
+function runAI(a, dt){
+  if(a.circling){
+    const c=a.circling; c.ang += c.w*dt;
+    a.x = c.cx + Math.sin(c.ang)*c.r;
+    a.z = c.cz + Math.cos(c.ang)*c.r;
+    a.heading = c.ang + (c.w>0? Math.PI/2 : -Math.PI/2) + Math.PI; // tangent
+    a.speed = Math.abs(c.w)*c.r; a.turning = true;
+  } else {
+    const s = a.script[a.idx];
+    a.turning = false;
+    if(!s){ a.speed=0; a.done=true; }
+    else if(s.type==='wait'){ a.speed=0; a.wait+=dt; if(a.wait>=s.t){ a.wait=0; a.idx++; } }
+    else if(s.type==='drive'){
+      const dx=s.to[0]-a.x, dz=s.to[1]-a.z, d=Math.hypot(dx,dz);
+      if(d<0.3) a.idx++;
+      else {
+        const th = Math.atan2(dx,-dz) + (s.rev?Math.PI:0);
+        a.heading = approachAngle(a.heading, th, 2.2*dt);
+        a.speed = s.speed; a.reversing = !!s.rev;
+        a.x += (dx/d)*a.speed*dt; a.z += (dz/d)*a.speed*dt;
+      }
+    }
+  }
+  a.fk.group.position.set(a.x,0,a.z);
+  a.fk.group.rotation.y = -a.heading;
+  setBeacon(a.fk, a.speed>0.05 || a.turning, clockNow);
+  setRevLights(a.fk, a.reversing && a.speed>0.05);
+  // distance-based reverse beep
+  if(a.reversing && a.speed>0.05){
+    const d = Math.hypot(player.x-a.x, player.z-a.z);
+    AudioSys.reverseBeep(dt, true, clamp(0.2 - d*0.006, 0.03, 0.2));
+  }
+}
+function aiHitsPlayer(a){
+  const dx=player.x-a.x, dz=player.z-a.z;
+  const fx=Math.sin(a.heading), fz=-Math.cos(a.heading);
+  const rx=Math.cos(a.heading), rz=Math.sin(a.heading);
+  const lf=dx*fx+dz*fz, lr=dx*rx+dz*rz;
+  return lf>-1.7 && lf<2.75 && Math.abs(lr)<1.1;
+}
+function aiTailNearPlayer(a, rad=0.85){
+  const rx=Math.cos(a.heading), rz=Math.sin(a.heading);
+  const bx=a.x - Math.sin(a.heading)*1.35, bz=a.z + Math.cos(a.heading)*1.35;
+  for(const s of [-0.72,0.72]){
+    const cx=bx+rx*s, cz=bz+rz*s;
+    const dx=player.x-cx, dz=player.z-cz;
+    if(dx*dx+dz*dz < rad*rad) return true;
+  }
+  return false;
+}
+
+/* =========================================================
+   SEGMENT 2 AMBIENCE — a live warehouse, not an empty one.
+   A background pallet jack works a staging zone off to the east
+   (it politely stops if you approach), and distant horns/beeps
+   play now and then.
+   ========================================================= */
+const ambient = { fk:null, on:false, ang:0, sndT:6 };
+function setAmbient(on){
+  if(on && !ambient.fk){ ambient.fk = buildPalletJack(true); scene.add(ambient.fk.group); }
+  if(ambient.fk) ambient.fk.group.visible = on;
+  ambient.on = on;
+}
+function updateAmbient(dt){
+  if(!ambient.on || !ambient.fk) return;
+  ambient.sndT -= dt;
+  if(ambient.sndT<=0){ AudioSys.hornFar(); ambient.sndT = 8+Math.random()*8; }
+  const cx=13, cz=-6, r=4;
+  const nextAng = ambient.ang + dt*0.4;
+  const nx = cx + Math.sin(nextAng)*r, nz = cz + Math.cos(nextAng)*r;
+  // a good driver stops when someone wanders close
+  if(Math.hypot(player.x-nx, player.z-nz) > 5) ambient.ang = nextAng;
+  const x = cx + Math.sin(ambient.ang)*r, z = cz + Math.cos(ambient.ang)*r;
+  ambient.fk.group.position.set(x,0,z);
+  ambient.fk.group.rotation.y = -(ambient.ang + Math.PI/2 + Math.PI);
+  setBeacon(ambient.fk, true, clockNow);
+}
+
+/* =========================================================
+   SEGMENT 2 SPOTTING — optional reportable floor hazards.
+   Walk close to a floating ⚠ marker and tap REPORT. Purely
+   bonus: never required to finish, never blocks progress.
+   ========================================================= */
+const tagAmberMat = new THREE.MeshStandardMaterial({ color:0xffb020, emissive:0xa06400, emissiveIntensity:1.1 });
+const tagLiveMat  = new THREE.MeshStandardMaterial({ color:0x35d97f, emissive:0x1d7a45, emissiveIntensity:1.6 });
+const hazMats = {
+  spill: new THREE.MeshStandardMaterial({ color:0x232c1c, roughness:0.12, metalness:0.3 }),
+  drum:  new THREE.MeshStandardMaterial({ color:0x2f7d4a, roughness:0.55, metalness:0.35 }),
+  cable: new THREE.MeshStandardMaterial({ color:0x14161a, roughness:0.85 }),
+  strap: new THREE.MeshStandardMaterial({ color:0xd8a712, roughness:0.7 }),
+};
+/* each hazard is a real object on the floor, not a marker floating over nothing */
+function buildSpill(g){
+  const p1 = new THREE.Mesh(new THREE.CircleGeometry(1.05,24), hazMats.spill);
+  p1.rotation.x=-Math.PI/2; p1.position.y=0.016; g.add(p1);
+  const p2 = new THREE.Mesh(new THREE.CircleGeometry(0.52,18), hazMats.spill);
+  p2.rotation.x=-Math.PI/2; p2.position.set(0.9,0.017,-0.55); g.add(p2);
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.82,14), hazMats.drum);
+  drum.rotation.z=Math.PI/2; drum.rotation.y=0.4;
+  drum.position.set(-0.8,0.28,0.3); drum.castShadow=true; g.add(drum);
+}
+function buildPallet(g){
+  const pal = new THREE.Mesh(new THREE.BoxGeometry(1.3,0.14,1.0), M.palletWd);
+  pal.position.y=0.07; pal.castShadow=true; g.add(pal);
+  const load = new THREE.Mesh(new THREE.BoxGeometry(1.05,0.95,0.86), M.wrap);
+  load.position.set(-0.52,0.64,0.06); load.rotation.z=0.44; load.castShadow=true; g.add(load);
+  const strap = new THREE.Mesh(new THREE.BoxGeometry(1.12,0.07,0.9), hazMats.strap);
+  strap.position.set(-0.52,0.78,0.06); strap.rotation.z=0.44; g.add(strap);
+}
+function buildCable(g){
+  for(let i=0;i<8;i++){
+    const link = new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.66,8), hazMats.cable);
+    link.rotation.z=Math.PI/2; link.rotation.y=Math.sin(i*0.85)*0.4;
+    link.position.set(-2.1+i*0.6, 0.055, Math.sin(i*0.85)*0.4); g.add(link);
+  }
+  const coil = new THREE.Mesh(new THREE.TorusGeometry(0.34,0.055,8,18), hazMats.cable);
+  coil.rotation.x=-Math.PI/2; coil.position.set(2.2,0.055,0.2); g.add(coil);
+}
+const hazardTags = [
+  { x:-8.6, z:14.5,  build:buildSpill,  title:'Spill beside the walkway' },
+  { x:-8.8, z:-2.0,  build:buildPallet, title:'Unstable load on a pallet' },
+  { x:-9.3, z:-22.5, build:buildCable,  title:'Cable trailing across the floor' },
+].map(t=>{
+  const g=new THREE.Group();
+  t.build(g);                                   // the physical hazard itself
+  const marker=new THREE.Group();               // the reportable ⚠ indicator
+  const gem=new THREE.Mesh(new THREE.OctahedronGeometry(0.22), tagAmberMat);
+  gem.position.y=1.7; marker.add(gem);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(0.5,0.72,22),
+    new THREE.MeshBasicMaterial({ color:0xffb020, transparent:true, opacity:0.5, side:THREE.DoubleSide }));
+  ring.rotation.x=-Math.PI/2; ring.position.y=0.03; marker.add(ring);
+  t.ring = ring;
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,1.3,6),
+    new THREE.MeshBasicMaterial({ color:0xffb020, transparent:true, opacity:0.35 }));
+  stem.position.y=1.0; marker.add(stem);
+  g.add(marker);
+  g.position.set(t.x,0,t.z); g.visible=false; scene.add(g);
+  return Object.assign(t,{ group:g, marker, gem, found:false });
+});
+let tagNear=null, tagPromptShown=false;
+// the hazard object stays on the floor once reported; only the ⚠ marker clears
+function setTagsVisible(on){
+  for(const t of hazardTags){ t.group.visible = on; t.marker.visible = on && !t.found; }
+}
+function resetTags(){ for(const t of hazardTags){ t.found=false; t.marker.visible=true; } }
+const TAG_RANGE = 3.5;   // generous: the walkway runs ~2 m to the side of each hazard
+function updateTags(dt){
+  tagNear=null;
+  let bestD = 99;
+  for(const t of hazardTags){
+    if(t.found || !t.group.visible) continue;
+    t.gem.position.y = 1.7 + Math.sin(clockNow*2.6 + t.x)*0.12;
+    t.gem.rotation.y += dt*2;
+    const d = Math.hypot(player.x-t.group.position.x, player.z-t.group.position.z);
+    const inRange = d < TAG_RANGE;
+    // marker goes green and lifts once you are close enough to report it
+    t.gem.material = inRange ? tagLiveMat : tagAmberMat;
+    t.ring.material.color.setHex(inRange ? 0x35d97f : 0xffb020);
+    t.ring.material.opacity = inRange ? 0.75 : 0.45;
+    t.ring.scale.setScalar(inRange ? 1.25 : 1);
+    if(inRange && d < bestD){ bestD = d; tagNear = t; }
+  }
+  if(seg.d && seg.d.awaitEye){ tagPromptShown=false; return; }  // eye contact owns the button
+  if(tagNear && !tagPromptShown){ setAction('&#9888;&#65039; REPORT HAZARD', true); tagPromptShown=true; }
+  else if(!tagNear && tagPromptShown){ setAction(null,false); tagPromptShown=false; }
+}
+function reportTag(t){
+  t.found=true; t.marker.visible=false;
+  tagPromptShown=false; setAction(null,false);
+  AudioSys.chime();
+  const n = hazardTags.filter(x=>x.found).length;
+  toast(`✅ Reported ${n}/3: ${t.title}`, 3000);
+  console.info('[MHE] hazard reported:', t.title);
+}
+
+/* =========================================================
+   SEGMENT 2 — ON FOOT (pedestrian)
+   Moments: 0 blind crossing + eye contact · 1 reversing truck ·
+            2 swing-radius shortcut · 3 done
+   ========================================================= */
+const meetPoint = (()=>{  // glowing meeting point marker
+  const g = new THREE.Group();
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.06,24),
+    new THREE.MeshStandardMaterial({ color:0x2fae6a, emissive:0x1d7a45, emissiveIntensity:0.9 }));
+  disc.position.y=0.03; g.add(disc);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,2.4,8), M.steel);
+  pole.position.y=1.2; g.add(pole);
+  const flag = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.5,0.04),
+    new THREE.MeshStandardMaterial({ color:0x2fae6a, emissive:0x1d7a45, emissiveIntensity:0.8 }));
+  flag.position.set(0.4,2.1,0); g.add(flag);
+  g.position.set(-3.2,0,-24.5); g.visible=false; scene.add(g);
+  return g;
+})();
+// marked crossing near meeting point
+for(let x=-9.4;x<=-4.2;x+=0.8) { const p=paint(0.5,1.4,M.lineWhite,x,-25); }
+
+function startSeg2(){
+  clearBlood(); removePeds(); clearAI();
+  // entering ON FOOT straight from the title screen skips startSeg1, so the HUD
+  // must be shown here too — without this there are no on-screen controls at all
+  $('hud').classList.add('show');
+  seg.mode='seg2'; seg.moment=0; seg.state='enter'; seg.t=0; seg.d={};
+  player.mode='walk'; player.x=-10.5; player.z=20; player.heading=0;
+  player.speed=0; player.frozen=false;
+  playerTruck.group.visible=false;
+  $('beltStrap').classList.remove('show');
+  meetPoint.visible=true;
+  setDots(3,0);
+  setCheckpoint(-10.5,20,0,0);
+  showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1});
+  setAmbient(true);
+  resetTags(); setTagsVisible(true);
+  setTimeout(()=>{ if(seg.mode==='seg2') toast('💡 Spot a floating ⚠ ? Walk up and REPORT the hazard — bonus points for sharp eyes.', 3800); }, 2500);
+}
+
+function updateSeg2(dt){
+  seg.t += dt;
+  const m = seg.moment;
+  // universal strike check vs any moving AI truck
+  for(const a of aiTrucks){
+    if(seg.state!=='struck' && seg.state!=='cleared' && a.speed>0.5 && aiHitsPlayer(a)){
+      strike(null,'Struck by the pallet jack.', seg.d.strikeFact ||
+        'The driver never saw you. Stop at lines, listen for beeps and horns, and stay inside the yellow walkway.');
+      return;
+    }
+  }
+  if(seg.state==='struck') return;
+
+  /* ---- W0: blind crossing + eye contact ---- */
+  if(m===0){
+    if(seg.state==='enter'){
+      seg.state='walkTo'; setDots(3,0);
+      banner('Walk the <span class="em">yellow walkway</span>. STOP at the white line.');
+      setGuide(-10.5,10.6);
+      seg.d.strikeFact = 'You stepped into a pallet jack’s path at a crossing. Stop at the line, look, and let it pass.';
+    }
+    if(seg.state==='walkTo' && player.z<12.5){
+      seg.state='truck1';
+      const a = addAI(2,7,-Math.PI/2); // heading -X
+      a.script=[{type:'drive',to:[-17,7],speed:5.0}];
+      AudioSys.hornFar();
+      hideGuide();                                  // don't invite walking into it
+      toast('🚨 Truck crossing — STOP at the line and let it pass.',2400);
+      banner('&#9940; <span class="em">WAIT</span> &mdash; pallet jack crossing.', true);
+    }
+    if(seg.state==='truck1'){
+      const a = aiTrucks[0];
+      if(a && (a.done || a.x<-12)){
+        seg.state='truck2';
+        clearAI();
+        const b = addAI(8,7,-Math.PI/2);
+        b.script=[{type:'drive',to:[-4.5,7],speed:3.6},{type:'drive',to:[-6.0,7],speed:1.2},{type:'wait',t:99}];
+        banner('&#9940; <span class="em">WAIT</span> &mdash; a second pallet jack is slowing for you&hellip;', true);
+        toast('One more coming — it is braking for you.',2200);
+        seg.d.strikeFact = 'You crossed before the driver saw you. Wait until it stops AND the driver acknowledges you.';
+      }
+    }
+    if(seg.state==='truck2'){
+      if(seg.d.eyeDone) setGuide(-10.5,1.0);
+      const b = aiTrucks[0];
+      if(b && b.speed<0.05 && b.idx>=2 && !seg.d.awaitEye && player.z>4){
+        seg.d.awaitEye = true;
+        AudioSys.chime();
+        banner('It has stopped. <span class="em">Make eye contact</span> before you cross.');
+        toast('👀 Tap MAKE EYE CONTACT — then you can cross.',3000);
+        setAction('&#128064; MAKE EYE CONTACT', true);
+      }
+      if(seg.d.eyeDone && player.z<3.5){
+        safeMoment('Seen, acknowledged, safe.',
+          'Stop at the line. Wait for it to stop. Make eye contact so you KNOW the driver sees you. Then cross.',
+          ()=>advanceSeg2(1));
+      }
+      // crossing without eye contact (prompted or not) → near miss, lesson delivered.
+      // Also the fallback that guarantees this moment can always complete.
+      if(!seg.d.eyeDone && ((seg.d.awaitEye && player.z<9.6) || player.z<3.5)){
+        seg.d.awaitEye=false; setAction(null,false);
+        AudioSys.horn(); flash('#d33',0.4,0.7); shake(0.05);
+        toast('⚠ He did NOT see you! Always make eye contact.',2600);
+        seg.d.eyeDone=true; // let them continue, lesson delivered
+      }
+    }
+    return;
+  }
+
+  /* ---- W1: reversing truck across the walkway ---- */
+  if(m===1){
+    if(seg.state==='enter'){
+      seg.state='walk'; setDots(3,1);
+      banner('Walk on. <span class="em">Listen</span> for reverse beeps.');
+      setCheckpoint(-10.5,2.5,0,1);
+      setGuide(-10.5,-11);
+      seg.d.strikeFact='Struck by a reversing truck. Drivers can barely see behind — the beep IS the warning. Stop and stay clear.';
+    }
+    if(seg.state==='walk' && player.z<-2.5){
+      seg.state='reversing';
+      const a = addAI(-15.5,-8, Math.PI/2); // facing +X... heading PI/2 → fwd=(1,0) faces +X toward walkway
+      // backs clear across the walkway and parks — no long round trip to sit through
+      a.script=[{type:'wait',t:0.3},
+                {type:'drive',to:[-8.0,-8],speed:2.2,rev:true},
+                {type:'wait',t:0.9}];
+      hideGuide();
+      toast('🔊 Those beeps mean a truck is reversing. Stand back.',2600);
+      banner('&#9940; <span class="em">WAIT</span> &mdash; reverse beeps! A truck is backing across.', true);
+    }
+    if(seg.state==='reversing'){
+      const a = aiTrucks[0];
+      if(a && a.done){
+        safeMoment('You heard it, you stopped.',
+          'Reversing trucks cause many serious injuries. The beep and the white reverse lights mean: stand back.',
+          ()=>advanceSeg2(2));
+      }
+    }
+    return;
+  }
+
+  /* ---- W2: swing-radius shortcut temptation ---- */
+  if(m===2){
+    if(seg.state==='enter'){
+      seg.state='walk'; setDots(3,2);
+      banner('Almost there. <span class="em">Never cut behind a turning pallet jack.</span> Use the crossing.');
+      setCheckpoint(-10.5,-11,0,2);
+      setGuide(-3.2,-24.5);
+      const a = addAI(-6,-17.9, Math.PI);
+      a.circling = { cx:-6, cz:-19.5, r:1.6, w:0.85, ang:0 };
+      seg.d.strikeFact='The tail of a turning pallet jack swings WIDE — it hit you before the driver could know. Never walk behind or beside a turning pallet jack.';
+      seg.d.warned=false;
+    }
+    const a = aiTrucks[0];
+    if(a){
+      // tail sweep strike
+      if(aiTailNearPlayer(a, 0.7)){
+        strike(null,'The swinging tail hit you.', seg.d.strikeFact);
+        return;
+      }
+      // off-walkway warning (the temptation zone)
+      if(!seg.d.warned && player.x>-9.1 && player.z>-21 && player.z<-12){
+        seg.d.warned=true;
+        toast('⚠ You left the walkway — see the beacon? The tail swings here!',2600);
+      }
+    }
+    // reached the meeting point
+    const dx=player.x-(-3.2), dz=player.z-(-24.5);
+    if(dx*dx+dz*dz < 1.5){
+      setDots(3,3);
+      safeMoment('You made it — alert the whole way.',
+        'Yellow walkway, stop lines, eye contact, ears open, clear of the swing. That is how you stay safe around MHE.',
+        finishGame);
+      seg.moment=99;
+    }
+    return;
+  }
+}
+function advanceSeg2(next){
+  console.info('[MHE] seg2 → moment', next);
+  clearAI(); clearBlood();
+  seg.moment=next; seg.state='enter'; seg.t=0; seg.d={};
+}
+
+/* action button dispatcher (belt + eye contact) */
+onAction(()=>{
+  if(seg.mode==='seg1' && seg.moment===0){
+    AudioSys.buckle();
+    player.belted=true;
+    $('beltStrap').classList.add('show');
+    setAction(null,false);
+    toast('Interlock released — the truck can move now.',2400);
+    advanceSeg1(1);
+  } else if(seg.mode==='seg2' && seg.d.awaitEye){
+    seg.d.awaitEye=false; seg.d.eyeDone=true;
+    setAction(null,false);
+    AudioSys.hornFar(); AudioSys.click();
+    const b=aiTrucks[0]; if(b) setRevLights(b.fk,true), setTimeout(()=>{ if(aiTrucks[0]) setRevLights(aiTrucks[0].fk,false); },600);
+    banner('&#128077; The driver waves &mdash; <span class="em">cross now.</span>');
+    toast('👋 He sees you. Safe to cross.',2000);
+  } else if(seg.mode==='seg2' && tagNear && !tagNear.found){
+    reportTag(tagNear);
+  }
+});
+/* =========================================================
+   REVERSE toggle
+   ========================================================= */
+bindTap($('revBtn'), ()=>{
+  if(player.mode!=='drive' || player.frozen) return;
+  setGear(-player.gear);
+  AudioSys.click();
+});
+
+/* =========================================================
+   GAME FLOW
+   ========================================================= */
+function finishGame(){
+  seg.mode='finish';
+  $('hud').classList.remove('show');
+  showBtns({}); hideGuide();
+  clearAI(); removePeds(); clearBlood();
+  setAmbient(false); setTagsVisible(false);
+  const n = hazardTags.filter(t=>t.found).length;
+  document.querySelector('#finishScreen .sub').textContent = n>0
+    ? `Five safeguards kept people safe today — and you reported ${n}/3 floor hazards:`
+    : 'Five safeguards kept people safe today:';
+  $('finishScreen').classList.add('show');
+  AudioSys.chime();
+}
+function resetAll(){
+  clearAI(); removePeds(); clearBlood(); strikeAnim=null;
+  bloodVignette(false);
+  setAmbient(false); setTagsVisible(false); resetTags();
+  $('finishScreen').classList.remove('show');
+  $('cardWrap').classList.remove('show');
+  $('hud').classList.remove('show');
+  $('beltStrap').classList.remove('show');
+  meetPoint.visible=false; turnBox.visible=false; stagePad.visible=false;
+  swingPath.visible=false; bayMark.visible=false; hideGuide();
+  player.frozen=true; player.speed=0; player.belted=false; setGear(1);
+  playerTruck.group.visible=true;
+  seg.mode='title'; seg.moment=0; seg.state=''; seg.t=0; seg.d={};
+  held.go=held.brake=held.left=held.right=false;
+  $('titleScreen').classList.add('show');
+}
+let entryMode = 'drive';   // chosen on the title screen
+function beginFromTitle(mode){
+  entryMode = mode;
+  AudioSys.init(); AudioSys.resume(); AudioSys.click();
+  const el=document.documentElement;
+  if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+  $('titleScreen').classList.remove('show');
+  $('howtoScreen').classList.add('show');
+  seg.mode='howto';
+}
+bindTap($('startDriveBtn'), ()=>beginFromTitle('drive'));
+bindTap($('startWalkBtn'),  ()=>beginFromTitle('walk'));
+bindTap($('goBtn'), ()=>{
+  AudioSys.resume(); AudioSys.click();
+  $('howtoScreen').classList.remove('show');
+  if(entryMode==='walk') startSeg2(); else startSeg1();
+});
+bindTap($('againBtn'), ()=>{ AudioSys.click(); resetAll(); });
+
+/* =========================================================
+   IDLE NUDGES — never dead-end
+   ========================================================= */
+let waitNudgeT = -99;
+function updateNudge(){
+  if(seg.mode!=='seg1' && seg.mode!=='seg2') return;
+  if($('cardWrap').classList.contains('show')) { lastInput=clockNow; return; }
+  const idle = clockNow - lastInput;
+  /* standing still is the CORRECT action while a truck crosses — reassure the
+     player instead of nagging them to walk into it */
+  const eyeSettled = seg.d && (seg.d.awaitEye || seg.d.eyeDone);   // your turn to move
+  const holding = seg.mode==='seg2' && !eyeSettled &&
+    (seg.state==='truck1' || seg.state==='truck2' || seg.state==='reversing');
+  if(holding){
+    if(idle>4 && clockNow-waitNudgeT>6){
+      waitNudgeT = clockNow;
+      toast('⏳ Holding back is right — wait until it is clear.',2800);
+    }
+    return;
+  }
+  // acknowledged by the driver but still standing there — say so plainly
+  if(seg.mode==='seg2' && seg.d && seg.d.eyeDone && seg.state==='truck2' &&
+     idle>3.5 && clockNow-waitNudgeT>5){
+    waitNudgeT = clockNow;
+    toast('✅ The driver has seen you — cross now.',2800);
+    return;
+  }
+  if(idle>9 && !nudgeShown){
+    nudgeShown=true;
+    if(seg.mode==='seg1' && seg.moment===0){
+      toast('👉 Tap the big amber button to buckle up.',3200);
+      $('actionBtn').classList.add('pulse');
+    } else if(seg.d && seg.d.awaitEye){
+      toast('👉 Tap MAKE EYE CONTACT, then cross.',3200);
+    } else if(seg.mode==='seg1' && seg.moment===2 && seg.state==='loaded'){
+      toast('👉 Tap REVERSE, then hold GO to back out.',3200);
+    } else {
+      toast('👉 Hold the green GO button to move.',3200);
+      $('goPedal').classList.add('pulse');
+      setTimeout(()=>$('goPedal').classList.remove('pulse'),3200);
+    }
+    lastInput = clockNow; nudgeShown=false;
+  }
+}
+
+/* =========================================================
+   ATTRACT CAMERA (title / how-to)
+   ========================================================= */
+function attractCam(t){
+  const a = t*0.08;
+  camera.position.set(Math.sin(a)*16, 7.5, 10+Math.cos(a)*14);
+  camera.lookAt(0,1.2,0);
+}
+
+/* =========================================================
+   MAIN LOOP
+   ========================================================= */
+let clockNow=0, lastT=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05,(now-lastT)/1000); lastT=now;
+  tick(dt);
+}
+function tick(dt){
+  clockNow += dt;
+  checkResize();
+  updateGamepad();
+
+  if(seg.mode==='title'||seg.mode==='howto'||seg.mode==='finish'){
+    attractCam(clockNow);
+    setBeacon(playerTruck,true,clockNow);
+    playerTruck.group.position.set(0,0,2);
+    playerTruck.group.rotation.y = clockNow*0.15;
+  }
+  else if(seg.mode==='seg1'){
+    updateDrive(dt);
+    updateSeg1(dt);
+    updateStuckGuard(dt);
+  }
+  else if(seg.mode==='seg2'){
+    updateWalk(dt);
+    for(const a of aiTrucks) runAI(a,dt);
+    updateSeg2(dt);
+    updateAmbient(dt);
+    updateTags(dt);
+    updateStuckGuard(dt);
+  }
+
+  // knockdown / camera-fall animation after a strike
+  if(strikeAnim){
+    if(strikeAnim.ped) pedKnockdown(strikeAnim.ped, dt, strikeAnim.dx, strikeAnim.dz);
+    if(strikeAnim.camFall!=null){
+      strikeAnim.camFall = Math.min(1, strikeAnim.camFall+dt*2.2);
+      const e = 1-Math.pow(1-strikeAnim.camFall,3);
+      camera.position.y = lerp(1.62,0.38,e);
+      camera.rotateZ(0.9*e);
+    }
+  }
+  // screen shake
+  if(shakeT>0){
+    shakeT -= dt;
+    const k = shakeAmp*(shakeT/0.55);
+    camera.position.x += (Math.random()-0.5)*k*2;
+    camera.position.y += (Math.random()-0.5)*k*2;
+  }
+
+  if(guide.visible){
+    const c=guide.children[0];
+    c.position.y = 2.7 + Math.sin(clockNow*3.2)*0.3;
+    c.rotation.y += dt*2.5;
+    guide.children[1].material.opacity = 0.4 + Math.sin(clockNow*3.2)*0.2;
+  }
+  updateBlood(dt);
+  updateDust(dt);
+  if(seg.mode==='seg1'||seg.mode==='seg2') updateSpeedHUD();
+  updateNudge();
+  renderer.render(scene,camera);
+  bootDone = true;
+}
+requestAnimationFrame(loop);
+// keep the simulation alive (real-time, substepped) if rAF is throttled
+setInterval(()=>{
+  const now = performance.now();
+  const elapsed = now - lastT;
+  if(elapsed > 100){
+    const steps = Math.min(5, Math.max(1, Math.round(elapsed/50)));
+    const dt = Math.min(0.05, elapsed/1000/steps);
+    lastT = now;
+    for(let i=0;i<steps;i++) tick(dt);
+  }
+}, 50);
+
+/* =========================================================
+   KEYBOARD — W=GO · A/D=steer · X/S=BRAKE · H/space=HORN ·
+   R=reverse · Enter=OK/next
+   ========================================================= */
+const KEYHOLD = { w:'go', a:'left', d:'right', x:'brake', s:'brake',
+                  arrowup:'go', arrowleft:'left', arrowright:'right', arrowdown:'brake' };
+function kbTap(id){
+  $(id).dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1}));
+}
+window.addEventListener('keydown', e=>{
+  const k = e.key.toLowerCase();
+  if(KEYHOLD[k] || k===' ') e.preventDefault();
+  if(e.repeat) return;
+  if(KEYHOLD[k]){ held[KEYHOLD[k]]=true; noteInput(); }
+  else if(k==='h' || k===' '){ if($('hornBtn').style.display==='flex') kbTap('hornBtn'); }
+  else if(k==='r'){ if($('revBtn').style.display==='flex') kbTap('revBtn'); }
+  else if(k==='c'){ if($('hud').classList.contains('show')) kbTap('resetBtn'); }
+  else if(k==='escape'){ if($('hud').classList.contains('show')) kbTap('exitBtn'); }
+  else if(k==='enter'){
+    if($('cardWrap').classList.contains('show')) kbTap('cardBtn');
+    else if($('actionBtn').style.display==='flex') kbTap('actionBtn');
+    else if($('titleScreen').classList.contains('show')) kbTap('startDriveBtn');
+    else if($('howtoScreen').classList.contains('show')) kbTap('goBtn');
+    else if($('finishScreen').classList.contains('show')) kbTap('againBtn');
+  }
+});
+window.addEventListener('keyup', e=>{
+  const k = e.key.toLowerCase();
+  if(KEYHOLD[k]) held[KEYHOLD[k]]=false;
+});
+
+/* =========================================================
+   GAMEPAD / JOYSTICK — polled each frame.
+   Left stick or D-pad steers · RT or A = GO · LT or B = BRAKE ·
+   X = HORN · Y = REVERSE · Start = the on-screen action button ·
+   Back = RESET. Writes to `held` only on edges, so keyboard and
+   touch keep working alongside it.
+   ========================================================= */
+const padHeld = { go:false, brake:false, left:false, right:false };
+const padTapPrev = {};
+let padSeen = false;
+
+function padSetHold(key, on){
+  if(on === padHeld[key]) return;
+  padHeld[key] = on; held[key] = on;
+  if(on) noteInput();
+}
+function padTap(name, pressed, fn){
+  if(pressed && !padTapPrev[name]){ noteInput(); fn(); }
+  padTapPrev[name] = pressed;
+}
+function updateGamepad(){
+  let pads;
+  try { pads = navigator.getGamepads ? navigator.getGamepads() : null; }
+  catch(err){ return; }                       // some browsers throw when blocked
+  if(!pads) return;
+  let gp = null;
+  for(const p of pads) if(p && p.connected){ gp = p; break; }
+  if(!gp){
+    if(padSeen){ padSeen=false; for(const k in padHeld) padSetHold(k,false); }
+    return;
+  }
+  if(!padSeen){ padSeen = true; console.info('[MHE] gamepad connected:', gp.id); }
+
+  const ax = gp.axes || [], bt = gp.buttons || [];
+  const down = i => !!(bt[i] && (bt[i].pressed || bt[i].value > 0.4));
+  const axis = i => (ax.length > i && Math.abs(ax[i]) > 0.3) ? ax[i] : 0;
+
+  // steering: left stick X or D-pad
+  const steer = axis(0);
+  padSetHold('left',  steer < -0.3 || down(14));
+  padSetHold('right', steer >  0.3 || down(15));
+  // throttle: right trigger, A, D-pad up, or stick pushed forward
+  padSetHold('go',    down(7) || down(0) || down(12) || axis(1) < -0.5);
+  // brake: left trigger, B, D-pad down, or stick pulled back
+  padSetHold('brake', down(6) || down(1) || down(13) || axis(1) >  0.5);
+
+  const vis = id => $(id).style.display === 'flex';
+  padTap('horn', down(2), ()=>{ if(vis('hornBtn')) kbTap('hornBtn'); });
+  padTap('rev',  down(3), ()=>{ if(vis('revBtn'))  kbTap('revBtn'); });
+  padTap('reset',down(8), ()=>{ if($('hud').classList.contains('show')) kbTap('resetBtn'); });
+  padTap('ok',   down(9), ()=>{
+    if($('cardWrap').classList.contains('show')) kbTap('cardBtn');
+    else if(vis('actionBtn')) kbTap('actionBtn');
+    else if($('titleScreen').classList.contains('show')) kbTap('startDriveBtn');
+    else if($('howtoScreen').classList.contains('show')) kbTap('goBtn');
+    else if($('finishScreen').classList.contains('show')) kbTap('againBtn');
+  });
+}
+window.addEventListener('gamepadconnected', e=>{
+  toast('🎮 Controller connected — stick steers, A = GO, B = BRAKE, X = HORN.', 3600);
+  console.info('[MHE] gamepad connected:', e.gamepad && e.gamepad.id);
+});
+window.addEventListener('gamepaddisconnected', ()=>{
+  for(const k in padHeld) padSetHold(k,false);
+  console.info('[MHE] gamepad disconnected');
+});
+
+/* block context menu / double-tap zoom on the kiosk */
+document.addEventListener('contextmenu', e=>e.preventDefault());
+document.addEventListener('dblclick', e=>e.preventDefault());
+
+</script>
+</body>
+</html>

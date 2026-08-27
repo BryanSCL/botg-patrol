@@ -1,3 +1,26 @@
+# 3PDC Online Activities
+
+Two independent, self-contained browser safety games live in this folder:
+
+1. **BotG Patrol: Spot the Contact Risk** — `index.html` (+ `style.css`, `script.js`), documented below.
+2. **Stay Alert Around MHE** — `stay-alert-around-mhe/stay-alert-around-mhe.html`, a single-file 3D
+   pallet-jack safety kiosk game (AnjouHealth × SATS, Tackling SIF FY26–27).
+   Open the file in Chrome — desktop or tablet (landscape). It needs internet
+   access once per load for the three.js CDN script. The vehicle throughout is
+   a rider (stand-on) powered pallet truck. Two playable segments:
+   **On the Jack** (drive it: pre-use check, blind corner, reversing, swing
+   radius, speed choice) and **On Foot** (walkway discipline, stop lines, eye
+   contact, reversing vehicles, swing radius, plus three optional floor
+   hazards to spot and report). Players can never get permanently stuck:
+   REVERSE is always available while driving, a **⟲ RESET** button returns to
+   the last safe checkpoint, stuck-detection prompts after ~3 s of blocked
+   input, and **✕ EXIT** (double-tap) returns to the game's own title screen.
+
+   Controls — keyboard: W/↑ = go, A D / ← → = steer, X/↓ = brake, H = horn,
+   R = reverse, C = reset, Esc = exit, Enter = confirm. Gamepad: left stick or
+   D-pad steers, A or RT = go, B or LT = brake, X = horn, Y = reverse,
+   Start = confirm, Back = reset.
+
 # BotG Patrol: Spot the Contact Risk
 
 A self-contained, mobile-first browser game built for a Google Data Centre
@@ -6,9 +29,9 @@ and JavaScript — no external libraries, fonts, or images.
 
 ## How to run
 
-1. Open `index.html` directly in any modern browser (Chrome, Edge, Firefox) —
-   desktop or mobile. Double-clicking the file works — the game has no
-   build step and makes no network requests.
+1. Open `index.html` directly in any modern browser (Chrome, Edge,
+   Firefox) — desktop or mobile. Double-clicking the file works — the game has
+   no build step and makes no network requests.
 2. Click/tap **Start Patrol** and play.
 
 If your browser blocks local-file features (rare, since this game uses no
