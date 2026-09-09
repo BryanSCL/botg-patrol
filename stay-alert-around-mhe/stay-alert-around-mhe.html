@@ -37,6 +37,24 @@
       border-radius:999px; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.2);
       backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
 
+  /* ============ bilingual: Chinese sits under the English ============ */
+  .zh { display:block; font-weight:700; letter-spacing:0; opacity:.9;
+        font-size:.72em; margin-top:.1em; }
+  #banner .zh { font-size:.68em; opacity:.86; margin-top:.14em; }
+  #toast .zh { font-size:.76em; opacity:.85; }
+  #cardTitle .zh { font-size:.6em; margin-top:.22em; color:#46505f; }
+  #cardFact .zh { font-size:.8em; margin-top:.45em; opacity:.95; }
+  #cardBtn .zh, #goBtn .zh, #againBtn .zh { font-size:.6em; margin-top:.05em; }
+  .ctl .zh { font-size:.4em; margin-top:.04em; opacity:.95; }
+  .ctl small .zh { font-size:13px; margin-top:.02em; }
+  #actionBtn .zh { font-size:.7em; }
+  #resetBtn .zh, #exitBtn .zh { font-size:.62em; }
+  #startRow .btn .zh { font-size:.52em; margin-top:.12em; }
+  .demoBtn .zh { font-size:12px; font-weight:700; }
+  .howTxt .zh { font-size:.76em; color:#a9bcdb; margin-top:.2em; }
+  .rule .zh { font-size:.8em; color:#bcd0ee; margin-top:.15em; }
+  #speedTags .zh { display:inline; font-size:11px; margin-left:3px; }
+
   /* ============ big tap buttons ============ */
   .btn { border:none; cursor:pointer; font-family:inherit; font-weight:800; color:#fff;
       border-radius:26px; letter-spacing:1px;
@@ -76,7 +94,9 @@
       box-shadow:0 6px 0 rgba(0,0,0,.4); }
   .demoBtn small { font-size:16px; font-weight:700; }
   .howTxt { font-size:min(3vw,32px); font-weight:700; text-align:left; min-width:280px; }
-  #goBtn { margin-top:34px; font-size:min(4.6vw,50px); padding:22px 110px; }
+  #goBtn { margin-top:24px; font-size:min(4.6vw,50px); padding:20px 100px; }
+  .hint { margin-top:10px; font-size:min(2vw,22px); color:#9fb2d4; font-weight:700; }
+  .hint.dim { margin-top:7px; font-size:min(2vw,20px); color:#7d90b5; }
 
   /* ============ HUD ============ */
   #hud { position:fixed; inset:0; z-index:50; display:none; pointer-events:none; }
@@ -206,10 +226,16 @@
     .rule { padding:7px 16px; font-size:min(2.2vw,20px); }
     .rule .ric { font-size:24px; }
     #againBtn { margin-top:14px; font-size:min(4vw,38px); padding:14px 60px; }
-    #howtoScreen h2 { font-size:min(4vw,40px); margin-bottom:14px; }
-    .howRow { gap:18px; margin:7px 0; }
-    .demoBtn { width:88px; height:68px; font-size:24px; }
-    #goBtn { margin-top:18px; font-size:min(4vw,42px); padding:16px 80px; }
+    #howtoScreen h2 { font-size:min(3.2vw,30px); margin-bottom:6px; }
+    .howRow { gap:14px; margin:4px 0; }
+    .demoBtn { width:72px; height:54px; font-size:19px; border-radius:13px; }
+    .demoBtn small { font-size:11px; }
+    .howTxt { font-size:min(2.1vw,21px); min-width:210px; }
+    .hint { margin-top:5px; font-size:min(1.65vw,17px); }
+    .hint.dim { margin-top:4px; font-size:min(1.55vw,16px); }
+    #goBtn { margin-top:10px; font-size:min(3.2vw,32px); padding:11px 56px; }
+    /* the bilingual banner gets tall on short screens — keep it off the view */
+    #banner { font-size:clamp(14px,1.9vw,26px); padding:9px 22px; }
   }
 
   /* rotate-device overlay — touch devices only (never block a desktop window) */
@@ -243,20 +269,20 @@
   <div id="speedPanel">
     <div id="speedNum">0<small> km/h</small></div>
     <div id="speedBarWrap"><div id="speedBar"></div></div>
-    <div id="speedTags"><span>SLOW</span><span>FAST</span></div>
+    <div id="speedTags"><span>SLOW<span class="zh">慢</span></span><span>FAST<span class="zh">快</span></span></div>
     <div id="limiterTag"></div>
   </div>
   <div id="dots"></div>
   <div id="beltStrap"></div>
-  <button class="btn blue ctl"  id="steerL"><span>&#9664;</span><small>LEFT</small></button>
-  <button class="btn blue ctl"  id="steerR"><span>&#9654;</span><small>RIGHT</small></button>
-  <button class="btn green ctl" id="goPedal"><span class="ico">&#9650;</span>GO</button>
-  <button class="btn red ctl"   id="brakePedal"><span class="ico">&#9632;</span>BRAKE<small>/ STOP</small></button>
-  <button class="btn amber ctl" id="hornBtn"><span class="ico">&#128226;</span>HORN</button>
-  <button class="btn grey ctl"  id="revBtn">REVERSE</button>
+  <button class="btn blue ctl"  id="steerL"><span>&#9664;</span><small>LEFT<span class="zh">左转</span></small></button>
+  <button class="btn blue ctl"  id="steerR"><span>&#9654;</span><small>RIGHT<span class="zh">右转</span></small></button>
+  <button class="btn green ctl" id="goPedal"><span class="ico">&#9650;</span>GO<span class="zh">前进</span></button>
+  <button class="btn red ctl"   id="brakePedal"><span class="ico">&#9632;</span>BRAKE<span class="zh">刹车</span></button>
+  <button class="btn amber ctl" id="hornBtn"><span class="ico">&#128226;</span>HORN<span class="zh">喇叭</span></button>
+  <button class="btn grey ctl"  id="revBtn">REVERSE<span class="zh">倒车</span></button>
   <button class="btn amber ctl" id="actionBtn">ACTION</button>
-  <button class="btn grey" id="resetBtn" aria-label="Reset to last safe point">&#10226; RESET<small>back to safe point</small></button>
-  <button class="btn grey" id="exitBtn" aria-label="Exit to title screen">&#10005; EXIT</button>
+  <button class="btn grey" id="resetBtn" aria-label="Reset to last safe point">&#10226; RESET<span class="zh">重置</span></button>
+  <button class="btn grey" id="exitBtn" aria-label="Exit to title screen">&#10005; EXIT<span class="zh">退出</span></button>
 </div>
 
 <div id="toast"></div>
@@ -280,52 +306,57 @@
       <rect x="25" y="9" width="7" height="4.4" rx="1.6" fill="#c62f28"/>
     </svg>
   </div>
-  <h1>STAY ALERT<br>AROUND <span class="hl">MHE</span></h1>
-  <div class="theme">Drive the pallet jack. Walk the floor. Keep everyone safe.</div>
+  <h1>STAY ALERT<br>AROUND <span class="hl">MHE</span>
+    <span class="zh" style="font-size:.42em; margin-top:.25em; opacity:.95;">警惕物料搬运设备</span></h1>
+  <div class="theme">Drive the pallet jack. Walk the floor. Keep everyone safe.
+    <span class="zh">驾驶托盘车，步行通道，确保人人安全。</span></div>
   <div class="hazardBar" aria-hidden="true"></div>
   <div class="chipRow" aria-hidden="true">
-    <span class="tchip">&#128666; First-person 3D</span>
-    <span class="tchip">&#128100; Two roles &mdash; driver &amp; pedestrian</span>
-    <span class="tchip">&#9201; About 5 minutes</span>
+    <span class="tchip">&#128666; First-person 3D&nbsp;·&nbsp;第一人称 3D</span>
+    <span class="tchip">&#128100; Driver &amp; pedestrian&nbsp;·&nbsp;司机与行人</span>
+    <span class="tchip">&#9201; About 5 minutes&nbsp;·&nbsp;约 5 分钟</span>
   </div>
   <div id="startRow">
-    <button class="btn green pulse" id="startDriveBtn">&#128666; ON THE JACK<small>drive the pallet jack</small></button>
-    <button class="btn blue pulse" id="startWalkBtn">&#128694; ON FOOT<small>walk the warehouse</small></button>
+    <button class="btn green pulse" id="startDriveBtn">&#128666; ON THE JACK<span class="zh">驾驶托盘车</span></button>
+    <button class="btn blue pulse" id="startWalkBtn">&#128694; ON FOOT<span class="zh">步行穿越仓库</span></button>
   </div>
   <div id="titleFoot">AnjouHealth &times; SATS &nbsp;&bull;&nbsp; Tackling SIF Promotion Campaign FY26&ndash;27 &nbsp;&bull;&nbsp; Booth 2</div>
 </div>
 
 <div class="screen" id="howtoScreen">
-  <h2>HOW TO PLAY &mdash; just tap!</h2>
+  <h2>HOW TO PLAY &mdash; just tap! &nbsp;·&nbsp; 游戏方法 &mdash; 轻触即可</h2>
   <div class="howRow">
     <div class="howPic">
-      <div class="demoBtn" style="background:#2c8a50;">&#9650;<small>GO</small></div>
-      <div class="demoBtn" style="background:#c03531;">&#9632;<small>BRAKE</small></div>
+      <div class="demoBtn" style="background:#2c8a50;">&#9650;<small>GO<span class="zh">前进</span></small></div>
+      <div class="demoBtn" style="background:#c03531;">&#9632;<small>BRAKE<span class="zh">刹车</span></small></div>
     </div>
-    <div class="howTxt">Hold <b>GO</b> to move.<br>Hold <b>BRAKE</b> to stop.</div>
+    <div class="howTxt">Hold <b>GO</b> to move.<br>Hold <b>BRAKE</b> to stop.
+      <span class="zh">按住「前进」移动，按住「刹车」停下。</span></div>
   </div>
   <div class="howRow">
     <div class="howPic">
-      <div class="demoBtn" style="background:#2c5cb0;">&#9664;<small>LEFT</small></div>
-      <div class="demoBtn" style="background:#2c5cb0;">&#9654;<small>RIGHT</small></div>
+      <div class="demoBtn" style="background:#2c5cb0;">&#9664;<small>LEFT<span class="zh">左转</span></small></div>
+      <div class="demoBtn" style="background:#2c5cb0;">&#9654;<small>RIGHT<span class="zh">右转</span></small></div>
     </div>
-    <div class="howTxt">Hold to steer.</div>
+    <div class="howTxt">Hold to steer.<span class="zh">按住转向。</span></div>
   </div>
   <div class="howRow">
     <div class="howPic">
-      <div class="demoBtn" style="background:#d3860a; border-radius:50%;">&#128226;<small>HORN</small></div>
+      <div class="demoBtn" style="background:#d3860a; border-radius:50%;">&#128226;<small>HORN<span class="zh">喇叭</span></small></div>
     </div>
-    <div class="howTxt">Tap the horn near corners<br>and people.</div>
+    <div class="howTxt">Tap the horn near corners<br>and people.
+      <span class="zh">在转角和有人的地方按喇叭。</span></div>
   </div>
-  <div style="margin-top:14px; font-size:min(2vw,22px); color:#9fb2d4; font-weight:700;">
-    Keyboard: W or &#8593; = GO &nbsp;&middot;&nbsp; A D or &#8592; &#8594; = steer &nbsp;&middot;&nbsp; X or &#8595; = BRAKE
+  <div class="hint">
+    Keyboard 键盘: W or &#8593; = GO &nbsp;&middot;&nbsp; A D or &#8592; &#8594; = steer &nbsp;&middot;&nbsp; X or &#8595; = BRAKE
     &nbsp;&middot;&nbsp; H = HORN &nbsp;&middot;&nbsp; R = REVERSE &nbsp;&middot;&nbsp; C = RESET</div>
-  <div style="margin-top:6px; font-size:min(2vw,22px); color:#9fb2d4; font-weight:700;">
-    &#127918; Controller: left stick steers &nbsp;&middot;&nbsp; A / RT = GO &nbsp;&middot;&nbsp; B / LT = BRAKE
+  <div class="hint">
+    &#127918; Controller 手柄: left stick steers &nbsp;&middot;&nbsp; A / RT = GO &nbsp;&middot;&nbsp; B / LT = BRAKE
     &nbsp;&middot;&nbsp; X = HORN &nbsp;&middot;&nbsp; Y = REVERSE</div>
-  <div style="margin-top:8px; font-size:min(2vw,20px); color:#7d90b5; font-weight:700;">
-    Stuck? Tap &#10226; RESET (top right) any time &mdash; you go back to the last safe point.</div>
-  <button class="btn green pulse" id="goBtn">GO</button>
+  <div class="hint dim">
+    Stuck? Tap &#10226; RESET (top right) any time &mdash; you go back to the last safe point.<br>
+    卡住了？随时轻触 &#10226; RESET（右上角），即可回到上一个安全点。</div>
+  <button class="btn green pulse" id="goBtn">GO<span class="zh">开始</span></button>
 </div>
 
 <div id="cardWrap">
@@ -338,24 +369,25 @@
 </div>
 
 <div class="screen" id="finishScreen">
-  <h2>&#127942; You stayed alert.</h2>
+  <h2>&#127942; You stayed alert. &nbsp;·&nbsp; 你保持了警觉。</h2>
   <div class="sub">Five safeguards kept people safe today:</div>
   <div id="rules">
-    <div class="rule"><span class="ric">&#128694;</span>Stay in the yellow walkway. Stop and look at crossings.</div>
-    <div class="rule"><span class="ric">&#128678;</span>Control your speed &mdash; the limiter helps, but stopping is on you.</div>
-    <div class="rule"><span class="ric">&#128226;</span>Sound the horn at corners. Make eye contact before you pass.</div>
-    <div class="rule"><span class="ric">&#128260;</span>Never walk or drive behind a turning pallet jack &mdash; the tail swings wide.</div>
-    <div class="rule"><span class="ric">&#128309;</span>Respect the beacon and the belt &mdash; buckle up, watch the amber light.</div>
+    <div class="rule"><span class="ric">&#128694;</span><span>Stay in the yellow walkway. Stop and look at crossings.<span class="zh">走在黄色人行道内，在路口停下并观察。</span></span></div>
+    <div class="rule"><span class="ric">&#128678;</span><span>Control your speed &mdash; the limiter helps, but stopping is on you.<span class="zh">控制车速 — 限速器有帮助，但刹车靠你自己。</span></span></div>
+    <div class="rule"><span class="ric">&#128226;</span><span>Sound the horn at corners. Make eye contact before you pass.<span class="zh">在转角按喇叭，通过前与对方目光确认。</span></span></div>
+    <div class="rule"><span class="ric">&#128260;</span><span>Never walk or drive behind a turning pallet jack &mdash; the tail swings wide.<span class="zh">切勿走到或驶到转弯托盘车后方 — 车尾会大幅外摆。</span></span></div>
+    <div class="rule"><span class="ric">&#128309;</span><span>Respect the beacon and the belt &mdash; buckle up, watch the amber light.<span class="zh">重视警示灯与安全带 — 系好安全带，留意黄灯。</span></span></div>
   </div>
-  <button class="btn green pulse" id="againBtn">PLAY AGAIN</button>
+  <button class="btn green pulse" id="againBtn">PLAY AGAIN<span class="zh">再玩一次</span></button>
 </div>
 
-<div id="rotate">&#128241;&#8635;<br>Please turn the screen sideways<br>(landscape)</div>
+<div id="rotate">&#128241;&#8635;<br>Please turn the screen sideways (landscape)
+  <span class="zh" style="font-size:.7em;">请将屏幕横放</span></div>
 
 <div id="errScreen">
-  <h2>&#9888;&#65039; Something went wrong</h2>
+  <h2>&#9888;&#65039; Something went wrong &nbsp;·&nbsp; 出现问题</h2>
   <p id="errMsg">The game hit an unexpected problem.</p>
-  <button class="btn green" onclick="location.reload()">RELOAD GAME</button>
+  <button class="btn green" onclick="location.reload()">RELOAD GAME<span class="zh">重新载入</span></button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -390,6 +422,155 @@ const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => v<a?a:(v>b?b:v);
 const lerp = (a,b,t) => a+(b-a)*t;
 const TAU = Math.PI*2;
+
+/* =========================================================
+   BILINGUAL — every runtime string, English then 简体中文.
+   Keyed on the exact English passed to banner()/toast()/showCard()/
+   setAction(); bi() appends the Chinese, and anything without an entry
+   simply shows English, so a missing key can never break a screen.
+   ========================================================= */
+const ZH = {
+  /* ---- banners ---- */
+  '&#10004;&#65039; <span class="em">SAFE</span>': '安全',
+  '&#9888;&#65039; <span class="em">STRUCK</span>': '已发生撞击',
+  '&#9888;&#65039; <span class="em">You did not stop.</span>': '你没有停车。',
+  '&#9940; <span class="em">STOP</span> &mdash; person crossing ahead.': '停车 — 前方有人横过。',
+  '&#9940; <span class="em">WAIT</span> &mdash; pallet jack crossing.': '等待 — 托盘车正在通过。',
+  '&#9940; <span class="em">WAIT</span> &mdash; a second pallet jack is slowing for you&hellip;': '等待 — 第二辆托盘车正在为你减速…',
+  '&#9940; <span class="em">WAIT</span> &mdash; reverse beeps! A truck is backing across.': '等待 — 倒车提示音！有车正在倒车横过。',
+  '&#9989; <span class="em">Clear</span> &mdash; drive on to the green ring.': '已安全 — 继续驶向绿色圆环。',
+  '&#128077; The driver waves &mdash; <span class="em">cross now.</span>': '司机挥手示意 — 现在可以通过。',
+  '&#128077; They are crossing. <span class="em">Wait until they are clear.</span>': '对方正在通过。等他们完全离开。',
+  'You are in the seat. <span class="em">Buckle up first.</span>': '你已就位。请先系好安全带。',
+  'Drive ahead. <span class="em">Blind corner</span> coming &mdash; slow down + tap HORN.': '向前行驶。前方是盲角 — 减速并按喇叭。',
+  'Drive to the <span class="em">green bay</span> and STOP on it.': '驶向绿色装货区，并停在上面。',
+  'Forks in. Now <span class="em">REVERSE</span> out &mdash; check behind you.': '货叉已插入。现在倒车驶出 — 注意后方。',
+  'Reversing. <span class="em">Your view behind is limited.</span> Go slow.': '正在倒车。后方视野有限，请慢行。',
+  'Follow the <span class="em">green path</span> &mdash; line up on the amber pad first.': '沿着绿色路线 — 先在琥珀色区域对正车身。',
+  'Now hold <span class="em">LEFT + GO</span> &mdash; follow the path round and park in the green box. Watch your TAIL!': '现在按住「左转 + 前进」— 沿路线绕行并停入绿色方框。注意车尾！',
+  'Head back to the dock. <span class="em">Sound the horn</span> near people &mdash; and keep a speed you can stop from.': '返回装卸区。靠近人员时按喇叭 — 并保持能够刹停的车速。',
+  'Walk the <span class="em">yellow walkway</span>. STOP at the white line.': '走在黄色人行道上。在白线前停下。',
+  'It has stopped. <span class="em">Make eye contact</span> before you cross.': '车已停下。通过前先与司机目光确认。',
+  'Walk on. <span class="em">Listen</span> for reverse beeps.': '继续步行。注意倒车提示音。',
+  'Almost there. <span class="em">Never cut behind a turning pallet jack.</span> Use the crossing.': '快到了。切勿从转弯的托盘车后方穿过，请走人行横道。',
+
+  /* ---- action / gear buttons ---- */
+  '&#128737;&#65039; TAP TO BUCKLE SEATBELT': '轻触系上安全带',
+  '&#128064; MAKE EYE CONTACT': '与司机目光确认',
+  '&#9888;&#65039; REPORT HAZARD': '报告隐患',
+  'REVERSE': '倒车',
+  'FORWARD': '前进档',
+  'TRY AGAIN': '重试',
+  'CONTINUE': '继续',
+
+  /* ---- toasts ---- */
+  'Good — they heard you!': '很好 — 对方听到了！',
+  'Interlock released — the truck can move now.': '联锁已解除 — 现在可以行驶了。',
+  'Not on the bay yet — stop with the green square under your forks.': '还没停在装货区 — 让绿色方块位于货叉下方。',
+  '⬅ The green bay is BEHIND you — tap REVERSE and back onto it.': '⬅ 绿色装货区在你后方 — 按「倒车」再退回去。',
+  'One more coming — it is braking for you.': '还有一辆正在驶来 — 它正在为你刹车。',
+  'Someone is behind you!': '你的后方有人！',
+  'They stopped — horn works.': '对方停下了 — 喇叭起作用了。',
+  'Watch the amber beacon — it warns of the swing.': '注意琥珀色警示灯 — 它提示车尾摆动。',
+  'Stuck? Tap ↩ RESET (top right) — or try REVERSE.': '卡住了？轻触右上角 ↩ RESET — 或试试倒车。',
+  'Tap EXIT again to end and return to the title.': '再按一次 EXIT 即可结束并返回主页。',
+  '↩ Back at the last safe point.': '↩ 已回到上一个安全点。',
+  '↩ Position reset — back at the last safe point.': '↩ 位置已重置 — 回到上一个安全点。',
+  '↩ Straighten up along the path first, then swing LEFT.': '↩ 先沿路线摆正车身，再向左转弯。',
+  '⏳ Holding back is right — wait until it is clear.': '⏳ 在此等候是正确的 — 等安全后再走。',
+  '⚠ He did NOT see you! Always make eye contact.': '⚠ 他并没有看到你！务必先目光确认。',
+  '⚠ Someone has stepped out in front of you — STOP!': '⚠ 有人走到你前方 — 立即停车！',
+  '⚠ You left the walkway — see the beacon? The tail swings here!': '⚠ 你离开了人行道 — 看到警示灯了吗？车尾会摆到这里！',
+  '✅ The driver has seen you — cross now.': '✅ 司机已看到你 — 现在通过。',
+  '🎮 Controller connected — stick steers, A = GO, B = BRAKE, X = HORN.': '🎮 手柄已连接 — 摇杆转向，A = 前进，B = 刹车，X = 喇叭。',
+  '👀 Tap MAKE EYE CONTACT — then you can cross.': '👀 轻触「与司机目光确认」— 然后即可通过。',
+  '👉 Follow the green path onto the amber pad on your right.': '👉 沿绿色路线驶上右侧的琥珀色区域。',
+  '👉 Hold the green GO button to move.': '👉 按住绿色「前进」按钮即可移动。',
+  '👉 Tap MAKE EYE CONTACT, then cross.': '👉 轻触「与司机目光确认」，然后通过。',
+  '👉 Tap REVERSE, then hold GO to back out.': '👉 按「倒车」，再按住「前进」倒出。',
+  '👉 Tap the big amber button to buckle up.': '👉 轻触琥珀色大按钮系好安全带。',
+  '👋 He sees you. Safe to cross.': '👋 他看到你了，可以安全通过。',
+  '💡 Spot a floating ⚠ ? Walk up and REPORT the hazard — bonus points for sharp eyes.': '💡 看到漂浮的 ⚠ 了吗？走近并「报告隐患」— 眼尖有加分。',
+  '🔊 Those beeps mean a truck is reversing. Stand back.': '🔊 提示音代表有车正在倒车，请退后。',
+  '🚨 Truck crossing — STOP at the line and let it pass.': '🚨 有车正在通过 — 在线前停下，让它先行。',
+  '🛡 Buckle up first — tap the amber button.': '🛡 请先系好安全带 — 轻触琥珀色按钮。',
+  '👍 Horn AND a full stop — textbook.': '👍 按喇叭并完全停车 — 标准做法。',
+  '👍 Good stop. Let them clear.': '👍 停得好。等他们通过。',
+  '👍 They heard the horn — stepping back out of your way.': '👍 他们听到喇叭 — 正退开让路。',
+  '👍 Horn heard — they are holding back to let you pass.': '👍 喇叭已听到 — 他们正在等你先过。',
+
+  /* ---- teaching card titles ---- */
+  'Too fast for a blind corner.': '盲角车速过快。',
+  'You drove past without stopping.': '你没有停车就开了过去。',
+  'Horn, then a full stop — textbook.': '先按喇叭，再完全停车 — 标准做法。',
+  'You stopped and let them cross.': '你停车让对方先通过。',
+  'Struck while reversing.': '倒车时发生撞击。',
+  'Backed out safely.': '安全倒出。',
+  'Clean turn — tail stayed clear.': '转弯干净 — 车尾未碰到人。',
+  'The tail swung into a person.': '车尾摆动撞到了人。',
+  'Struck the worker.': '撞到了工人。',
+  'Speed made it unstoppable.': '车速过快，无法刹停。',
+  'You could stop — because you were slow.': '你能刹停 — 因为你开得慢。',
+  'Horn used — and they stayed clear.': '使用了喇叭 — 对方保持了距离。',
+  'Back at the dock — everyone safe.': '回到装卸区 — 大家都安全。',
+  'Now see it from the ground.': '现在从地面视角体验。',
+  'Seen, acknowledged, safe.': '被看到、被确认、才安全。',
+  'You heard it, you stopped.': '你听到了，也停下了。',
+  'Struck by the pallet jack.': '被托盘车撞到。',
+  'The swinging tail hit you.': '摆动的车尾撞到了你。',
+  'You made it — alert the whole way.': '你成功了 — 全程保持警觉。',
+
+  /* ---- teaching card lessons ---- */
+  'A person stepped out — at speed, the pallet jack could not stop. Slow right down and sound your horn at every blind corner.':
+    '有人走了出来 — 车速快时托盘车根本停不下来。每个盲角都要大幅减速并按喇叭。',
+  'Someone stepped into your path and you kept moving. Steering around a person is not a substitute for stopping — you cannot know which way they will step. Come to a full stop, let them clear, then move off.':
+    '有人走进你的行进路线，你却继续前进。绕过行人不能代替停车 — 你无法预知他会往哪边走。请完全停车，等对方离开后再起步。',
+  'You warned them before the corner and stopped to let them cross. That is exactly how to take a blind corner.':
+    '你在转角前发出警告，并停车让对方通过。这正是通过盲角的正确做法。',
+  'Stopping was the right call. Next time sound the horn BEFORE the corner as well, so people know you are coming before they step out.':
+    '停车是正确的选择。下次请在转角前就按喇叭，让人在走出来之前就知道你要过来。',
+  'A loaded pallet jack’s rear view is poor. Reverse at creep speed, look over your shoulder, and use the horn.':
+    '载货的托盘车后方视野很差。倒车时应极慢速行驶、回头查看，并使用喇叭。',
+  'Slow, checked, warned. Reversing causes many struck-by injuries — creep speed saves lives.':
+    '慢速、查看、示警。倒车造成大量撞击伤害 — 极慢速能救命。',
+  'You swung wide into open floor instead of cutting it tight. A pallet jack needs that room, because the rear end sweeps out the opposite way — never stand beside a turning pallet jack.':
+    '你选择了大弧度绕行，而不是急转弯。托盘车需要这样的空间，因为车尾会向相反方向大幅外摆 — 切勿站在转弯的托盘车旁边。',
+  'When a pallet jack turns, its rear end sweeps WIDE the other way. Keep clear of the swing zone — driver and walker both.':
+    '托盘车转弯时，车尾会向相反方向大幅外摆。无论司机还是行人，都要远离摆尾区域。',
+  'Slow down around people. If someone is close, stop and let them move first.':
+    '在有人的地方减速。若有人靠近，先停车让对方通过。',
+  'Stopping distance grows massively with speed. The limiter caps the pallet jack — but a SAFE speed is the driver’s choice.':
+    '刹车距离随车速急剧增加。限速器只是上限 — 安全车速由司机自己掌握。',
+  'At low speed you stop in under a metre. At full speed you need many metres. Choose the speed that lets you stop.':
+    '低速时不到一米即可停下，全速时需要好几米。请选择让你能停下来的车速。',
+  'You warned them before you got there, so they held back and you passed safely. Sound the horn at crossings and blind spots every time — do not wait to be seen.':
+    '你在到达之前就发出警告，对方因此退让，你安全通过。每次在路口和盲区都要按喇叭 — 不要等着被看见。',
+  'You controlled your speed the whole way. That is what keeps stopping distance short. Next time sound the horn too, so people know you are coming.':
+    '你全程控制了车速，这正是缩短刹车距离的关键。下次也按一下喇叭，让人知道你要过来。',
+  'You drove the pallet jack. Next: walk the same warehouse on foot — and stay safe around one you do NOT control.':
+    '你已驾驶过托盘车。接下来：步行穿越同一个仓库 — 在你无法控制的车辆旁保持安全。',
+  'Stop at the line. Wait for it to stop. Make eye contact so you KNOW the driver sees you. Then cross.':
+    '在线前停下，等车停稳，与司机目光确认，确定他看到你之后再通过。',
+  'You stepped into a pallet jack’s path at a crossing. Stop at the line, look, and let it pass.':
+    '你在路口走进了托盘车的行进路线。请在线前停下、观察，让它先通过。',
+  'You crossed before the driver saw you. Wait until it stops AND the driver acknowledges you.':
+    '你在司机看到你之前就穿过了。要等车停下并且司机示意后再通过。',
+  'The driver never saw you. Stop at lines, listen for beeps and horns, and stay inside the yellow walkway.':
+    '司机自始至终没有看到你。请在线前停下、留意提示音与喇叭，并走在黄色人行道内。',
+  'Struck by a reversing truck. Drivers can barely see behind — the beep IS the warning. Stop and stay clear.':
+    '被倒车中的车辆撞到。司机几乎看不到后方 — 提示音就是警告。请停下并保持距离。',
+  'Reversing trucks cause many serious injuries. The beep and the white reverse lights mean: stand back.':
+    '倒车车辆造成许多严重伤害。提示音和白色倒车灯的意思是：请退后。',
+  'The tail of a turning pallet jack swings WIDE — it hit you before the driver could know. Never walk behind or beside a turning pallet jack.':
+    '转弯托盘车的车尾会大幅外摆 — 司机还来不及察觉就撞到了你。切勿走在转弯托盘车的后方或旁边。',
+  'Yellow walkway, stop lines, eye contact, ears open, clear of the swing. That is how you stay safe around MHE.':
+    '黄色人行道、停止线、目光确认、留心声响、远离摆尾区。这就是在搬运设备旁保持安全的方法。',
+};
+function bi(en){
+  if(en == null) return en;
+  const zh = ZH[en];
+  return zh ? en + '<span class="zh">' + zh + '</span>' : en;
+}
 
 /* ---- fatal error handling: never fail silently ---- */
 function fatal(msg, detail){
@@ -1067,12 +1248,12 @@ function noteInput(){ lastInput = clockNow; nudgeShown=false; }
    HUD helpers
    ========================================================= */
 function banner(html, urgent){
-  const b=$('banner'); b.innerHTML=html;
+  const b=$('banner'); b.innerHTML=bi(html);
   b.classList.toggle('urgent', !!urgent);
 }
 let toastTimer=null;
 function toast(msg, ms=2600){
-  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  const t=$('toast'); t.innerHTML=bi(msg); t.classList.add('show');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), ms);
 }
 function setDots(total, current){
@@ -1089,7 +1270,7 @@ function showBtns(map){   // {goPedal:1, revBtn:0, ...}
 function setAction(label, visible){
   const a=$('actionBtn');
   a.style.display = visible?'flex':'none';
-  if(label) a.innerHTML=label;
+  if(label) a.innerHTML=bi(label);
   a.classList.toggle('pulse', !!visible);
 }
 
@@ -1112,9 +1293,9 @@ let cardCb=null;
 function showCard(kind, icon, title, fact, btnLabel, cb){
   const c=$('card'); c.className=kind;                  // 'bad' | 'good'
   $('cardIcon').textContent=icon;
-  $('cardTitle').textContent=title;
-  $('cardFact').textContent=fact;
-  const b=$('cardBtn'); b.textContent=btnLabel;
+  $('cardTitle').innerHTML=bi(title);
+  $('cardFact').innerHTML=bi(fact);
+  const b=$('cardBtn'); b.innerHTML=bi(btnLabel);
   b.className='btn '+(kind==='bad'?'green':'green');
   cardCb=cb; $('cardWrap').classList.add('show');
   player.frozen=true; held.go=held.brake=held.left=held.right=false;
@@ -1250,8 +1431,8 @@ function updateSpeedHUD(){
   $('speedNum').innerHTML = kmh+'<small> km/h</small>';
   const r = player.speed / (player.mode==='drive' ? TUNE.maxFwd : TUNE.walkSpeed);
   $('speedBar').style.width = (r*100)+'%';
-  $('limiterTag').textContent =
-    player.mode==='drive' && player.speed>=TUNE.maxFwd-0.05 ? '⚠ LIMITER: at cap' : '';
+  $('limiterTag').innerHTML =
+    player.mode==='drive' && player.speed>=TUNE.maxFwd-0.05 ? '⚠ LIMITER 限速已达上限' : '';
 }
 /* =========================================================
    MOMENT / CONSEQUENCE ENGINE
@@ -1323,7 +1504,7 @@ function safeMoment(title, fact, cb){
 /* gear changes always go through here so the button label stays in sync */
 function setGear(g){
   player.gear = g;
-  $('revBtn').textContent = g<0 ? 'FORWARD' : 'REVERSE';
+  $('revBtn').innerHTML = bi(g<0 ? 'FORWARD' : 'REVERSE');
 }
 
 /* checkpoints — where TRY AGAIN / RESET puts you */
@@ -1965,9 +2146,9 @@ function buildCable(g){
   coil.rotation.x=-Math.PI/2; coil.position.set(2.2,0.055,0.2); g.add(coil);
 }
 const hazardTags = [
-  { x:-8.6, z:14.5,  build:buildSpill,  title:'Spill beside the walkway' },
-  { x:-8.8, z:-2.0,  build:buildPallet, title:'Unstable load on a pallet' },
-  { x:-9.3, z:-22.5, build:buildCable,  title:'Cable trailing across the floor' },
+  { x:-8.6, z:14.5,  build:buildSpill,  title:'Spill beside the walkway',            zh:'人行道旁的洒漏' },
+  { x:-8.8, z:-2.0,  build:buildPallet, title:'Unstable load on a pallet',           zh:'托盘上不稳的货物' },
+  { x:-9.3, z:-22.5, build:buildCable,  title:'Cable trailing across the floor',     zh:'横跨地面的电缆' },
 ].map(t=>{
   const g=new THREE.Group();
   t.build(g);                                   // the physical hazard itself
@@ -2017,7 +2198,10 @@ function reportTag(t){
   tagPromptShown=false; setAction(null,false);
   AudioSys.chime();
   const n = hazardTags.filter(x=>x.found).length;
-  toast(`✅ Reported ${n}/3: ${t.title}`, 3000);
+  const el=$('toast');
+  el.innerHTML = `✅ Reported ${n}/3: ${t.title}<span class="zh">✅ 已报告 ${n}/3：${t.zh}</span>`;
+  el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'), 3000);
   console.info('[MHE] hazard reported:', t.title);
 }
 
@@ -2243,9 +2427,11 @@ function finishGame(){
   clearAI(); removePeds(); clearBlood();
   setAmbient(false); setTagsVisible(false);
   const n = hazardTags.filter(t=>t.found).length;
-  document.querySelector('#finishScreen .sub').textContent = n>0
-    ? `Five safeguards kept people safe today — and you reported ${n}/3 floor hazards:`
-    : 'Five safeguards kept people safe today:';
+  document.querySelector('#finishScreen .sub').innerHTML = n>0
+    ? `Five safeguards kept people safe today — and you reported ${n}/3 floor hazards:` +
+      `<span class="zh">今天有五项防护措施保障了大家的安全 — 你还报告了 ${n}/3 处地面隐患：</span>`
+    : 'Five safeguards kept people safe today:' +
+      '<span class="zh">今天有五项防护措施保障了大家的安全：</span>';
   $('finishScreen').classList.add('show');
   AudioSys.chime();
 }
