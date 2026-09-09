@@ -15,6 +15,10 @@ Two independent, self-contained browser safety games live in this folder:
    REVERSE is always available while driving, a **⟲ RESET** button returns to
    the last safe checkpoint, stuck-detection prompts after ~3 s of blocked
    input, and **✕ EXIT** (double-tap) returns to the game's own title screen.
+   The swing-radius challenge runs inside a fenced turning bay with a painted
+   route, flowing chevrons, a cone island and numbered marks (1 line up ·
+   2 swing wide · 3 park). The fence is only up for that moment; it cannot be
+   driven around, and being pinned or circling auto-returns you to the pad.
 
    Controls — keyboard: W/↑ = go, A D / ← → = steer, X/↓ = brake, H = horn,
    R = reverse, C = reset, Esc = exit, Enter = confirm. Gamepad: left stick or

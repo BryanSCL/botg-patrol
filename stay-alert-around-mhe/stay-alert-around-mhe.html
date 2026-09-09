@@ -447,6 +447,8 @@ const ZH = {
   'Forks in. Now <span class="em">REVERSE</span> out &mdash; check behind you.': '货叉已插入。现在倒车驶出 — 注意后方。',
   'Reversing. <span class="em">Your view behind is limited.</span> Go slow.': '正在倒车。后方视野有限，请慢行。',
   'Follow the <span class="em">green path</span> &mdash; line up on the amber pad first.': '沿着绿色路线 — 先在琥珀色区域对正车身。',
+  'Into the <span class="em">turning bay</span> &mdash; follow the green path to pad <span class="em">1</span>.': '进入转弯区 — 沿绿色路线驶到 1 号琥珀色区域。',
+  'Hold <span class="em">LEFT + GO</span> &mdash; sweep wide round the cones to <span class="em">2</span>, then park on <span class="em">3</span>. Watch your TAIL!': '按住「左转 + 前进」— 大弧度绕过锥筒到 2，再停到 3。注意车尾！',
   'Now hold <span class="em">LEFT + GO</span> &mdash; follow the path round and park in the green box. Watch your TAIL!': '现在按住「左转 + 前进」— 沿路线绕行并停入绿色方框。注意车尾！',
   'Head back to the dock. <span class="em">Sound the horn</span> near people &mdash; and keep a speed you can stop from.': '返回装卸区。靠近人员时按喇叭 — 并保持能够刹停的车速。',
   'Walk the <span class="em">yellow walkway</span>. STOP at the white line.': '走在黄色人行道上。在白线前停下。',
@@ -485,6 +487,9 @@ const ZH = {
   '🎮 Controller connected — stick steers, A = GO, B = BRAKE, X = HORN.': '🎮 手柄已连接 — 摇杆转向，A = 前进，B = 刹车，X = 喇叭。',
   '👀 Tap MAKE EYE CONTACT — then you can cross.': '👀 轻触「与司机目光确认」— 然后即可通过。',
   '👉 Follow the green path onto the amber pad on your right.': '👉 沿绿色路线驶上右侧的琥珀色区域。',
+  'The bay is fenced — you cannot go wrong. Follow 1 → 2 → 3.': '转弯区已围起 — 不会走错。依次跟随 1 → 2 → 3。',
+  '↩ You went right round. One half-turn only — stop on green box 3.': '↩ 你转了一整圈。只需转半圈 — 停在 3 号绿色方框。',
+  '👉 Follow the white arrows onto amber pad 1.': '👉 沿白色箭头驶上 1 号琥珀色区域。',
   '👉 Hold the green GO button to move.': '👉 按住绿色「前进」按钮即可移动。',
   '👉 Tap MAKE EYE CONTACT, then cross.': '👉 轻触「与司机目光确认」，然后通过。',
   '👉 Tap REVERSE, then hold GO to back out.': '👉 按「倒车」，再按住「前进」倒出。',
@@ -846,7 +851,10 @@ function box(w,h,d,mat,x,y,z,ry=0,shadow=true){
   m.castShadow=shadow; m.receiveShadow=true;
   world.add(m); return m;
 }
-function collide(x,z,w,d){ colliders.push({minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2}); }
+function collide(x,z,w,d){
+  const c = {minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2};
+  colliders.push(c); return c;      // returned so temporary barriers can be toggled
+}
 
 const M = {
   concrete: new THREE.MeshStandardMaterial({ map:Tex.concrete, roughness:0.94, metalness:0.02 }),
@@ -917,15 +925,22 @@ function rackBay(x,z,ry,bays=4,levels=3){
 }
 // racking flanking the main aisle (gaps at cross-aisle z=4..10)
 const bayLen = 4*2.6;
+const rackRows = [];
 for(const side of [-1,1]){
   const rx = side*5.5;
   // west side opens into a staging floor south of z≈-15 (seg-2 work area + crossing)
   const zcs = side<0 ? [-10.2,-4.9, 13.5,18.8,24.1]
-                     : [-20.8,-15.5,-10.2,-4.9, 13.5,18.8,24.1];
-  for(const zc of zcs){
-    rackBay(rx, zc, Math.PI/2, 4, 3);
-    collide(rx, zc, 1.4, bayLen+0.3);
-  }
+                     : [-10.2,-4.9, 13.5,18.8,24.1];
+  for(const zc of zcs) rackRows.push([rx, zc]);
+}
+/* The two east rows that flank the turning bay used to sit at x=5.5, i.e. a
+   rack face 4.8 m out — testers clipped them constantly during the swing.
+   They are set back to x=9.0 (face 8.3) so the bay is a genuinely wide,
+   purpose-built turning area rather than a slot between two racks. */
+rackRows.push([9.0,-20.8],[9.0,-15.5]);
+for(const [rx,zc] of rackRows){
+  rackBay(rx, zc, Math.PI/2, 4, 3);
+  collide(rx, zc, 1.4, bayLen+0.3);
 }
 // far racking along cross-aisle (kept west of the walkway — walkway stays clear)
 rackBay(-16.5, 1.8, 0, 3, 3);  collide(-16.5,1.8, 3*2.6+0.3, 1.4);
@@ -1327,6 +1342,7 @@ scene.add(playerTruck.group);
 
 function collideCircle(x,z,r){
   for(const c of colliders){
+    if(c.off) continue;                      // barriers that are only up in some moments
     const nx = clamp(x, c.minX, c.maxX), nz = clamp(z, c.minZ, c.maxZ);
     const dx=x-nx, dz=z-nz;
     if(dx*dx+dz*dz < r*r) return true;
@@ -1584,19 +1600,27 @@ function hornedRecently(win=3){ return clockNow-lastHorn < win; }
    Moments: 0 belt · 1 blind corner · 2 pallet+reverse ·
             3 swing radius · 4 speed run · 5 done
    ========================================================= */
-/* Swing-radius moment. Testers kept wedging on the east racking because the
-   old line-up pad sat 1.2 m off the rack face — only 0.25 m of body clearance,
-   and the tail sweeps RIGHT into that same rack while you turn left.
-   The whole manoeuvre now happens in the open staging floor south of z=-15.5,
-   where the west side has no racking at all: line up in the aisle, swing wide
-   left into open floor, then curve back into the aisle and park in the box. */
-const SWING_R = 3.5;                  // a touch wider than full lock, so there is slack
-const PAD  = { x: 2.0, z:-20.0 };     // line-up pad — 2.8 m clear of the east racking
-const ARC_C = { x: PAD.x - SWING_R, z: PAD.z };   // arc centre, out in open floor
-const ARC_END = { x: PAD.x - 2*SWING_R, z: PAD.z };  // where the 180° finishes (-5.0)
-// landing box, back in the aisle facing north — kept east enough that driving
-// on to the dock afterwards cannot clip the west racking that starts at z=-15.5
-const BOXP = { x:-1.8, z:-16.6 };
+/* Swing-radius moment. Testers kept wedging on the racking, so the manoeuvre
+   now happens inside a purpose-built TURNING BAY: the two east racking rows
+   that flanked it are set back to x=9.0, and while the moment is running the
+   bay is fenced on all four sides with only the aisle mouth open. You cannot
+   drive off behind the racking, and the nearest hard surface is metres away. */
+const SWING_R = 3.6;                  // a touch wider than full lock, so there is slack
+/* The pad sits east of the aisle centreline on purpose: the 180° then finishes
+   at x = PAD.x - 2R = -3.4, which is INSIDE the bay's gate. That matters — it
+   means the exit leg and any overshoot on it run out through the open mouth of
+   the bay rather than into the fence on the far side of it. */
+const PAD  = { x: 3.8, z:-20.4 };     // line-up pad, mid-bay
+const ARC_C = { x: PAD.x - SWING_R, z: PAD.z };   // arc centre
+const ARC_END = { x: PAD.x - 2*SWING_R, z: PAD.z };  // where the 180° finishes (-3.4)
+// landing box, back in the aisle mouth — driving on to the dock afterwards is
+// then a straight run out through the gate
+const BOXP = { x:-1.8, z:-17.4 };
+// bay walls. `gate` is the half-width of the open aisle mouth on the north side.
+// `gate` is the half-width of the open mouth on the north side. It is set to
+// 4.8 so the gate posts line up exactly with the rack faces of the aisle above,
+// making the aisle wall continuous — you drive in and out, never past.
+const BAY = { w:-8.6, e:8.4, s:-27.6, n:-15.9, gate:4.8 };
 
 // flat ribbon following a list of {x,z} centre points
 function makePathRibbon(points, width, mat){
@@ -1619,16 +1643,18 @@ function makePathRibbon(points, width, mat){
   const m = new THREE.Mesh(g, mat); world.add(m);
   return m;
 }
-const pathMat = new THREE.MeshBasicMaterial({ color:0x35d97f, transparent:true,
-  opacity:0.42, depthWrite:false, side:THREE.DoubleSide });
-const swingPath = (()=>{
+const pathMat = new THREE.MeshBasicMaterial({ color:0x2bd07a, transparent:true,
+  opacity:0.55, depthWrite:false, side:THREE.DoubleSide });
+/* the route, kept as points so the ribbon, the chevrons and the moving
+   waypoint arrow are all driven off exactly the same line */
+const swingPts = (()=>{
   const pts = [], ease = t => t*t*(3-2*t);
   // 1. lead-in: run south down the aisle onto the line-up pad, nose still south
   for(let i=0;i<=18;i++){
     const t=i/18;
     pts.push({ x: 0.3 + (PAD.x-0.3)*ease(t), z: -13.6 + (PAD.z+13.6)*t });
   }
-  // 2. the swing: a wide 180° left arc out into the open staging floor
+  // 2. the swing: a wide 180° left arc across the middle of the bay
   for(let i=1;i<=40;i++){
     const phi = -Math.PI*(i/40);
     pts.push({ x: ARC_C.x + Math.cos(phi)*SWING_R, z: ARC_C.z + Math.sin(phi)*SWING_R });
@@ -1638,15 +1664,120 @@ const swingPath = (()=>{
     const t=i/14;
     pts.push({ x: ARC_END.x + (BOXP.x-ARC_END.x)*ease(t), z: ARC_END.z + (BOXP.z-ARC_END.z)*t });
   }
-  const m = makePathRibbon(pts, 2.6, pathMat);
+  return pts;
+})();
+const swingPath = (()=>{
+  const m = makePathRibbon(swingPts, 2.8, pathMat);
   m.visible = false; return m;
 })();
+
+/* ---------- guidance dressing for the swing ----------
+   All of this is decoration: none of it collides, so none of it can trap
+   anyone. It exists purely so the turn reads at a glance from the seat. */
+const swingGuides = new THREE.Group(); swingGuides.visible=false; world.add(swingGuides);
+
+// flowing chevrons down the middle of the route — these carry the direction
+const chevrons = [];
+(()=>{
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.55,-0.40); shape.lineTo(0,0.22); shape.lineTo(0.55,-0.40);
+  shape.lineTo(0.55,-0.06); shape.lineTo(0,0.56); shape.lineTo(-0.55,-0.06);
+  const geo = new THREE.ShapeGeometry(shape);
+  for(let i=4;i<swingPts.length-3;i+=3){
+    const a = swingPts[i-1], b = swingPts[i+1];
+    // dark green reads clearly against both the mint ribbon and bare concrete;
+    // plain white washed out completely under the warehouse lighting
+    const mat = new THREE.MeshBasicMaterial({ color:0x0a6b39, transparent:true,
+      opacity:0.35, depthWrite:false, side:THREE.DoubleSide });
+    const m = new THREE.Mesh(geo, mat);
+    m.rotation.x = -Math.PI/2;
+    m.rotation.z = -Math.atan2(b.x-a.x, b.z-a.z) + Math.PI;   // point along travel
+    m.position.set(swingPts[i].x, 0.032, swingPts[i].z);
+    m.scale.setScalar(1.25);
+    swingGuides.add(m); chevrons.push(mat);
+  }
+})();
+
+/* traffic cones ringing the inside of the turn — the pylon you swing around.
+   Purely visual: clipping one costs nothing but looks like a scuffed cone. */
+(()=>{
+  const coneMat = new THREE.MeshStandardMaterial({ color:0xe4551d, roughness:0.7 });
+  const bandMat = new THREE.MeshStandardMaterial({ color:0xf2f4f6, roughness:0.7 });
+  for(let i=0;i<6;i++){
+    const phi = -Math.PI*(0.08 + 0.84*(i/5)), r = SWING_R - 1.9;
+    const g = new THREE.Group();
+    g.position.set(ARC_C.x + Math.cos(phi)*r, 0, ARC_C.z + Math.sin(phi)*r);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.05,0.5), coneMat);
+    base.position.y=0.025; base.castShadow=true; g.add(base);
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.22,0.72,14), coneMat);
+    body.position.y=0.41; body.castShadow=true; g.add(body);
+    const band = new THREE.Mesh(new THREE.ConeGeometry(0.155,0.16,14), bandMat);
+    band.position.y=0.5; g.add(band);
+    swingGuides.add(g);
+  }
+})();
+
+/* big numbered floor decals: 1 line up · 2 swing wide · 3 park */
+function numDecal(txt, colour, x, z, size){
+  const c = document.createElement('canvas'); c.width=c.height=256;
+  const g = c.getContext('2d');
+  g.font='bold 200px system-ui,sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+  g.lineWidth=16; g.strokeStyle='rgba(12,18,14,0.55)'; g.strokeText(txt,128,134);
+  g.fillStyle=colour; g.fillText(txt,128,134);
+  const t = new THREE.CanvasTexture(c);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(size,size),
+    new THREE.MeshBasicMaterial({ map:t, transparent:true, opacity:0.9, depthWrite:false }));
+  m.rotation.x=-Math.PI/2; m.position.set(x,0.034,z);
+  swingGuides.add(m); return m;
+}
+numDecal('1','#ffd479', PAD.x, PAD.z+1.4, 1.9);
+numDecal('2','#eafff2', ARC_C.x, ARC_C.z-SWING_R+0.1, 1.9);
+numDecal('3','#8dffbe', BOXP.x, BOXP.z-1.7, 1.9);
+
+/* ---------- the bay fence ----------
+   Up only while the swing moment is running: segment 2 walks across this same
+   floor later, so every barrier keeps a handle on its collider and switches it
+   off again the moment the challenge ends. */
+const bayFence = new THREE.Group(); bayFence.visible=false; world.add(bayFence);
+const bayColliders = [];
+function bayRail(x1,z1,x2,z2){
+  const dx=x2-x1, dz=z2-z1, len=Math.hypot(dx,dz);
+  const ry = Math.atan2(dx,dz);
+  for(const y of [0.46,0.92]){
+    const r = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.17,len), M.hazard);
+    r.position.set((x1+x2)/2, y, (z1+z2)/2); r.rotation.y=ry;
+    r.castShadow=true; r.receiveShadow=true; bayFence.add(r);
+  }
+  const n = Math.max(2, Math.round(len/2.4));
+  for(let i=0;i<=n;i++){
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.17,1.06,0.17), M.bollard);
+    p.position.set(x1+dx*i/n, 0.53, z1+dz*i/n);
+    p.castShadow=true; bayFence.add(p);
+  }
+  const c = collide((x1+x2)/2, (z1+z2)/2, Math.abs(dx)+0.36, Math.abs(dz)+0.36);
+  c.off = true; bayColliders.push(c);
+}
+bayRail(BAY.w, BAY.n, BAY.w, BAY.s);          // west
+bayRail(BAY.w, BAY.s, BAY.e, BAY.s);          // south
+bayRail(BAY.e, BAY.s, BAY.e, BAY.n);          // east, guarding the set-back racking
+bayRail(BAY.w, BAY.n, -BAY.gate, BAY.n);      // north-west closure
+bayRail(BAY.gate, BAY.n, BAY.e, BAY.n);       // north-east closure
+// striped gate posts so the way in (and back out) is unmistakable
+for(const gx of [-BAY.gate, BAY.gate]){
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,1.5,12), M.hazard);
+  p.position.set(gx, 0.75, BAY.n); p.castShadow=true; bayFence.add(p);
+}
+function setSwingBay(on){
+  bayFence.visible = on; swingGuides.visible = on;
+  for(const c of bayColliders) c.off = !on;
+}
+
 const stagePad = paint(3.2,3.6, new THREE.MeshStandardMaterial({
-  color:0xf2a41c, transparent:true, opacity:0.45 }), PAD.x,PAD.z);
+  color:0xf2a41c, transparent:true, opacity:0.62 }), PAD.x,PAD.z);
 stagePad.visible=false;
 // elongated along the exit so parking anywhere at the end of the swing counts
 const turnBox = paint(2.8,5.2, new THREE.MeshStandardMaterial({
-  color:0x2fae6a, transparent:true, opacity:0.45 }), BOXP.x,BOXP.z);
+  color:0x2fae6a, transparent:true, opacity:0.62 }), BOXP.x,BOXP.z);
 turnBox.visible=false;
 const bayMark = paint(3.6,4.2, new THREE.MeshStandardMaterial({
   color:0x2fae6a, transparent:true, opacity:0.4 }), 0,-19.5);
@@ -1666,6 +1797,32 @@ const guide = (()=>{
 function setGuide(x,z){ guide.visible=true; guide.position.set(x,0,z); }
 function hideGuide(){ guide.visible=false; }
 
+/* The swing guide arrow travels along the route instead of sitting on the far
+   end of it — a fixed target 20 m away tells you nothing about which way to
+   steer. Progress only ever moves forwards, so the arrow cannot jump back to
+   the lead-in when you come round to the box (the two run side by side). */
+let pathI = 0;
+const PAD_I = 18;                       // index of the line-up pad in swingPts
+function resetPathProgress(i){ pathI = i||0; }
+function guideAlongPath(){
+  let best = pathI, bd = 1e9;
+  for(let i=pathI; i<Math.min(swingPts.length, pathI+14); i++){
+    const dx = swingPts[i].x-player.x, dz = swingPts[i].z-player.z;
+    const d = dx*dx+dz*dz;
+    if(d<bd){ bd=d; best=i; }
+  }
+  pathI = best;
+  const t = swingPts[Math.min(swingPts.length-1, best+7)];
+  setGuide(t.x, t.z);
+}
+// chevrons pulse forwards down the route so the direction of travel is obvious
+function animateChevrons(now){
+  for(let i=0;i<chevrons.length;i++){
+    const w = Math.sin(now*2.6 - i*0.55);
+    chevrons[i].opacity = 0.34 + 0.55*Math.max(0, w);
+  }
+}
+
 function startSeg1(){
   seg.mode='seg1'; seg.moment=0; seg.state='enter'; seg.t=0; seg.d={};
   player.mode='drive'; player.x=0; player.z=24; player.heading=0;
@@ -1673,6 +1830,7 @@ function startSeg1(){
   setGear(1);
   playerTruck.group.visible=true;
   setAmbient(false); setTagsVisible(false);
+  setSwingBay(false);
   $('beltStrap').classList.remove('show');
   $('hud').classList.add('show');
   hideGuide();
@@ -1854,18 +2012,21 @@ function updateSeg1(dt){
     if(seg.state==='enter'){
       seg.state='lineup'; setDots(5,3); player.frozen=false; setGear(1);
       bayMark.visible=false;
-      banner('Follow the <span class="em">green path</span> &mdash; line up on the amber pad first.');
+      banner('Into the <span class="em">turning bay</span> &mdash; follow the green path to pad <span class="em">1</span>.');
       swingPath.visible=true; stagePad.visible=true; turnBox.visible=false;
-      setGuide(PAD.x, PAD.z);
-      // off the straight-ahead line (so driving forward cannot hit them head-on)
-      // but just outside the tail's sweep, so only a sloppy wide swing clips them
-      seg.d.worker = addPed(3.2,-22.2, Math.PI/2);
+      setSwingBay(true); resetPathProgress(); guideAlongPath();
+      // stands well to the east of the route, facing the manoeuvre: visible the
+      // whole way round, off the straight-ahead line, and far enough out that a
+      // reasonable swing — even a sloppy wide one — never reaches them. Only
+      // someone who abandons the path entirely can catch them with the tail.
+      seg.d.worker = addPed(7.6,-19.0, -Math.PI/2);
       seg.d.entryHeading = player.heading;
       seg.d.startHeading = player.heading;
       seg.d.lineT = 0; seg.d.jamT = 0;
       setCheckpoint(player.x, player.z, player.heading, 3);
-      toast('Watch the amber beacon — it warns of the swing.',2600);
+      toast('The bay is fenced — you cannot go wrong. Follow 1 → 2 → 3.',3000);
     }
+    animateChevrons(clockNow);
     /* belt-and-braces: this moment must never be able to trap anyone, so if the
        truck is pinned against something for a few seconds, put it back on the
        pad automatically rather than waiting for the player to find RESET */
@@ -1878,8 +2039,8 @@ function updateSeg1(dt){
         player.speed = 0; player.steer = 0; clearHeld();
         seg.state = 'lineup'; seg.d.lineT = 0;
         stagePad.visible = true; turnBox.visible = false;
-        setGuide(PAD.x, PAD.z);
-        banner('Follow the <span class="em">green path</span> &mdash; line up on the amber pad first.');
+        resetPathProgress(PAD_I); guideAlongPath();
+        banner('Into the <span class="em">turning bay</span> &mdash; follow the green path to pad <span class="em">1</span>.');
         toast('↩ Back on the pad — follow the green path round.', 3000);
         console.info('[MHE] swing moment: auto-recovered from a jam');
         return;
@@ -1914,13 +2075,14 @@ function updateSeg1(dt){
       let dSign = ((player.heading - seg.d.entryHeading) % TAU + TAU) % TAU;
       if(dSign > Math.PI) dSign -= TAU;
       seg.d.lineT += dt;
+      guideAlongPath();
       // never dead-end: lined up, already swinging left, or waited too long
       if(onPad || dSign < -1.2 || seg.d.lineT>22){
         seg.state='turn';
         seg.d.startHeading = onPad ? player.heading : seg.d.entryHeading;
         stagePad.visible=false; turnBox.visible=true;
-        setGuide(BOXP.x, BOXP.z);
-        banner('Now hold <span class="em">LEFT + GO</span> &mdash; follow the path round and park in the green box. Watch your TAIL!');
+        guideAlongPath();
+        banner('Hold <span class="em">LEFT + GO</span> &mdash; sweep wide round the cones to <span class="em">2</span>, then park on <span class="em">3</span>. Watch your TAIL!');
         AudioSys.click();
         if(onPad) setCheckpoint(player.x, player.z, player.heading, 3);
       } else if(onArea && !aligned && !seg.d.alignHint){
@@ -1928,7 +2090,7 @@ function updateSeg1(dt){
         toast('↩ Straighten up along the path first, then swing LEFT.',3000);
       } else if(seg.d.lineT>8 && !seg.d.padHint){
         seg.d.padHint = true;
-        toast('👉 Follow the green path onto the amber pad on your right.',3000);
+        toast('👉 Follow the white arrows onto amber pad 1.',3000);
       }
       return;
     }
@@ -1936,10 +2098,29 @@ function updateSeg1(dt){
     /* beat 2 — swing left into the green box */
     seg.d.turnT = (seg.d.turnT||0) + dt;
     const inBox = Math.abs(player.x-BOXP.x)<1.4 && Math.abs(player.z-BOXP.z)<2.6;
-    if(inBox) hideGuide(); else setGuide(BOXP.x, BOXP.z);
+    if(inBox) hideGuide(); else guideAlongPath();
+
+    /* Circling. Someone who starts the swing off-line just orbits the bay for
+       ever: nothing collides, so the jam timer never fires and they are stuck
+       in a way no reset prompt catches. Once they have turned most of a full
+       circle without reaching the box, put them back on the pad and say why. */
+    let dRot = player.heading - (seg.d.prevH===undefined ? player.heading : seg.d.prevH);
+    seg.d.prevH = player.heading;
+    dRot = ((dRot + Math.PI) % TAU + TAU) % TAU - Math.PI;     // shortest signed step
+    seg.d.rot = (seg.d.rot||0) + dRot;
+    if(seg.state==='turn' && !inBox && seg.d.rot < -5.6){       // ≈320° of left turn
+      player.x = PAD.x; player.z = PAD.z; player.heading = 0;
+      player.speed = 0; player.steer = 0; clearHeld();
+      seg.d.rot = 0; seg.d.turnT = 0; seg.d.startHeading = 0; seg.d.prevH = 0;
+      resetPathProgress(PAD_I); guideAlongPath();
+      toast('↩ You went right round. One half-turn only — stop on green box 3.', 3400);
+      console.info('[MHE] swing moment: recovered from an over-rotation');
+      return;
+    }
     // parking in the box is the goal; the rest are anti-dead-end fallbacks
     if(seg.state==='turn' && ((inBox && dh>1.6) || (seg.d.turnT>35 && fwdZ()>0.5))){
       turnBox.visible=false; stagePad.visible=false; swingPath.visible=false; hideGuide();
+      setSwingBay(false);
       safeMoment('Clean turn — tail stayed clear.',
         'You swung wide into open floor instead of cutting it tight. A pallet jack needs that room, because the rear end sweeps out the opposite way — never stand beside a turning pallet jack.',
         ()=>advanceSeg1(4));
@@ -1952,6 +2133,7 @@ function updateSeg1(dt){
     if(seg.state==='enter'){
       seg.state='run'; setDots(5,4); player.frozen=false;
       removePeds(); swingPath.visible=false; stagePad.visible=false; turnBox.visible=false;
+      setSwingBay(false);      // fence comes down — the run home needs the aisle open
       banner('Head back to the dock. <span class="em">Sound the horn</span> near people &mdash; and keep a speed you can stop from.');
       setCheckpoint(player.x, player.z, player.heading, 4);
       showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1,hornBtn:1,revBtn:1});
@@ -2264,6 +2446,7 @@ function startSeg2(){
   player.mode='walk'; player.x=-10.5; player.z=20; player.heading=0;
   player.speed=0; player.frozen=false;
   playerTruck.group.visible=false;
+  setSwingBay(false);        // seg 2 walks across the bay floor — no fence here
   $('beltStrap').classList.remove('show');
   meetPoint.visible=true;
   setDots(3,0);
@@ -2474,6 +2657,7 @@ function resetAll(){
   $('beltStrap').classList.remove('show');
   meetPoint.visible=false; turnBox.visible=false; stagePad.visible=false;
   swingPath.visible=false; bayMark.visible=false; hideGuide();
+  setSwingBay(false);
   player.frozen=true; player.speed=0; player.belted=false; setGear(1);
   playerTruck.group.visible=true;
   seg.mode='title'; seg.moment=0; seg.state=''; seg.t=0; seg.d={};
