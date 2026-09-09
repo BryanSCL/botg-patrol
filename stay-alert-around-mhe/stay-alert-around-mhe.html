@@ -1584,13 +1584,19 @@ function hornedRecently(win=3){ return clockNow-lastHorn < win; }
    Moments: 0 belt · 1 blind corner · 2 pallet+reverse ·
             3 swing radius · 4 speed run · 5 done
    ========================================================= */
-/* Swing-radius moment uses two pads. The aisle is only clear between the
-   racking at x=±4.8, and the truck's turning radius is ~2.4 m — so a LEFT
-   swing only fits if you start over on the RIGHT. Amber pad = line up here,
-   green box = where the left swing lands you. */
-const SWING_R = 3.2;                  // matches the truck's full-lock radius
-const PAD  = { x: 3.6, z:-18.6 };     // line-up pad, right of the aisle
-const BOXP = { x: PAD.x - 2*SWING_R, z:-16.5 };   // landing box, left (x = -2.8)
+/* Swing-radius moment. Testers kept wedging on the east racking because the
+   old line-up pad sat 1.2 m off the rack face — only 0.25 m of body clearance,
+   and the tail sweeps RIGHT into that same rack while you turn left.
+   The whole manoeuvre now happens in the open staging floor south of z=-15.5,
+   where the west side has no racking at all: line up in the aisle, swing wide
+   left into open floor, then curve back into the aisle and park in the box. */
+const SWING_R = 3.5;                  // a touch wider than full lock, so there is slack
+const PAD  = { x: 2.0, z:-20.0 };     // line-up pad — 2.8 m clear of the east racking
+const ARC_C = { x: PAD.x - SWING_R, z: PAD.z };   // arc centre, out in open floor
+const ARC_END = { x: PAD.x - 2*SWING_R, z: PAD.z };  // where the 180° finishes (-5.0)
+// landing box, back in the aisle facing north — kept east enough that driving
+// on to the dock afterwards cannot clip the west racking that starts at z=-15.5
+const BOXP = { x:-1.8, z:-16.6 };
 
 // flat ribbon following a list of {x,z} centre points
 function makePathRibbon(points, width, mat){
@@ -1616,28 +1622,30 @@ function makePathRibbon(points, width, mat){
 const pathMat = new THREE.MeshBasicMaterial({ color:0x35d97f, transparent:true,
   opacity:0.42, depthWrite:false, side:THREE.DoubleSide });
 const swingPath = (()=>{
-  const pts = [];
-  // lead-in: ease across from the aisle onto the line-up pad, still facing south
-  for(let i=0;i<=16;i++){
-    const t=i/16, s=t*t*(3-2*t);
-    pts.push({ x: 0.3 + (PAD.x-0.3)*s, z: -13.6 + (PAD.z+13.6)*t });
+  const pts = [], ease = t => t*t*(3-2*t);
+  // 1. lead-in: run south down the aisle onto the line-up pad, nose still south
+  for(let i=0;i<=18;i++){
+    const t=i/18;
+    pts.push({ x: 0.3 + (PAD.x-0.3)*ease(t), z: -13.6 + (PAD.z+13.6)*t });
   }
-  // the swing: a 180° left arc
-  const cx = PAD.x - SWING_R, cz = PAD.z;
-  for(let i=1;i<=36;i++){
-    const phi = -Math.PI*(i/36);
-    pts.push({ x: cx + Math.cos(phi)*SWING_R, z: cz + Math.sin(phi)*SWING_R });
+  // 2. the swing: a wide 180° left arc out into the open staging floor
+  for(let i=1;i<=40;i++){
+    const phi = -Math.PI*(i/40);
+    pts.push({ x: ARC_C.x + Math.cos(phi)*SWING_R, z: ARC_C.z + Math.sin(phi)*SWING_R });
   }
-  // exit straight north into the green box
-  for(let i=1;i<=6;i++) pts.push({ x: BOXP.x, z: PAD.z + (BOXP.z-PAD.z)*(i/6) });
-  const m = makePathRibbon(pts, 2.4, pathMat);
+  // 3. curve back east into the aisle and park in the green box, facing north
+  for(let i=1;i<=14;i++){
+    const t=i/14;
+    pts.push({ x: ARC_END.x + (BOXP.x-ARC_END.x)*ease(t), z: ARC_END.z + (BOXP.z-ARC_END.z)*t });
+  }
+  const m = makePathRibbon(pts, 2.6, pathMat);
   m.visible = false; return m;
 })();
 const stagePad = paint(3.2,3.6, new THREE.MeshStandardMaterial({
   color:0xf2a41c, transparent:true, opacity:0.45 }), PAD.x,PAD.z);
 stagePad.visible=false;
 // elongated along the exit so parking anywhere at the end of the swing counts
-const turnBox = paint(4.0,5.2, new THREE.MeshStandardMaterial({
+const turnBox = paint(2.8,5.2, new THREE.MeshStandardMaterial({
   color:0x2fae6a, transparent:true, opacity:0.45 }), BOXP.x,BOXP.z);
 turnBox.visible=false;
 const bayMark = paint(3.6,4.2, new THREE.MeshStandardMaterial({
@@ -1849,12 +1857,33 @@ function updateSeg1(dt){
       banner('Follow the <span class="em">green path</span> &mdash; line up on the amber pad first.');
       swingPath.visible=true; stagePad.visible=true; turnBox.visible=false;
       setGuide(PAD.x, PAD.z);
-      seg.d.worker = addPed(3.9,-22.4, Math.PI/2);   // stands just outside the tail's sweep
+      // off the straight-ahead line (so driving forward cannot hit them head-on)
+      // but just outside the tail's sweep, so only a sloppy wide swing clips them
+      seg.d.worker = addPed(3.2,-22.2, Math.PI/2);
       seg.d.entryHeading = player.heading;
       seg.d.startHeading = player.heading;
-      seg.d.lineT = 0;
+      seg.d.lineT = 0; seg.d.jamT = 0;
       setCheckpoint(player.x, player.z, player.heading, 3);
       toast('Watch the amber beacon — it warns of the swing.',2600);
+    }
+    /* belt-and-braces: this moment must never be able to trap anyone, so if the
+       truck is pinned against something for a few seconds, put it back on the
+       pad automatically rather than waiting for the player to find RESET */
+    if(seg.state!=='cleared'){
+      const jammed = held.go && player.belted && !player.frozen && player.speed < 0.05;
+      seg.d.jamT = jammed ? (seg.d.jamT||0) + dt : 0;
+      if(seg.d.jamT > 2.5){
+        seg.d.jamT = 0;
+        player.x = PAD.x; player.z = PAD.z; player.heading = 0;
+        player.speed = 0; player.steer = 0; clearHeld();
+        seg.state = 'lineup'; seg.d.lineT = 0;
+        stagePad.visible = true; turnBox.visible = false;
+        setGuide(PAD.x, PAD.z);
+        banner('Follow the <span class="em">green path</span> &mdash; line up on the amber pad first.');
+        toast('↩ Back on the pad — follow the green path round.', 3000);
+        console.info('[MHE] swing moment: auto-recovered from a jam');
+        return;
+      }
     }
     const w = seg.d.worker;
     pedIdleAnim(w, clockNow);
@@ -1906,7 +1935,7 @@ function updateSeg1(dt){
 
     /* beat 2 — swing left into the green box */
     seg.d.turnT = (seg.d.turnT||0) + dt;
-    const inBox = Math.abs(player.x-BOXP.x)<2.0 && Math.abs(player.z-BOXP.z)<2.6;
+    const inBox = Math.abs(player.x-BOXP.x)<1.4 && Math.abs(player.z-BOXP.z)<2.6;
     if(inBox) hideGuide(); else setGuide(BOXP.x, BOXP.z);
     // parking in the box is the goal; the rest are anti-dead-end fallbacks
     if(seg.state==='turn' && ((inBox && dh>1.6) || (seg.d.turnT>35 && fwdZ()>0.5))){
