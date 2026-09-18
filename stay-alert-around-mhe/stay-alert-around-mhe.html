@@ -434,6 +434,7 @@ const ZH = {
   '&#10004;&#65039; <span class="em">SAFE</span>': '安全',
   '&#9888;&#65039; <span class="em">STRUCK</span>': '已发生撞击',
   '&#9888;&#65039; <span class="em">You did not stop.</span>': '你没有停车。',
+  '&#9888;&#65039; <span class="em">NEAR MISS</span>': '险些撞到',
   '&#9940; <span class="em">STOP</span> &mdash; person crossing ahead.': '停车 — 前方有人横过。',
   '&#9940; <span class="em">WAIT</span> &mdash; pallet jack crossing.': '等待 — 托盘车正在通过。',
   '&#9940; <span class="em">WAIT</span> &mdash; a second pallet jack is slowing for you&hellip;': '等待 — 第二辆托盘车正在为你减速…',
@@ -507,6 +508,9 @@ const ZH = {
   /* ---- teaching card titles ---- */
   'Too fast for a blind corner.': '盲角车速过快。',
   'You drove past without stopping.': '你没有停车就开了过去。',
+  'You passed within touching distance.': '你擦身而过，距离近在咫尺。',
+  'They were still walking and you slid straight past at speed. Steering around a person is not a substitute for slowing down — one step the wrong way and it is a struck-by. Sound the horn early, then creep past or wait until they are clear.': '对方还在行走，你却高速擦身而过。绕开行人不能代替减速 — 他只要迈错一步就会被撞。应及早鸣笛，然后以极慢速度通过，或等他完全离开。',
+  '⚠ Someone is crossing — SLOW RIGHT DOWN or sound the horn.': '⚠ 有人正在横穿 — 请大幅减速或鸣笛。',
   'Horn, then a full stop — textbook.': '先按喇叭，再完全停车 — 标准做法。',
   'You stopped and let them cross.': '你停车让对方先通过。',
   'Struck while reversing.': '倒车时发生撞击。',
@@ -1482,7 +1486,7 @@ function tailCorners(){
    or 'walk' (you are hit). */
 let strikeAnim = null;
 function strike(ped, cardTitle, cardFact){
-  if(seg.state==='struck') return;
+  if(seg.state==='struck'||seg.state==='failed') return;
   seg.state='struck';
   player.frozen = true; player.speed = Math.min(player.speed, 0.4);
   AudioSys.thud(); AudioSys.engine(0,false);
@@ -1507,7 +1511,9 @@ function strike(ped, cardTitle, cardFact){
   }, 1700);
 }
 function safeMoment(title, fact, cb){
-  if(seg.state==='struck'||seg.state==='cleared') return;
+  // 'failed' matters as much as the other two: a moment that has already gone
+  // wrong must never be able to finish with a card that praises the player
+  if(seg.state==='struck'||seg.state==='cleared'||seg.state==='failed') return;
   seg.state='cleared';
   AudioSys.chime();
   banner('&#10004;&#65039; <span class="em">SAFE</span>');
@@ -2176,8 +2182,34 @@ function updateSeg1(dt){
       pedWalkAnim(p, clockNow, 1);
       if(p.group.position.x<-4) p.state='done';
     }
+    /* Sliding past is not a pass. Missing someone by half a metre at speed is
+       a near miss, and near misses are exactly how struck-by incidents happen
+       — the person only has to step the other way. While they are moving in
+       the aisle you slow to a crawl, or you warned them early enough that
+       they never got there. Steering round them is neither. */
+    if(p && seg.state==='run' && (p.state==='cross' || p.state==='retreat')){
+      if(p.state==='cross' && !seg.d.crossWarn){
+        seg.d.crossWarn = true;
+        toast('⚠ Someone is crossing — SLOW RIGHT DOWN or sound the horn.', 2800);
+      }
+      const {lf,lr} = truckLocal(p.group.position.x, p.group.position.z);
+      // a retreating walker is already moving clear, so judge them a bit tighter
+      const side = p.state==='cross' ? 1.9 : 1.4;
+      if(lf > -2.0 && lf < 3.0 && Math.abs(lr) < side && player.speed > 1.6){
+        seg.state='failed'; player.frozen=true; player.speed=0;
+        AudioSys.alarm(); flash('#e8a400',0.5,0.8); shake(0.07);
+        banner('&#9888;&#65039; <span class="em">NEAR MISS</span>', true);
+        setTimeout(()=>{
+          if(seg.mode!=='seg1') return;
+          showCard('bad','⚠️','You passed within touching distance.',
+            'They were still walking and you slid straight past at speed. Steering around a person is not a substitute for slowing down — one step the wrong way and it is a struck-by. Sound the horn early, then creep past or wait until they are clear.',
+            'TRY AGAIN', ()=>resetMoment());
+        }, 900);
+        return;
+      }
+    }
     // a horn does not excuse driving into someone — they can still be struck
-    if(p && (p.state==='cross' || p.state==='retreat')){
+    if(p && seg.state==='run' && (p.state==='cross' || p.state==='retreat')){
       if(truckHitsPed(p) && player.speed>TUNE.strikeSpeed){
         strike(p,'Speed made it unstoppable.',
           'Stopping distance grows massively with speed. The limiter caps the pallet jack — but a SAFE speed is the driver’s choice.');
