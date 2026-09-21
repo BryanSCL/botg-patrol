@@ -11,109 +11,212 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
-       font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-       padding:18px;-webkit-text-size-adjust:100%}
-  h1{margin:0 0 4px;font-size:clamp(20px,3vw,30px)}
-  .sub{color:var(--dim);margin-bottom:16px;font-size:clamp(13px,1.6vw,16px)}
-  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+       font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       padding:16px 18px 40px;-webkit-text-size-adjust:100%}
+  h1{margin:0 0 2px;font-size:clamp(19px,2.6vw,26px)}
+  .sub{color:var(--dim);margin-bottom:14px;font-size:clamp(13px,1.5vw,15px)}
+
+  /* ---- the guided step, the only thing that matters while testing ---- */
+  #stage{background:var(--panel);border:2px solid var(--line);border-radius:14px;
+         padding:22px 20px;margin-bottom:14px;text-align:center}
+  #stage.live{border-color:var(--hot)}
+  #stepNo{color:var(--dim);font-size:clamp(13px,1.6vw,16px);letter-spacing:.09em;
+          text-transform:uppercase;margin-bottom:6px}
+  #prompt{font-size:clamp(24px,4.6vw,44px);font-weight:800;line-height:1.15;margin-bottom:8px}
+  #where{color:var(--dim);font-size:clamp(14px,1.9vw,19px)}
+  #gotIt{color:var(--hot);font-weight:700;font-size:clamp(15px,2vw,20px);
+         min-height:1.5em;margin-top:10px}
+  .bar{height:10px;background:#0d1219;border-radius:5px;overflow:hidden;margin-top:16px}
+  .bar > i{display:block;height:100%;background:var(--hot);width:0;transition:width .25s}
+  .acts{margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  button{background:var(--line);color:var(--ink);border:0;border-radius:9px;
+         padding:11px 18px;font-size:15px;cursor:pointer;font-family:inherit}
+  button:active{background:#3a465e}
+  button.go{background:var(--hot);color:#07120b;font-weight:700}
+
+  /* ---- results ---- */
+  #results{display:none}
+  #results.show{display:block}
+  .done{background:#16301f;border:2px solid var(--hot);border-radius:14px;
+        padding:18px 20px;margin-bottom:14px}
+  .done h2{margin:0 0 4px;font-size:clamp(19px,2.8vw,26px);color:var(--hot)}
+  .done p{margin:0;color:#b9e8cd;font-size:clamp(14px,1.7vw,17px)}
+  table{width:100%;border-collapse:collapse;font-size:clamp(14px,1.7vw,17px)}
+  td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  td.k{color:var(--dim);white-space:nowrap;width:44%}
+  td.v{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700}
+  td.v.none{color:var(--warn);font-weight:400}
+
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(310px,1fr))}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-  .panel h2{margin:0 0 10px;font-size:clamp(14px,1.8vw,18px);color:var(--dim);
+  .panel h2{margin:0 0 10px;font-size:clamp(13px,1.6vw,16px);color:var(--dim);
             text-transform:uppercase;letter-spacing:.08em}
-  #status{font-size:clamp(20px,3.2vw,30px);font-weight:700;margin-bottom:12px}
-  .on{color:var(--hot)} .off{color:var(--warn)}
-  dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;
-     font-size:clamp(13px,1.5vw,16px)}
+  dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
   dt{color:var(--dim);white-space:nowrap}
-  dd{margin:0;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-  .axrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-  .axname{width:56px;color:var(--dim);font-family:ui-monospace,monospace;font-size:14px}
-  .axbar{position:relative;flex:1;height:22px;background:#0d1219;border-radius:6px;overflow:hidden}
+  dd{margin:0;word-break:break-word;font-family:ui-monospace,Menlo,monospace}
+  .axrow{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  .axname{width:52px;color:var(--dim);font-family:ui-monospace,monospace;font-size:13px}
+  .axbar{position:relative;flex:1;height:18px;background:#0d1219;border-radius:5px;overflow:hidden}
   .axmid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
-  .axfill{position:absolute;top:3px;bottom:3px;background:var(--hot);border-radius:3px}
-  .axval{width:62px;text-align:right;font-family:ui-monospace,monospace;font-size:14px}
-  .btns{display:flex;flex-wrap:wrap;gap:7px}
-  .btn{min-width:46px;padding:9px 6px;text-align:center;border-radius:8px;
-       background:#0d1219;border:1px solid var(--line);
-       font-family:ui-monospace,monospace;font-size:15px;color:var(--dim)}
+  .axfill{position:absolute;top:3px;bottom:3px;border-radius:3px;background:var(--line)}
+  .axval{width:56px;text-align:right;font-family:ui-monospace,monospace;font-size:13px}
+  .btns{display:flex;flex-wrap:wrap;gap:6px}
+  .btn{min-width:42px;padding:8px 5px;text-align:center;border-radius:7px;background:#0d1219;
+       border:1px solid var(--line);font-family:ui-monospace,monospace;font-size:14px;color:var(--dim)}
   .btn.hit{background:var(--hot);border-color:var(--hot);color:#07120b;font-weight:700}
-  #last{font-size:clamp(34px,7vw,64px);font-weight:800;color:var(--hot);
-        font-family:ui-monospace,monospace;line-height:1;margin:4px 0 2px}
-  #lastHint{color:var(--dim);font-size:14px}
-  ol#log{margin:0;padding-left:26px;font-family:ui-monospace,monospace;
-         font-size:clamp(13px,1.6vw,16px);max-height:260px;overflow:auto}
-  ol#log li{margin-bottom:3px}
-  button.act{background:var(--line);color:var(--ink);border:0;border-radius:8px;
-             padding:10px 16px;font-size:15px;cursor:pointer;margin-top:10px}
-  button.act:active{background:#3a465e}
   .note{color:var(--dim);font-size:13px;margin-top:10px}
+  details{margin-top:16px}
+  summary{color:var(--dim);cursor:pointer;font-size:14px;padding:6px 0}
 </style>
 </head>
 <body>
 
 <h1>Controller test</h1>
-<div class="sub">Pair the controller, then <strong>press any button on it</strong> — browsers hide
-gamepads until one is pressed. Screenshot this page and send it over.</div>
+<div class="sub">Follow the prompt. The page moves on by itself each time it sees the button.</div>
 
-<div id="status" class="off">⏳ No controller seen yet — press a button on it.</div>
+<div id="stage">
+  <div id="stepNo">Step 1</div>
+  <div id="prompt">Press any button on the controller</div>
+  <div id="where">Browsers hide a controller until something is pressed. If nothing happens,
+    it is not paired — check Bluetooth settings.</div>
+  <div id="gotIt"></div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="acts">
+    <button id="skip">This button doesn’t work — skip it</button>
+    <button id="restart">Start over</button>
+  </div>
+</div>
+
+<div id="results">
+  <div class="done">
+    <h2>✅ Done — screenshot this table and send it over</h2>
+    <p>Everything I need is in the one table below.</p>
+  </div>
+  <div class="panel" style="margin-bottom:14px">
+    <h2>What each control reported</h2>
+    <table id="resTable"></table>
+  </div>
+</div>
 
 <div class="grid">
-
   <div class="panel">
-    <h2>What this device reports</h2>
+    <h2>Device</h2>
     <dl>
-      <dt>Controller</dt><dd id="padId">—</dd>
+      <dt>Controller</dt><dd id="padId">— not seen yet —</dd>
       <dt>Mapping</dt><dd id="padMap">—</dd>
       <dt>Axes / buttons</dt><dd id="padCounts">—</dd>
-      <dt>Index</dt><dd id="padIndex">—</dd>
       <dt>Browser</dt><dd id="ua">—</dd>
       <dt>Screen</dt><dd id="screen">—</dd>
     </dl>
-    <div class="note">“Mapping: standard” means the browser recognised the layout.
-      Anything else (usually blank) means we have to map the buttons by hand — which is
-      normal for a single Joy-Con.</div>
   </div>
-
   <div class="panel">
-    <h2>Sticks</h2>
+    <h2>Live readout</h2>
     <div id="axes"><span class="note">Waiting for a controller…</span></div>
-    <div class="note">Hold the controller the way a player would, push the stick
-      <strong>left</strong>, and note which axis moves and which way it goes.</div>
+    <div class="btns" id="btns" style="margin-top:10px"></div>
   </div>
-
-  <div class="panel">
-    <h2>Last button pressed</h2>
-    <div id="last">—</div>
-    <div id="lastHint">Press one button at a time.</div>
-    <div class="btns" id="btns" style="margin-top:12px"></div>
-  </div>
-
-  <div class="panel">
-    <h2>Press order log</h2>
-    <ol id="log"><li class="note" style="font-family:inherit">Nothing pressed yet.</li></ol>
-    <button class="act" id="clear">Clear log</button>
-    <div class="note">Press the buttons one at a time in the order I asked for,
-      then screenshot this list.</div>
-  </div>
-
 </div>
+
+<details>
+  <summary>Nothing is detected — what to check</summary>
+  <div class="note">
+    1. The Joy‑Con must be paired to <em>this</em> device, not to a Switch. Hold the small round
+    sync button on the flat rail edge for about 3 seconds until the four little lights run back
+    and forth, then pair it in Bluetooth settings as “Joy‑Con (L)”.<br>
+    2. Press a button on it after the page has loaded — the browser will not show it otherwise.<br>
+    3. If this page is open in a TV or monitor’s own built-in browser, it may not support
+    controllers at all. Try the same page on a laptop to compare.
+  </div>
+</details>
 
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  var log = [], prev = {}, seen = false, cleared = false;
+
+  var STEPS = [
+    { type:'wake', prompt:'Press any button on the controller',
+      where:'Any button at all — this just wakes it up.' },
+    { type:'axis', key:'Stick LEFT',  prompt:'Push the stick LEFT',
+      where:'Hold the Joy‑Con sideways, stick on the left, like you would to play. Hold it until it moves on.' },
+    { type:'axis', key:'Stick RIGHT', prompt:'Push the stick RIGHT', where:'Same grip. Hold it.' },
+    { type:'axis', key:'Stick UP',    prompt:'Push the stick UP',    where:'Same grip. Hold it.' },
+    { type:'axis', key:'Stick DOWN',  prompt:'Push the stick DOWN',  where:'Same grip. Hold it.' },
+    { type:'btn', key:'Arrow ▲', prompt:'Press the ▲ arrow', where:'The four round arrow buttons.' },
+    { type:'btn', key:'Arrow ▼', prompt:'Press the ▼ arrow', where:'' },
+    { type:'btn', key:'Arrow ◀', prompt:'Press the ◀ arrow', where:'' },
+    { type:'btn', key:'Arrow ▶', prompt:'Press the ▶ arrow', where:'' },
+    { type:'btn', key:'SL', prompt:'Press SL',
+      where:'On the flat rail edge — the shoulder button nearer the stick.' },
+    { type:'btn', key:'SR', prompt:'Press SR', where:'On the rail edge, the other shoulder button.' },
+    { type:'btn', key:'Capture (square)', prompt:'Press the square button',
+      where:'The small square one, below and right of the arrows.' },
+    { type:'btn', key:'Minus (−)', prompt:'Press the − button',
+      where:'The small dash, up by the corner.' },
+    { type:'btn', key:'Stick click', prompt:'Press the stick IN',
+      where:'Push straight down on the stick until it clicks.' }
+  ];
+
+  var step = 0, armed = false, results = [], seen = false, finished = false;
 
   $('ua').textContent = navigator.userAgent;
   var de = document.documentElement;
   var vw = window.innerWidth || de.clientWidth, vh = window.innerHeight || de.clientHeight;
-  var parts = ['window ' + vw + '×' + vh];
-  if(window.screen && screen.width) parts.push('display ' + screen.width + '×' + screen.height);
-  parts.push('@' + (window.devicePixelRatio || 1) + 'x');
-  parts.push((('ontouchstart' in window) || navigator.maxTouchPoints > 0) ? 'touch' : 'no touch');
-  $('screen').textContent = parts.join(' · ');
+  var sp = ['window ' + vw + '×' + vh];
+  if(window.screen && screen.width) sp.push('display ' + screen.width + '×' + screen.height);
+  sp.push('@' + (window.devicePixelRatio || 1) + 'x');
+  sp.push((('ontouchstart' in window) || navigator.maxTouchPoints > 0) ? 'touch' : 'no touch');
+  $('screen').textContent = sp.join(' · ');
 
-  $('clear').onclick = function(){
-    log = []; cleared = true;
-    $('log').innerHTML = '<li class="note" style="font-family:inherit">Log cleared — press a button.</li>';
+  function showStep(){
+    var s = STEPS[step];
+    $('stepNo').textContent = 'Step ' + (step + 1) + ' of ' + STEPS.length;
+    $('prompt').textContent = s.prompt;
+    $('where').textContent = s.where || '';
+    $('prog').style.width = Math.round(step / STEPS.length * 100) + '%';
+    $('skip').style.display = (s.type === 'wake') ? 'none' : '';
+    armed = false;
+  }
+
+  function record(key, value){
+    if(key) results.push({ k:key, v:value });
+    $('gotIt').textContent = key ? (key + ' → ' + value) : 'Got it';
+    step++;
+    if(step >= STEPS.length) finish(); else showStep();
+  }
+
+  function finish(){
+    finished = true;
+    $('stage').style.display = 'none';
+    var t = $('resTable'), html = '';
+    // the device facts go in the same table, so one screenshot carries everything
+    var gp = firstPad();
+    html += '<tr><td class="k">Controller</td><td class="v">' +
+            (gp ? (gp.id || '(no id)') : '(disconnected)') + '</td></tr>';
+    html += '<tr><td class="k">Mapping</td><td class="v">' +
+            (gp && gp.mapping ? gp.mapping : '(blank — non-standard)') + '</td></tr>';
+    html += '<tr><td class="k">Axes / buttons</td><td class="v">' +
+            (gp ? gp.axes.length + ' / ' + gp.buttons.length : '—') + '</td></tr>';
+    html += '<tr><td class="k">Browser</td><td class="v" style="font-weight:400;font-size:.8em">' +
+            navigator.userAgent + '</td></tr>';
+    for(var i=0;i<results.length;i++){
+      var none = /^not /.test(results[i].v);
+      html += '<tr><td class="k">' + results[i].k + '</td>' +
+              '<td class="v' + (none ? ' none' : '') + '">' + results[i].v + '</td></tr>';
+    }
+    t.innerHTML = html;
+    $('results').classList.add('show');
+    window.scrollTo(0,0);
+  }
+
+  $('skip').onclick = function(){
+    if(finished) return;
+    record(STEPS[step].key, 'not detected');
+  };
+  $('restart').onclick = function(){
+    step = 0; results = []; finished = false;
+    $('results').classList.remove('show');
+    $('stage').style.display = '';
+    $('gotIt').textContent = '';
+    showStep();
   };
 
   function firstPad(){
@@ -124,8 +227,23 @@ gamepads until one is pressed. Screenshot this page and send it over.</div>
     for(var i=0;i<pads.length;i++) if(pads[i] && pads[i].connected) return pads[i];
     return null;
   }
+  function anyDown(gp){
+    for(var i=0;i<gp.buttons.length;i++){
+      var b = gp.buttons[i];
+      if(b && (b.pressed || b.value > 0.4)) return i;
+    }
+    return -1;
+  }
+  function biggestAxis(gp){
+    var best = -1, mag = 0;
+    for(var i=0;i<gp.axes.length;i++){
+      var m = Math.abs(gp.axes[i] || 0);
+      if(m > mag){ mag = m; best = i; }
+    }
+    return { i:best, mag:mag, v: best < 0 ? 0 : (gp.axes[best] || 0) };
+  }
 
-  function renderAxes(gp){
+  function renderLive(gp){
     var host = $('axes');
     if(host.childElementCount !== gp.axes.length){
       host.innerHTML = '';
@@ -139,45 +257,27 @@ gamepads until one is pressed. Screenshot this page and send it over.</div>
       }
     }
     for(var j=0;j<gp.axes.length;j++){
-      var v = gp.axes[j] || 0;
-      var f = $('axf'+j);
+      var v = gp.axes[j] || 0, f = $('axf'+j);
       if(f){
-        var half = Math.min(Math.abs(v), 1) * 50;
-        f.style.left  = (v < 0 ? 50 - half : 50) + '%';
+        var half = Math.min(Math.abs(v),1) * 50;
+        f.style.left = (v < 0 ? 50 - half : 50) + '%';
         f.style.width = half + '%';
         f.style.background = Math.abs(v) > 0.3 ? 'var(--hot)' : 'var(--line)';
       }
-      var t = $('axv'+j); if(t) t.textContent = v.toFixed(2);
+      var tv = $('axv'+j); if(tv) tv.textContent = v.toFixed(2);
     }
-  }
-
-  function renderButtons(gp){
-    var host = $('btns');
-    if(host.childElementCount !== gp.buttons.length){
-      host.innerHTML = '';
-      for(var i=0;i<gp.buttons.length;i++){
-        var b = document.createElement('div');
-        b.className = 'btn'; b.id = 'b'+i; b.textContent = i;
-        host.appendChild(b);
+    var bh = $('btns');
+    if(bh.childElementCount !== gp.buttons.length){
+      bh.innerHTML = '';
+      for(var k=0;k<gp.buttons.length;k++){
+        var el = document.createElement('div');
+        el.className = 'btn'; el.id = 'lb'+k; el.textContent = k;
+        bh.appendChild(el);
       }
     }
-    for(var k=0;k<gp.buttons.length;k++){
-      var btn = gp.buttons[k];
-      var hit = !!(btn && (btn.pressed || btn.value > 0.4));
-      var el = $('b'+k);
-      if(el) el.className = 'btn' + (hit ? ' hit' : '');
-      if(hit && !prev[k]){
-        $('last').textContent = 'button ' + k;
-        $('lastHint').textContent = 'value ' + (btn.value != null ? btn.value.toFixed(2) : '1.00');
-        log.push(k);
-        var li = document.createElement('li');
-        li.textContent = 'button ' + k;
-        if(log.length === 1 && !cleared) $('log').innerHTML = '';
-        if(cleared && log.length === 1) $('log').innerHTML = '';
-        $('log').appendChild(li);
-        $('log').scrollTop = $('log').scrollHeight;
-      }
-      prev[k] = hit;
+    for(var n=0;n<gp.buttons.length;n++){
+      var bb = gp.buttons[n], el2 = $('lb'+n);
+      if(el2) el2.className = 'btn' + ((bb && (bb.pressed || bb.value > 0.4)) ? ' hit' : '');
     }
   }
 
@@ -186,24 +286,38 @@ gamepads until one is pressed. Screenshot this page and send it over.</div>
     if(gp){
       if(!seen){
         seen = true;
-        $('status').textContent = '✅ Controller detected';
-        $('status').className = 'on';
+        $('stage').classList.add('live');
+        $('padId').textContent = gp.id || '(no id)';
       }
       $('padId').textContent = gp.id || '(no id)';
       $('padMap').textContent = gp.mapping ? gp.mapping : '(blank — non-standard)';
       $('padCounts').textContent = gp.axes.length + ' axes, ' + gp.buttons.length + ' buttons';
-      $('padIndex').textContent = gp.index;
-      renderAxes(gp);
-      renderButtons(gp);
+      renderLive(gp);
+
+      if(!finished){
+        var s = STEPS[step];
+        var btn = anyDown(gp), ax = biggestAxis(gp);
+        var quiet = (btn < 0 && ax.mag < 0.3);
+        if(!armed){ if(quiet) armed = true; }
+        else if(s.type === 'wake'){
+          if(btn >= 0 || ax.mag > 0.6) record(null, '');
+        } else if(s.type === 'btn'){
+          if(btn >= 0) record(s.key, 'button ' + btn);
+        } else if(s.type === 'axis'){
+          if(ax.mag > 0.6){
+            record(s.key, 'axis ' + ax.i + ' = ' + (ax.v > 0 ? '+' : '') + ax.v.toFixed(2));
+          }
+        }
+      }
     } else if(seen){
       seen = false;
-      $('status').textContent = '⚠️ Controller disconnected';
-      $('status').className = 'off';
+      $('stage').classList.remove('live');
+      $('padId').textContent = '— disconnected —';
     }
     requestAnimationFrame(tick);
   }
 
-  window.addEventListener('gamepadconnected', function(){});
+  showStep();
   tick();
 })();
 </script>
