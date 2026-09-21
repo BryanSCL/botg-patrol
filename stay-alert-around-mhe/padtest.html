@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Controller Test — Stay Alert Around MHE</title>
+<style>
+  :root{
+    --bg:#11151c; --panel:#1b2230; --line:#2c3547; --ink:#eef3fa;
+    --dim:#94a3b8; --hot:#35d97f; --warn:#f2a41c; --bad:#ef5b5b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       padding:18px;-webkit-text-size-adjust:100%}
+  h1{margin:0 0 4px;font-size:clamp(20px,3vw,30px)}
+  .sub{color:var(--dim);margin-bottom:16px;font-size:clamp(13px,1.6vw,16px)}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .panel h2{margin:0 0 10px;font-size:clamp(14px,1.8vw,18px);color:var(--dim);
+            text-transform:uppercase;letter-spacing:.08em}
+  #status{font-size:clamp(20px,3.2vw,30px);font-weight:700;margin-bottom:12px}
+  .on{color:var(--hot)} .off{color:var(--warn)}
+  dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;
+     font-size:clamp(13px,1.5vw,16px)}
+  dt{color:var(--dim);white-space:nowrap}
+  dd{margin:0;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .axrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .axname{width:56px;color:var(--dim);font-family:ui-monospace,monospace;font-size:14px}
+  .axbar{position:relative;flex:1;height:22px;background:#0d1219;border-radius:6px;overflow:hidden}
+  .axmid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+  .axfill{position:absolute;top:3px;bottom:3px;background:var(--hot);border-radius:3px}
+  .axval{width:62px;text-align:right;font-family:ui-monospace,monospace;font-size:14px}
+  .btns{display:flex;flex-wrap:wrap;gap:7px}
+  .btn{min-width:46px;padding:9px 6px;text-align:center;border-radius:8px;
+       background:#0d1219;border:1px solid var(--line);
+       font-family:ui-monospace,monospace;font-size:15px;color:var(--dim)}
+  .btn.hit{background:var(--hot);border-color:var(--hot);color:#07120b;font-weight:700}
+  #last{font-size:clamp(34px,7vw,64px);font-weight:800;color:var(--hot);
+        font-family:ui-monospace,monospace;line-height:1;margin:4px 0 2px}
+  #lastHint{color:var(--dim);font-size:14px}
+  ol#log{margin:0;padding-left:26px;font-family:ui-monospace,monospace;
+         font-size:clamp(13px,1.6vw,16px);max-height:260px;overflow:auto}
+  ol#log li{margin-bottom:3px}
+  button.act{background:var(--line);color:var(--ink);border:0;border-radius:8px;
+             padding:10px 16px;font-size:15px;cursor:pointer;margin-top:10px}
+  button.act:active{background:#3a465e}
+  .note{color:var(--dim);font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+
+<h1>Controller test</h1>
+<div class="sub">Pair the controller, then <strong>press any button on it</strong> — browsers hide
+gamepads until one is pressed. Screenshot this page and send it over.</div>
+
+<div id="status" class="off">⏳ No controller seen yet — press a button on it.</div>
+
+<div class="grid">
+
+  <div class="panel">
+    <h2>What this device reports</h2>
+    <dl>
+      <dt>Controller</dt><dd id="padId">—</dd>
+      <dt>Mapping</dt><dd id="padMap">—</dd>
+      <dt>Axes / buttons</dt><dd id="padCounts">—</dd>
+      <dt>Index</dt><dd id="padIndex">—</dd>
+      <dt>Browser</dt><dd id="ua">—</dd>
+      <dt>Screen</dt><dd id="screen">—</dd>
+    </dl>
+    <div class="note">“Mapping: standard” means the browser recognised the layout.
+      Anything else (usually blank) means we have to map the buttons by hand — which is
+      normal for a single Joy-Con.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Sticks</h2>
+    <div id="axes"><span class="note">Waiting for a controller…</span></div>
+    <div class="note">Hold the controller the way a player would, push the stick
+      <strong>left</strong>, and note which axis moves and which way it goes.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Last button pressed</h2>
+    <div id="last">—</div>
+    <div id="lastHint">Press one button at a time.</div>
+    <div class="btns" id="btns" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Press order log</h2>
+    <ol id="log"><li class="note" style="font-family:inherit">Nothing pressed yet.</li></ol>
+    <button class="act" id="clear">Clear log</button>
+    <div class="note">Press the buttons one at a time in the order I asked for,
+      then screenshot this list.</div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var log = [], prev = {}, seen = false, cleared = false;
+
+  $('ua').textContent = navigator.userAgent;
+  var de = document.documentElement;
+  var vw = window.innerWidth || de.clientWidth, vh = window.innerHeight || de.clientHeight;
+  var parts = ['window ' + vw + '×' + vh];
+  if(window.screen && screen.width) parts.push('display ' + screen.width + '×' + screen.height);
+  parts.push('@' + (window.devicePixelRatio || 1) + 'x');
+  parts.push((('ontouchstart' in window) || navigator.maxTouchPoints > 0) ? 'touch' : 'no touch');
+  $('screen').textContent = parts.join(' · ');
+
+  $('clear').onclick = function(){
+    log = []; cleared = true;
+    $('log').innerHTML = '<li class="note" style="font-family:inherit">Log cleared — press a button.</li>';
+  };
+
+  function firstPad(){
+    var pads;
+    try { pads = navigator.getGamepads ? navigator.getGamepads() : []; }
+    catch(e){ return null; }
+    if(!pads) return null;
+    for(var i=0;i<pads.length;i++) if(pads[i] && pads[i].connected) return pads[i];
+    return null;
+  }
+
+  function renderAxes(gp){
+    var host = $('axes');
+    if(host.childElementCount !== gp.axes.length){
+      host.innerHTML = '';
+      for(var i=0;i<gp.axes.length;i++){
+        var row = document.createElement('div'); row.className = 'axrow';
+        row.innerHTML = '<span class="axname">axis ' + i + '</span>' +
+          '<span class="axbar"><span class="axmid"></span>' +
+          '<span class="axfill" id="axf' + i + '"></span></span>' +
+          '<span class="axval" id="axv' + i + '">0.00</span>';
+        host.appendChild(row);
+      }
+    }
+    for(var j=0;j<gp.axes.length;j++){
+      var v = gp.axes[j] || 0;
+      var f = $('axf'+j);
+      if(f){
+        var half = Math.min(Math.abs(v), 1) * 50;
+        f.style.left  = (v < 0 ? 50 - half : 50) + '%';
+        f.style.width = half + '%';
+        f.style.background = Math.abs(v) > 0.3 ? 'var(--hot)' : 'var(--line)';
+      }
+      var t = $('axv'+j); if(t) t.textContent = v.toFixed(2);
+    }
+  }
+
+  function renderButtons(gp){
+    var host = $('btns');
+    if(host.childElementCount !== gp.buttons.length){
+      host.innerHTML = '';
+      for(var i=0;i<gp.buttons.length;i++){
+        var b = document.createElement('div');
+        b.className = 'btn'; b.id = 'b'+i; b.textContent = i;
+        host.appendChild(b);
+      }
+    }
+    for(var k=0;k<gp.buttons.length;k++){
+      var btn = gp.buttons[k];
+      var hit = !!(btn && (btn.pressed || btn.value > 0.4));
+      var el = $('b'+k);
+      if(el) el.className = 'btn' + (hit ? ' hit' : '');
+      if(hit && !prev[k]){
+        $('last').textContent = 'button ' + k;
+        $('lastHint').textContent = 'value ' + (btn.value != null ? btn.value.toFixed(2) : '1.00');
+        log.push(k);
+        var li = document.createElement('li');
+        li.textContent = 'button ' + k;
+        if(log.length === 1 && !cleared) $('log').innerHTML = '';
+        if(cleared && log.length === 1) $('log').innerHTML = '';
+        $('log').appendChild(li);
+        $('log').scrollTop = $('log').scrollHeight;
+      }
+      prev[k] = hit;
+    }
+  }
+
+  function tick(){
+    var gp = firstPad();
+    if(gp){
+      if(!seen){
+        seen = true;
+        $('status').textContent = '✅ Controller detected';
+        $('status').className = 'on';
+      }
+      $('padId').textContent = gp.id || '(no id)';
+      $('padMap').textContent = gp.mapping ? gp.mapping : '(blank — non-standard)';
+      $('padCounts').textContent = gp.axes.length + ' axes, ' + gp.buttons.length + ' buttons';
+      $('padIndex').textContent = gp.index;
+      renderAxes(gp);
+      renderButtons(gp);
+    } else if(seen){
+      seen = false;
+      $('status').textContent = '⚠️ Controller disconnected';
+      $('status').className = 'off';
+    }
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('gamepadconnected', function(){});
+  tick();
+})();
+</script>
+
+</body>
+</html>
