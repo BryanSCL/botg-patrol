@@ -485,7 +485,11 @@ const ZH = {
   '⚠ Someone has stepped out in front of you — STOP!': '⚠ 有人走到你前方 — 立即停车！',
   '⚠ You left the walkway — see the beacon? The tail swings here!': '⚠ 你离开了人行道 — 看到警示灯了吗？车尾会摆到这里！',
   '✅ The driver has seen you — cross now.': '✅ 司机已看到你 — 现在通过。',
-  '🎮 Controller connected — stick steers, A = GO, B = BRAKE, X = HORN.': '🎮 手柄已连接 — 摇杆转向，A = 前进，B = 刹车，X = 喇叭。',
+  '🎮 Controller connected — stick steers, A = GO, B = BRAKE, X = HORN, Y = REVERSE.': '🎮 手柄已连接 — 摇杆转向，A = 前进，B = 刹车，X = 喇叭，Y = 倒车。',
+  '🎮 Controller connected — stick steers, A = GO, X = BRAKE, B = HORN, Y = REVERSE.': '🎮 手柄已连接 — 摇杆转向，A = 前进，X = 刹车，B = 喇叭，Y = 倒车。',
+  '🎮 Controller connected — stick steers, B = GO, A = BRAKE, Y = HORN, X = REVERSE.': '🎮 手柄已连接 — 摇杆转向，B = 前进，A = 刹车，Y = 喇叭，X = 倒车。',
+  '🎮 Controller connected — stick steers, bottom arrow = GO, right arrow = BRAKE.': '🎮 手柄已连接 — 摇杆转向，下方向键 = 前进，右方向键 = 刹车。',
+  '🎮 Controller connected — stick steers, bottom button = GO, right button = BRAKE.': '🎮 手柄已连接 — 摇杆转向，下方按键 = 前进，右侧按键 = 刹车。',
   '👀 Tap MAKE EYE CONTACT — then you can cross.': '👀 轻触「与司机目光确认」— 然后即可通过。',
   '👉 Follow the green path onto the amber pad on your right.': '👉 沿绿色路线驶上右侧的琥珀色区域。',
   'The bay is fenced — you cannot go wrong. Follow 1 → 2 → 3.': '转弯区已围起 — 不会走错。依次跟随 1 → 2 → 3。',
@@ -2925,9 +2929,12 @@ function updateGamepad(){
   padSetHold('brake', down(6) || down(1) || down(13) || axis(1) >  0.5);
 
   const vis = id => $(id).style.display === 'flex';
-  padTap('horn', down(2), ()=>{ if(vis('hornBtn')) kbTap('hornBtn'); });
+  // 5 (RB/SR) doubles for the horn, and 4 (LB/SL) for reset: a lone Joy-Con has
+  // no Back/Select at all, so without these there is no way to recover from the
+  // controller — and recovery must always be reachable.
+  padTap('horn', down(2) || down(5), ()=>{ if(vis('hornBtn')) kbTap('hornBtn'); });
   padTap('rev',  down(3), ()=>{ if(vis('revBtn'))  kbTap('revBtn'); });
-  padTap('reset',down(8), ()=>{ if($('hud').classList.contains('show')) kbTap('resetBtn'); });
+  padTap('reset',down(8) || down(4), ()=>{ if($('hud').classList.contains('show')) kbTap('resetBtn'); });
   padTap('ok',   down(9), ()=>{
     if($('cardWrap').classList.contains('show')) kbTap('cardBtn');
     else if(vis('actionBtn')) kbTap('actionBtn');
@@ -2936,9 +2943,28 @@ function updateGamepad(){
     else if($('finishScreen').classList.contains('show')) kbTap('againBtn');
   });
 }
+/* The API reports button POSITIONS, not labels, so the same index is printed
+   differently on every controller family: index 0 is the bottom face button,
+   which Xbox prints as A and a Switch Pro Controller prints as B. A lone right
+   Joy-Con held sideways rotates again — A=0, X=1, B=2, Y=3, measured on the
+   booth hardware. Telling a player the wrong letter is worse than telling them
+   nothing, so anything unrecognised gets described by position instead. */
+function padHint(id){
+  const s = (id||'').toLowerCase();
+  const nintendo = s.includes('057e') || s.includes('nintendo') ||
+                   s.includes('joy-con') || s.includes('pro controller');
+  if(nintendo){
+    if(s.includes('2007')) return 'A = GO, X = BRAKE, B = HORN, Y = REVERSE';
+    if(s.includes('2009')) return 'B = GO, A = BRAKE, Y = HORN, X = REVERSE';
+    if(s.includes('2006')) return 'bottom arrow = GO, right arrow = BRAKE';
+    return 'bottom button = GO, right button = BRAKE';
+  }
+  return 'A = GO, B = BRAKE, X = HORN, Y = REVERSE';
+}
 window.addEventListener('gamepadconnected', e=>{
-  toast('🎮 Controller connected — stick steers, A = GO, B = BRAKE, X = HORN.', 3600);
-  console.info('[MHE] gamepad connected:', e.gamepad && e.gamepad.id);
+  const id = e.gamepad && e.gamepad.id;
+  toast('🎮 Controller connected — stick steers, ' + padHint(id) + '.', 3600);
+  console.info('[MHE] gamepad connected:', id);
 });
 window.addEventListener('gamepaddisconnected', ()=>{
   for(const k in padHeld) padSetHold(k,false);
