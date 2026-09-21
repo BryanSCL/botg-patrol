@@ -34,6 +34,14 @@
   button:active{background:#3a465e}
   button.go{background:var(--hot);color:#07120b;font-weight:700}
 
+  #pick{background:var(--panel);border:2px solid var(--line);border-radius:14px;
+        padding:22px 20px;margin-bottom:14px;text-align:center}
+  #pickTitle{font-size:clamp(20px,3.4vw,30px);font-weight:800;margin-bottom:16px}
+  .pickRow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .pickBtn{display:flex;flex-direction:column;gap:5px;align-items:center;
+           padding:16px 22px;font-size:clamp(16px,2.1vw,20px);font-weight:700;min-width:180px}
+  .pickBtn small{font-weight:400;font-size:13px;opacity:.72}
+
   /* ---- results ---- */
   #results{display:none}
   #results.show{display:block}
@@ -74,7 +82,16 @@
 <h1>Controller test</h1>
 <div class="sub">Follow the prompt. The page moves on by itself each time it sees the button.</div>
 
-<div id="stage">
+<div id="pick">
+  <div id="pickTitle">Which controller are you testing?</div>
+  <div class="pickRow">
+    <button class="go pickBtn" data-layout="left">Left Joy‑Con<small>arrows · square · −</small></button>
+    <button class="go pickBtn" data-layout="right">Right Joy‑Con<small>A B X Y · + · HOME</small></button>
+    <button class="pickBtn" data-layout="other">Something else<small>Xbox, PlayStation, generic USB</small></button>
+  </div>
+</div>
+
+<div id="stage" style="display:none">
   <div id="stepNo">Step 1</div>
   <div id="prompt">Press any button on the controller</div>
   <div id="where">Browsers hide a controller until something is pressed. If nothing happens,
@@ -132,30 +149,68 @@
 (function(){
   var $ = function(id){ return document.getElementById(id); };
 
-  var STEPS = [
-    { type:'wake', prompt:'Press any button on the controller',
-      where:'Any button at all — this just wakes it up.' },
-    { type:'axis', key:'Stick LEFT',  prompt:'Push the stick LEFT',
-      where:'Hold the Joy‑Con sideways, stick on the left, like you would to play. Hold it until it moves on.' },
-    { type:'axis', key:'Stick RIGHT', prompt:'Push the stick RIGHT', where:'Same grip. Hold it.' },
-    { type:'axis', key:'Stick UP',    prompt:'Push the stick UP',    where:'Same grip. Hold it.' },
-    { type:'axis', key:'Stick DOWN',  prompt:'Push the stick DOWN',  where:'Same grip. Hold it.' },
-    { type:'btn', key:'Arrow ▲', prompt:'Press the ▲ arrow', where:'The four round arrow buttons.' },
-    { type:'btn', key:'Arrow ▼', prompt:'Press the ▼ arrow', where:'' },
-    { type:'btn', key:'Arrow ◀', prompt:'Press the ◀ arrow', where:'' },
-    { type:'btn', key:'Arrow ▶', prompt:'Press the ▶ arrow', where:'' },
+  // shared opening steps — wake, then the four stick directions
+  function stickSteps(){
+    return [
+      { type:'wake', prompt:'Press any button on the controller',
+        where:'Any button at all — this just wakes it up.' },
+      { type:'axis', key:'Stick LEFT',  prompt:'Push the stick LEFT',
+        where:'Hold it sideways, stick on the left, like you would to play. Hold until it moves on.' },
+      { type:'axis', key:'Stick RIGHT', prompt:'Push the stick RIGHT', where:'Same grip. Hold it.' },
+      { type:'axis', key:'Stick UP',    prompt:'Push the stick UP',    where:'Same grip. Hold it.' },
+      { type:'axis', key:'Stick DOWN',  prompt:'Push the stick DOWN',  where:'Same grip. Hold it.' }
+    ];
+  }
+  var RAIL = [
     { type:'btn', key:'SL', prompt:'Press SL',
       where:'On the flat rail edge — the shoulder button nearer the stick.' },
-    { type:'btn', key:'SR', prompt:'Press SR', where:'On the rail edge, the other shoulder button.' },
-    { type:'btn', key:'Capture (square)', prompt:'Press the square button',
-      where:'The small square one, below and right of the arrows.' },
-    { type:'btn', key:'Minus (−)', prompt:'Press the − button',
-      where:'The small dash, up by the corner.' },
-    { type:'btn', key:'Stick click', prompt:'Press the stick IN',
-      where:'Push straight down on the stick until it clicks.' }
+    { type:'btn', key:'SR', prompt:'Press SR', where:'On the rail edge, the other shoulder button.' }
   ];
+  var CLICK = { type:'btn', key:'Stick click', prompt:'Press the stick IN',
+                where:'Push straight down on the stick until it clicks.' };
 
+  var LAYOUTS = {
+    left: stickSteps().concat([
+      { type:'btn', key:'Arrow ▲', prompt:'Press the ▲ arrow', where:'The four round arrow buttons.' },
+      { type:'btn', key:'Arrow ▼', prompt:'Press the ▼ arrow', where:'' },
+      { type:'btn', key:'Arrow ◀', prompt:'Press the ◀ arrow', where:'' },
+      { type:'btn', key:'Arrow ▶', prompt:'Press the ▶ arrow', where:'' }
+    ], RAIL, [
+      { type:'btn', key:'Capture (square)', prompt:'Press the square button',
+        where:'The small square one, below and right of the arrows.' },
+      { type:'btn', key:'Minus (−)', prompt:'Press the − button', where:'The small dash, by the corner.' },
+      CLICK
+    ]),
+    right: stickSteps().concat([
+      { type:'btn', key:'A', prompt:'Press A', where:'The four lettered buttons.' },
+      { type:'btn', key:'B', prompt:'Press B', where:'' },
+      { type:'btn', key:'X', prompt:'Press X', where:'' },
+      { type:'btn', key:'Y', prompt:'Press Y', where:'' }
+    ], RAIL, [
+      { type:'btn', key:'Plus (+)', prompt:'Press the + button', where:'The small plus, by the corner.' },
+      { type:'btn', key:'HOME', prompt:'Press the round HOME button',
+        where:'The circle near the stick. It may do nothing here — skip it if so.' },
+      CLICK
+    ]),
+    other: stickSteps().concat([
+      { type:'btn', key:'Bottom face button', prompt:'Press the BOTTOM face button',
+        where:'On an Xbox pad that is A; on a Switch pad it is B.' },
+      { type:'btn', key:'Right face button', prompt:'Press the RIGHT face button', where:'' },
+      { type:'btn', key:'Left face button',  prompt:'Press the LEFT face button',  where:'' },
+      { type:'btn', key:'Top face button',   prompt:'Press the TOP face button',   where:'' },
+      { type:'btn', key:'Left shoulder',  prompt:'Press the LEFT shoulder button',  where:'LB / L.' },
+      { type:'btn', key:'Right shoulder', prompt:'Press the RIGHT shoulder button', where:'RB / R.' },
+      { type:'btn', key:'Left trigger',  prompt:'Squeeze the LEFT trigger',  where:'LT / ZL.' },
+      { type:'btn', key:'Right trigger', prompt:'Squeeze the RIGHT trigger', where:'RT / ZR.' },
+      { type:'btn', key:'Start / Menu', prompt:'Press START (or ≡ / +)', where:'' },
+      { type:'btn', key:'Select / Back', prompt:'Press SELECT (or ⧉ / −)', where:'' },
+      CLICK
+    ])
+  };
+
+  var STEPS = LAYOUTS.left, layoutName = 'Left Joy-Con';
   var step = 0, armed = false, results = [], seen = false, finished = false;
+  var started = false;
 
   $('ua').textContent = navigator.userAgent;
   var de = document.documentElement;
@@ -189,6 +244,7 @@
     var t = $('resTable'), html = '';
     // the device facts go in the same table, so one screenshot carries everything
     var gp = firstPad();
+    html += '<tr><td class="k">Tested as</td><td class="v">' + layoutName + '</td></tr>';
     html += '<tr><td class="k">Controller</td><td class="v">' +
             (gp ? (gp.id || '(no id)') : '(disconnected)') + '</td></tr>';
     html += '<tr><td class="k">Mapping</td><td class="v">' +
@@ -207,16 +263,32 @@
     window.scrollTo(0,0);
   }
 
+  var picks = document.querySelectorAll('.pickBtn');
+  for(var pi=0; pi<picks.length; pi++){
+    picks[pi].onclick = function(){
+      var which = this.getAttribute('data-layout');
+      STEPS = LAYOUTS[which];
+      layoutName = which === 'left' ? 'Left Joy-Con'
+                 : which === 'right' ? 'Right Joy-Con' : 'Other controller';
+      started = true;
+      $('pick').style.display = 'none';
+      $('stage').style.display = '';
+      step = 0; results = []; finished = false;
+      $('gotIt').textContent = '';
+      showStep();
+    };
+  }
+
   $('skip').onclick = function(){
-    if(finished) return;
+    if(finished || !started) return;
     record(STEPS[step].key, 'not detected');
   };
   $('restart').onclick = function(){
-    step = 0; results = []; finished = false;
+    step = 0; results = []; finished = false; started = false;
     $('results').classList.remove('show');
-    $('stage').style.display = '';
+    $('stage').style.display = 'none';
+    $('pick').style.display = '';
     $('gotIt').textContent = '';
-    showStep();
   };
 
   function firstPad(){
@@ -294,7 +366,7 @@
       $('padCounts').textContent = gp.axes.length + ' axes, ' + gp.buttons.length + ' buttons';
       renderLive(gp);
 
-      if(!finished){
+      if(started && !finished){
         var s = STEPS[step];
         var btn = anyDown(gp), ax = biggestAxis(gp);
         var quiet = (btn < 0 && ax.mag < 0.3);
@@ -317,7 +389,6 @@
     requestAnimationFrame(tick);
   }
 
-  showStep();
   tick();
 })();
 </script>
