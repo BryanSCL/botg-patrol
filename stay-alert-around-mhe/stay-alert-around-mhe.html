@@ -547,6 +547,8 @@ const ZH = {
   'Too fast for a blind corner.': '盲角车速过快。',
   'You drove past without stopping.': '你没有停车就开了过去。',
   'You passed within touching distance.': '你擦身而过，距离近在咫尺。',
+  'You hit a worker at the racking.': '你撞到了在货架旁工作的员工。',
+  'People pick, stack and walk along the rack faces all shift. Keep to the middle of the aisle, slow right down where people are working, and never cut close to the racking.': '员工整个班次都在货架旁拣货、堆放和走动。请保持在通道中间行驶，在有人作业的地方大幅减速，切勿贴近货架行驶。',
   'They were still walking and you slid straight past at speed. Steering around a person is not a substitute for slowing down — one step the wrong way and it is a struck-by. Sound the horn early, then creep past or wait until they are clear.': '对方还在行走，你却高速擦身而过。绕开行人不能代替减速 — 他只要迈错一步就会被撞。应及早鸣笛，然后以极慢速度通过，或等他完全离开。',
   '⚠ Someone is crossing — SLOW RIGHT DOWN or sound the horn.': '⚠ 有人正在横穿 — 请大幅减速或鸣笛。',
   'Horn, then a full stop — textbook.': '先按喇叭，再完全停车 — 标准做法。',
@@ -1590,6 +1592,8 @@ function resetMoment(){
   seg.moment=checkpoint.moment; seg.state='enter'; seg.t=0; seg.d={};
   clearHeld();
   stuckT=0;
+  // a struck worker is lying on the floor — put everyone back on their feet
+  if(seg.mode === 'seg1') spawnWorkers();
 }
 
 /* ---- manual recovery: RESET button (and C key) ---- */
@@ -1872,8 +1876,101 @@ function animateChevrons(now){
   }
 }
 
+/* =========================================================
+   WAREHOUSE WORKERS — people going about their shift along the driving
+   route, who can be struck like anyone else. Kept apart from the scripted
+   scenario pedestrians: every moment change and every TRY AGAIN calls
+   removePeds(), and these must survive the first and be restored by the
+   second.
+   Placement: along the rack faces (|x| 3.5–3.8) where pickers really
+   stand, never on the driving line — hitting one means you cut close to
+   the racking. Kept clear of every scripted zone: the blind-corner
+   crossing (z 4–10), the reversing pedestrian (z < -12), the fenced
+   turning bay, and the run-home crossing at z = 18.
+   ========================================================= */
+const WORKER_SPOTS = [
+  { kind:'pick', x: 3.8, z: 21.5, face: Math.PI/2 },        // dock end, picking from the east racking
+  { kind:'walk', x:-3.5, z0: 11.2, z1: 15.6, box:true },   // carrying a carton along the west racking
+  { kind:'walk', x: 3.5, z0: -9.0, z1: -2.0 },              // walking the east edge of the long aisle
+  { kind:'pick', x:-3.8, z: -6.5, face:-Math.PI/2 }         // picking from the west racking
+];
+const workers = [];
+const cartonMat = new THREE.MeshStandardMaterial({ color:0xb08a5a, roughness:0.9 });
+function clearWorkers(){
+  for(const w of workers) scene.remove(w.p.group);
+  workers.length = 0;
+}
+function spawnWorkers(){
+  clearWorkers();
+  for(const s of WORKER_SPOTS){
+    const p = buildPed();
+    const w = { p, s, dir:1, paused:false };
+    if(s.kind === 'pick'){
+      p.group.position.set(s.x, 0, s.z); p.group.rotation.y = s.face;
+    } else {
+      p.group.position.set(s.x, 0, s.z0); p.group.rotation.y = 0;
+      if(s.box){
+        const c = new THREE.Mesh(new THREE.BoxGeometry(0.46,0.34,0.36), cartonMat);
+        c.position.set(0, 1.02, 0.34); c.castShadow = true; p.body.add(c);
+      }
+    }
+    p.state = 'working';
+    scene.add(p.group); workers.push(w);
+  }
+}
+function updateWorkers(dt){
+  const t = clockNow;
+  // hits only count while the truck is actually being driven through a live moment
+  const live = seg.mode === 'seg1' && seg.moment >= 1 && seg.moment <= 4 && !player.frozen &&
+               seg.state !== 'struck' && seg.state !== 'cleared' && seg.state !== 'failed';
+  for(const w of workers){
+    const p = w.p;
+    if(p.state === 'down') continue;                   // the strike animation owns them now
+    const d = Math.hypot(p.group.position.x - player.x, p.group.position.z - player.z);
+    if(w.s.kind === 'walk'){
+      // a walker stops and waits when a truck is close, as a person would —
+      // they never walk themselves into it
+      if(d < 3.6) w.paused = true; else if(d > 4.6) w.paused = false;
+      if(w.paused){
+        pedIdleAnim(p, t);
+        p.group.rotation.y = Math.atan2(player.x - p.group.position.x, player.z - p.group.position.z);
+      } else {
+        const zNow = p.group.position.z + w.dir * 1.1 * dt;
+        if(zNow > w.s.z1){ w.dir = -1; } else if(zNow < w.s.z0){ w.dir = 1; }
+        p.group.position.z = clamp(zNow, w.s.z0, w.s.z1);
+        p.group.position.x = w.s.x;
+        p.group.rotation.y = w.dir > 0 ? 0 : Math.PI;
+        pedWalkAnim(p, t, 0.8);
+      }
+      if(w.s.box){ p.armL.rotation.x = p.armR.rotation.x = -1.15; }   // both hands on the carton
+    } else {
+      // picking: reach up into the rack and back, over and over
+      pedIdleAnim(p, t);
+      const r = 0.5 + 0.5*Math.sin(t*1.3 + p.walkPh);
+      p.armR.rotation.x = -1.1 - 1.0*r;
+      p.armL.rotation.x = -0.5 - 0.4*r;
+    }
+    if(!live) continue;
+    // contact only matters when the truck is moving TOWARDS them: fast = struck,
+    // slow = the truck stops. Moving away is always allowed — otherwise backing
+    // off a worker you had crept up to would itself count as hitting them, and
+    // a gentle bump could pin the truck in place.
+    if(truckHitsPed(p)){
+      const { lf } = truckLocal(p.group.position.x, p.group.position.z);
+      const towards = (lf >= 0 && player.gear > 0) || (lf < 0 && player.gear < 0);
+      if(towards && player.speed > TUNE.strikeSpeed){
+        strike(p, 'You hit a worker at the racking.',
+          'People pick, stack and walk along the rack faces all shift. Keep to the middle of the aisle, slow right down where people are working, and never cut close to the racking.');
+        return;
+      }
+      if(towards) player.speed = 0;
+    }
+  }
+}
+
 function startSeg1(){
   seg.mode='seg1'; seg.moment=0; seg.state='enter'; seg.t=0; seg.d={};
+  spawnWorkers();
   player.mode='drive'; player.x=0; player.z=24; player.heading=0;
   player.speed=0; player.steer=0; player.belted=false; player.frozen=true;
   setGear(1);
@@ -1897,6 +1994,7 @@ function nudgeBelt(){
 function updateSeg1(dt){
   seg.t += dt;
   const m = seg.moment;
+  updateWorkers(dt);
 
   /* ---- moment 0: seatbelt interlock ---- */
   if(m===0){
@@ -2549,6 +2647,7 @@ function startSeg2(){
   player.speed=0; player.frozen=false;
   playerTruck.group.visible=false;
   setSwingBay(false);        // seg 2 walks across the bay floor — no fence here
+  clearWorkers();            // they belong to the driving segment
   $('beltStrap').classList.remove('show');
   meetPoint.visible=true;
   setDots(3,0);
@@ -2750,7 +2849,7 @@ function finishGame(){
   AudioSys.chime();
 }
 function resetAll(){
-  clearAI(); removePeds(); clearBlood(); strikeAnim=null;
+  clearAI(); removePeds(); clearWorkers(); clearBlood(); strikeAnim=null;
   bloodVignette(false);
   setAmbient(false); setTagsVisible(false); resetTags();
   $('finishScreen').classList.remove('show');

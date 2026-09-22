@@ -19,6 +19,10 @@ Two independent, self-contained browser safety games live in this folder:
    route, flowing chevrons, a cone island and numbered marks (1 line up ·
    2 swing wide · 3 park). The fence is only up for that moment; it cannot be
    driven around, and being pinned or circling auto-returns you to the pad.
+   Four warehouse workers (two picking at the racking, two walking the aisle
+   edge, one carrying a carton) are on shift throughout the driving segment.
+   Keep to the middle of the aisle and they are never touched; cut close to
+   the racking at speed and you strike one.
 
    Controls — keyboard: W/↑ = go, A D / ← → = steer, X/↓ = brake, H = horn,
    R = reverse, C = reset, Esc = exit, Enter = confirm. Gamepad: left stick or
