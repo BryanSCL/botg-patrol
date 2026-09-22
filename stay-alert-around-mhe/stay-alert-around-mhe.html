@@ -173,7 +173,11 @@
      would float in empty space off the circle */
   #goPedal[data-pad]::after, #brakePedal[data-pad]::after, #hornBtn[data-pad]::after {
       top:-12px; right:auto; left:50%; transform:translateX(-50%); }
-  #cardBtn { position:relative; }
+  /* EXIT sits right under the speed panel, so its badge goes beside it */
+  #exitBtn[data-pad]::after { top:50%; right:-50px; transform:translateY(-50%); }
+  /* the menu buttons are in normal flow, so they need an anchor for the badge */
+  #cardBtn, #goBtn, #againBtn, #startRow .btn { position:relative; }
+  [hidden] { display:none !important; }
 
   /* subtle cinematic vignette while playing */
   #camVignette { position:fixed; inset:0; z-index:40; pointer-events:none;
@@ -337,8 +341,8 @@
   </div>
   <h1>STAY ALERT<br>AROUND <span class="hl">MHE</span>
     <span class="zh" style="font-size:.42em; margin-top:.25em; opacity:.95;">警惕物料搬运设备</span></h1>
-  <div class="theme">Drive the pallet jack. Walk the floor. Keep everyone safe.
-    <span class="zh">驾驶托盘车，步行通道，确保人人安全。</span></div>
+  <div class="theme">Drive the MHE. Walk the floor. Keep everyone safe.
+    <span class="zh">驾驶物料搬运设备，步行通道，确保人人安全。</span></div>
   <div class="hazardBar" aria-hidden="true"></div>
   <div class="chipRow" aria-hidden="true">
     <span class="tchip">&#128666; First-person 3D&nbsp;·&nbsp;第一人称 3D</span>
@@ -376,12 +380,13 @@
     <div class="howTxt">Tap the horn near corners<br>and people.
       <span class="zh">在转角和有人的地方按喇叭。</span></div>
   </div>
-  <div class="hint">
-    Keyboard 键盘: W or &#8593; = GO &nbsp;&middot;&nbsp; A D or &#8592; &#8594; = steer &nbsp;&middot;&nbsp; X or &#8595; = BRAKE
-    &nbsp;&middot;&nbsp; H = HORN &nbsp;&middot;&nbsp; R = REVERSE &nbsp;&middot;&nbsp; C = RESET</div>
-  <div class="hint">
-    &#127918; Controller 手柄: left stick steers &nbsp;&middot;&nbsp; A / RT = GO &nbsp;&middot;&nbsp; B / LT = BRAKE
-    &nbsp;&middot;&nbsp; X = HORN &nbsp;&middot;&nbsp; Y = REVERSE</div>
+  <!-- always shown: the keyboard is the fallback if a controller fails -->
+  <div class="hint" id="hintKeys">
+    &#9000;&#65039; Keyboard 键盘: &#8593; / W = GO &nbsp;&middot;&nbsp; &#8595; / S = BRAKE &nbsp;&middot;&nbsp;
+    &#8592; &#8594; / A D = steer &nbsp;&middot;&nbsp; H = HORN &nbsp;&middot;&nbsp; R = REVERSE &nbsp;&middot;&nbsp;
+    ENTER = OK / report &nbsp;&middot;&nbsp; C = RESET &nbsp;&middot;&nbsp; ESC = EXIT</div>
+  <!-- filled in from the controller actually connected; hidden until there is one -->
+  <div class="hint" id="hintPad" hidden></div>
   <div class="hint dim">
     Stuck? Tap &#10226; RESET (top right) any time &mdash; you go back to the last safe point.<br>
     卡住了？随时轻触 &#10226; RESET（右上角），即可回到上一个安全点。</div>
@@ -485,7 +490,7 @@ const ZH = {
   'Walk the <span class="em">yellow walkway</span>. STOP at the white line.': '走在黄色人行道上。在白线前停下。',
   'It has stopped. <span class="em">Make eye contact</span> before you cross.': '车已停下。通过前先与司机目光确认。',
   'Walk on. <span class="em">Listen</span> for reverse beeps.': '继续步行。注意倒车提示音。',
-  'Almost there. <span class="em">Never cut behind a turning pallet jack.</span> Use the crossing.': '快到了。切勿从转弯的托盘车后方穿过，请走人行横道。',
+  'Almost there. <span class="em">Never cut behind a turning MHE.</span> Use the crossing.': '快到了。切勿从转弯的物料搬运设备后方穿过，请走人行横道。',
 
   /* ---- action / gear buttons ---- */
   '&#128737;&#65039; TAP TO BUCKLE SEATBELT': '轻触系上安全带',
@@ -506,7 +511,7 @@ const ZH = {
   'They stopped — horn works.': '对方停下了 — 喇叭起作用了。',
   'Watch the amber beacon — it warns of the swing.': '注意琥珀色警示灯 — 它提示车尾摆动。',
   'Stuck? Tap ↩ RESET (top right) — or try REVERSE.': '卡住了？轻触右上角 ↩ RESET — 或试试倒车。',
-  'Tap EXIT again to end and return to the title.': '再按一次 EXIT 即可结束并返回主页。',
+  'Press EXIT again to end and return to the title.': '再按一次 EXIT 即可结束并返回主页。',
   '↩ Back at the last safe point.': '↩ 已回到上一个安全点。',
   '↩ Position reset — back at the last safe point.': '↩ 位置已重置 — 回到上一个安全点。',
   '↩ Straighten up along the path first, then swing LEFT.': '↩ 先沿路线摆正车身，再向左转弯。',
@@ -589,8 +594,8 @@ const ZH = {
     '你在到达之前就发出警告，对方因此退让，你安全通过。每次在路口和盲区都要按喇叭 — 不要等着被看见。',
   'You controlled your speed the whole way. That is what keeps stopping distance short. Next time sound the horn too, so people know you are coming.':
     '你全程控制了车速，这正是缩短刹车距离的关键。下次也按一下喇叭，让人知道你要过来。',
-  'You drove the pallet jack. Next: walk the same warehouse on foot — and stay safe around one you do NOT control.':
-    '你已驾驶过托盘车。接下来：步行穿越同一个仓库 — 在你无法控制的车辆旁保持安全。',
+  'You drove the MHE. Next: walk the same warehouse on foot — and stay safe around one you do NOT control.':
+    '你已驾驶过物料搬运设备。接下来：步行穿越同一个仓库 — 在你无法控制的车辆旁保持安全。',
   'Stop at the line. Wait for it to stop. Make eye contact so you KNOW the driver sees you. Then cross.':
     '在线前停下，等车停稳，与司机目光确认，确定他看到你之后再通过。',
   'You stepped into a pallet jack’s path at a crossing. Stop at the line, look, and let it pass.':
@@ -1605,7 +1610,7 @@ bindTap($('exitBtn'), ()=>{
     exitArmed = 0; AudioSys.click(); resetAll();
   } else {
     exitArmed = clockNow;
-    toast('Tap EXIT again to end and return to the title.', 2600);
+    toast('Press EXIT again to end and return to the title.', 2600);
   }
 });
 
@@ -2276,7 +2281,7 @@ function updateSeg1(dt){
   if(m===5){
     setDots(5,5); showBtns({}); hideGuide();
     showCard('good','🔄','Now see it from the ground.',
-      'You drove the pallet jack. Next: walk the same warehouse on foot — and stay safe around one you do NOT control.',
+      'You drove the MHE. Next: walk the same warehouse on foot — and stay safe around one you do NOT control.',
       'CONTINUE', startSeg2);
     seg.moment=99; // prevent re-fire
     return;
@@ -2631,7 +2636,7 @@ function updateSeg2(dt){
   if(m===2){
     if(seg.state==='enter'){
       seg.state='walk'; setDots(3,2);
-      banner('Almost there. <span class="em">Never cut behind a turning pallet jack.</span> Use the crossing.');
+      banner('Almost there. <span class="em">Never cut behind a turning MHE.</span> Use the crossing.');
       setCheckpoint(-10.5,-11,0,2);
       setGuide(-3.2,-24.5);
       const a = addAI(-6,-17.9, Math.PI);
@@ -2722,6 +2727,7 @@ function resetAll(){
   bloodVignette(false);
   setAmbient(false); setTagsVisible(false); resetTags();
   $('finishScreen').classList.remove('show');
+  $('howtoScreen').classList.remove('show');   // or it would sit over the title
   $('cardWrap').classList.remove('show');
   $('hud').classList.remove('show');
   $('beltStrap').classList.remove('show');
@@ -2886,8 +2892,10 @@ setInterval(()=>{
 }, 50);
 
 /* =========================================================
-   KEYBOARD — W=GO · A/D=steer · X/S=BRAKE · H/space=HORN ·
-   R=reverse · Enter=OK/next
+   KEYBOARD — W/↑=GO · A/D/←/→=steer · X/S/↓=BRAKE · H/space=HORN ·
+   R=reverse · Enter=OK/next/report · C=reset · Esc=exit ·
+   1/2 = DRIVING MHE / ON FOOT on the title screen.
+   The fallback if a controller fails, so every screen works from it.
    ========================================================= */
 const KEYHOLD = { w:'go', a:'left', d:'right', x:'brake', s:'brake',
                   arrowup:'go', arrowleft:'left', arrowright:'right', arrowdown:'brake' };
@@ -2903,6 +2911,10 @@ window.addEventListener('keydown', e=>{
   else if(k==='r'){ if($('revBtn').style.display==='flex') kbTap('revBtn'); }
   else if(k==='c'){ if($('hud').classList.contains('show')) kbTap('resetBtn'); }
   else if(k==='escape'){ if($('hud').classList.contains('show')) kbTap('exitBtn'); }
+  // title: 1 = DRIVING MHE, 2 = ON FOOT (ENTER still picks driving)
+  else if(k==='1' || k==='2'){
+    if($('titleScreen').classList.contains('show')) kbTap(k==='1' ? 'startDriveBtn' : 'startWalkBtn');
+  }
   else if(k==='enter'){
     if($('cardWrap').classList.contains('show')) kbTap('cardBtn');
     else if($('actionBtn').style.display==='flex') kbTap('actionBtn');
@@ -2921,13 +2933,16 @@ window.addEventListener('keyup', e=>{
    By standard-mapping index: stick or D-pad steers · 7/0 = GO ·
    6/1 = BRAKE (0 and 1 swap on the Switch grip, so A drives) ·
    2/5 = HORN · 3 = REVERSE · 2/3 = the on-screen action ·
-   any face button = continue a card · 8/4 = RESET · 9 = OK.
+   any face button = continue a card / start / play again ·
+   go & brake face buttons = DRIVING MHE & ON FOOT on the title ·
+   8/4 = RESET · 9 = OK on menus, EXIT during play.
    The letters printed on those buttons vary by controller — see
    PAD_GLYPHS, which drives the on-screen badges. Writes to `held` only
    on edges, so keyboard and touch keep working alongside it.
    ========================================================= */
 const padHeld = { go:false, brake:false, left:false, right:false };
 const padTapPrev = {};
+let padScr = '', padScrAt = 0;           // which menu is up, and since when
 let padSeen = false;
 
 function padSetHold(key, on){
@@ -2994,11 +3009,28 @@ function updateGamepad(){
   // brake: left trigger, the brake face button, D-pad down, or a stick back
   padSetHold('brake', down(6) || down(BRAKE_FACE) || down(13) || axis(1) >  0.5 || axis(3) >  0.5);
 
+  // a real press on the pad makes it the input the on-screen labels describe
+  let anyPress = false;
+  for(const p of live){
+    for(const b of p.buttons) if(b && (b.pressed || b.value > 0.4)){ anyPress = true; break; }
+    if(!anyPress) for(const a of p.axes) if(Math.abs(a || 0) > 0.6){ anyPress = true; break; }
+    if(anyPress) break;
+  }
+  if(anyPress) setInputMode('pad');
+
   const vis = id => $(id).style.display === 'flex';
-  const cardUp = $('cardWrap').classList.contains('show');
+  const cardUp   = $('cardWrap').classList.contains('show');
+  const onTitle  = $('titleScreen').classList.contains('show');
+  const onHowto  = $('howtoScreen').classList.contains('show');
+  const onFinish = $('finishScreen').classList.contains('show');
   // a card takes controller presses only once it has been up a moment, so a
   // button already being mashed when it pops cannot skip a lesson unread
   const cardArmed = cardUp && performance.now() - cardShownAt > 900;
+  // the menus get the same guard, so the press that leaves one screen cannot
+  // also fire the next — pressing A twice quickly must not skip HOW TO PLAY
+  const scr = cardUp ? 'card' : onTitle ? 'title' : onHowto ? 'howto' : onFinish ? 'finish' : 'play';
+  if(scr !== padScr){ padScr = scr; padScrAt = performance.now(); }
+  const menuArmed = performance.now() - padScrAt > 600;
 
   // 5 (RB/SR) doubles for the horn, and 4 (LB/SL) for reset: a lone Joy-Con has
   // no Back/Select at all, so without these there is no way to recover from the
@@ -3013,15 +3045,26 @@ function updateGamepad(){
   // on screen at the same time as an action, so they cannot collide. It stays
   // off GO: walking forward must never count as stopping for eye contact.
   padTap('act',  down(2) || down(3), ()=>{ if(!cardUp && vis('actionBtn')) kbTap('actionBtn'); });
-  // any face button continues a card. The edge is tracked on the raw buttons,
-  // so a button held down as the card arms does not fire — only a fresh press.
-  padTap('card', down(0) || down(1) || down(2) || down(3), ()=>{ if(cardArmed) kbTap('cardBtn'); });
+  // title: the go button picks DRIVING MHE, the brake button ON FOOT
+  padTap('drive', down(GO_FACE),    ()=>{ if(onTitle && menuArmed) kbTap('startDriveBtn'); });
+  padTap('walk',  down(BRAKE_FACE), ()=>{ if(onTitle && menuArmed) kbTap('startWalkBtn'); });
+  // any face button continues a card, starts from HOW TO PLAY, or plays again.
+  // The edge is tracked on the raw buttons, so a button held down as a screen
+  // arms does not fire — only a fresh press.
+  padTap('card', down(0) || down(1) || down(2) || down(3), ()=>{
+    if(cardUp){ if(cardArmed) kbTap('cardBtn'); }
+    else if(onHowto  && menuArmed) kbTap('goBtn');
+    else if(onFinish && menuArmed) kbTap('againBtn');
+  });
+  // + / Start confirms on the menus, and is EXIT during play — press twice,
+  // exactly like the on-screen button. It no longer doubles as the on-screen
+  // action: that is on X/Y, and + cannot mean "report" and "exit" at once.
   padTap('ok',   down(9), ()=>{
     if(cardUp){ if(cardArmed) kbTap('cardBtn'); }
-    else if(vis('actionBtn')) kbTap('actionBtn');
-    else if($('titleScreen').classList.contains('show')) kbTap('startDriveBtn');
-    else if($('howtoScreen').classList.contains('show')) kbTap('goBtn');
-    else if($('finishScreen').classList.contains('show')) kbTap('againBtn');
+    else if(onTitle)  { if(menuArmed) kbTap('startDriveBtn'); }
+    else if(onHowto)  { if(menuArmed) kbTap('goBtn'); }
+    else if(onFinish) { if(menuArmed) kbTap('againBtn'); }
+    else if($('hud').classList.contains('show')) kbTap('exitBtn');
   });
 }
 /* The API reports button POSITIONS, not labels, so the same index is printed
@@ -3050,29 +3093,68 @@ function padFamily(pads){
    binding in updateGamepad — change one, change both. */
 const PAD_GLYPHS = {
   // standard mapping: 0 bottom · 1 right · 2 left · 3 top · 4 LB · 6/7 triggers
-  xbox:   { go:'RT', brake:'LT', horn:'X', rev:'Y', reset:'LB', action:'Y', ok:'A' },
+  // · 8 back · 9 start. drive/walk are the title-screen choices; start/again/ok
+  // take any face button, so they show the conventional confirm.
+  xbox:   { go:'RT', brake:'LT', horn:'X', rev:'Y', reset:'LB', action:'Y', ok:'A',
+            exit:'☰', drive:'A', walk:'B', start:'A', again:'A' },
   // the Switch grip or a Pro Controller. A and B are swapped in updateGamepad
   // for this family, so A drives and B brakes — the Mario Kart layout. ZR/ZL
   // work too, but the face buttons are the ones confirmed on the booth grip.
-  switch: { go:'A',  brake:'B',  horn:'Y', rev:'X', reset:'−',  action:'X', ok:'A' },
-  // a right Joy-Con held sideways — A=0, X=1, B=2, Y=3, SL=4, measured
-  joycon: { go:'A',  brake:'X',  horn:'B', rev:'Y', reset:'SL', action:'Y', ok:'A' }
+  switch: { go:'A',  brake:'B',  horn:'Y', rev:'X', reset:'−',  action:'X', ok:'A',
+            exit:'+', drive:'A', walk:'B', start:'A', again:'A' },
+  // a right Joy-Con held sideways — A=0, X=1, B=2, Y=3, SL=4, +=9, measured
+  joycon: { go:'A',  brake:'X',  horn:'B', rev:'Y', reset:'SL', action:'Y', ok:'A',
+            exit:'+', drive:'A', walk:'X', start:'A', again:'A' }
 };
+// the keyboard — the fallback if a controller fails, so it gets labels too
+const KEY_GLYPHS = { go:'↑', brake:'↓', horn:'H', rev:'R', reset:'C', action:'ENTER',
+                     ok:'ENTER', exit:'ESC', drive:'1', walk:'2', start:'ENTER', again:'ENTER' };
 const BADGED = { goPedal:'go', brakePedal:'brake', hornBtn:'horn', revBtn:'rev',
-                 resetBtn:'reset', actionBtn:'action', cardBtn:'ok' };
+                 resetBtn:'reset', actionBtn:'action', cardBtn:'ok', exitBtn:'exit',
+                 startDriveBtn:'drive', startWalkBtn:'walk', goBtn:'start', againBtn:'again' };
+
+/* Which labels to show follows whatever the player used LAST — controller,
+   keyboard or touch. That is what makes the keyboard a real fallback: if the
+   controller dies mid-session, the first key pressed switches every label to
+   keys. Touch players never see labels at all. */
+let inputMode = (window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches)
+                ? 'key' : 'touch';
+function setInputMode(m){
+  if(m === inputMode) return;
+  inputMode = m; refreshBadges();
+}
+window.addEventListener('keydown', ()=>setInputMode('key'), true);
+window.addEventListener('pointerdown', e=>{
+  if(!e.isTrusted) return;               // kbTap's synthetic presses are not a device
+  setInputMode(e.pointerType === 'touch' || e.pointerType === 'pen' ? 'touch' : 'key');
+}, true);
+
 let badgeSig = null, padFam = null;
 function refreshPadBadges(pads){
   const sig = pads.map(p => p.id + '/' + p.axes.length).join('|');
   if(sig === badgeSig) return;                       // only on connect / disconnect
   badgeSig = sig;
-  const f = padFamily(pads), g = f && PAD_GLYPHS[f];
-  padFam = f;                                        // updateGamepad maps by this
+  padFam = padFamily(pads);                          // updateGamepad maps by this
+  refreshBadges();
+}
+function refreshBadges(){
+  // a wrong letter is worse than none, so an unrecognised pad gets no badges
+  const g = inputMode === 'pad' ? (padFam && PAD_GLYPHS[padFam])
+          : inputMode === 'key' ? KEY_GLYPHS : null;
   for(const id in BADGED){
     const el = $(id);
     if(!el) continue;
-    // a wrong letter is worse than none, so unrecognised pads get no badges
     if(g) el.setAttribute('data-pad', g[BADGED[id]]);
     else  el.removeAttribute('data-pad');
+  }
+  // the how-to screen's controller line, written for the pad actually connected
+  const hp = $('hintPad'), pg = padFam && PAD_GLYPHS[padFam];
+  if(hp){
+    hp.hidden = !pg;
+    if(pg) hp.innerHTML = '&#127918; Controller 手柄: stick steers &nbsp;&middot;&nbsp; ' +
+      [['go','GO'],['brake','BRAKE'],['horn','HORN'],['rev','REVERSE'],
+       ['action','report'],['reset','RESET'],['exit','EXIT']]
+        .map(([k,n]) => pg[k] + ' = ' + n).join(' &nbsp;&middot;&nbsp; ');
   }
 }
 function padHint(pads){
@@ -3100,6 +3182,9 @@ window.addEventListener('gamepaddisconnected', ()=>{
   for(const k in padHeld) padSetHold(k,false);
   console.info('[MHE] gamepad disconnected');
 });
+
+// paint the keyboard labels on a laptop before anything has been pressed
+refreshBadges();
 
 /* block context menu / double-tap zoom on the kiosk */
 document.addEventListener('contextmenu', e=>e.preventDefault());
