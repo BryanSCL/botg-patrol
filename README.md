@@ -4,11 +4,11 @@ Two independent, self-contained browser safety games live in this folder:
 
 1. **BotG Patrol: Spot the Contact Risk** — `index.html` (+ `style.css`, `script.js`), documented below.
 2. **Stay Alert Around MHE** — `stay-alert-around-mhe/stay-alert-around-mhe.html`, a single-file 3D
-   pallet-jack safety kiosk game (AnjouHealth × SATS, Tackling SIF FY26–27).
+   pallet-jack safety kiosk game (AnjouHealth × SATS, STOP SIF Campaign FY26–27).
    Open the file in Chrome — desktop or tablet (landscape). It needs internet
    access once per load for the three.js CDN script. The vehicle throughout is
    a rider (stand-on) powered pallet truck. Two playable segments:
-   **On the Jack** (drive it: pre-use check, blind corner, reversing, swing
+   **Driving MHE** (drive it: pre-use check, blind corner, reversing, swing
    radius, speed choice) and **On Foot** (walkway discipline, stop lines, eye
    contact, reversing vehicles, swing radius, plus three optional floor
    hazards to spot and report). Players can never get permanently stuck:

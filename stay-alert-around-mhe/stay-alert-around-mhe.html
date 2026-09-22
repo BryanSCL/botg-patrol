@@ -254,6 +254,17 @@
     #goBtn { margin-top:10px; font-size:min(3.2vw,32px); padding:11px 56px; }
     /* the bilingual banner gets tall on short screens — keep it off the view */
     #banner { font-size:clamp(14px,1.9vw,26px); padding:9px 22px; }
+    /* title: the footer was pinned to the bottom edge, and on a 720-768px
+       screen the start buttons run down past it, so the campaign line printed
+       straight across both buttons. Let it flow beneath them instead, and
+       tighten the stack so the whole page still fits without scrolling. */
+    .titleIcon { font-size:min(7vw,72px); margin-bottom:4px; }
+    #titleScreen h1 { font-size:min(6.4vw,70px); }
+    #titleScreen .theme { margin-top:8px; }
+    .hazardBar { margin-top:12px; }
+    .chipRow { margin-top:14px; }
+    #startRow { margin-top:22px; }
+    #titleFoot { position:static; margin-top:16px; }
   }
 
   /* rotate-device overlay — touch devices only (never block a desktop window) */
@@ -335,10 +346,10 @@
     <span class="tchip">&#9201; About 5 minutes&nbsp;·&nbsp;约 5 分钟</span>
   </div>
   <div id="startRow">
-    <button class="btn green pulse" id="startDriveBtn">&#128666; ON THE JACK<span class="zh">驾驶托盘车</span></button>
+    <button class="btn green pulse" id="startDriveBtn">&#128666; DRIVING MHE<span class="zh">驾驶物料搬运设备</span></button>
     <button class="btn blue pulse" id="startWalkBtn">&#128694; ON FOOT<span class="zh">步行穿越仓库</span></button>
   </div>
-  <div id="titleFoot">AnjouHealth &times; SATS &nbsp;&bull;&nbsp; Tackling SIF Promotion Campaign FY26&ndash;27 &nbsp;&bull;&nbsp; Booth 2</div>
+  <div id="titleFoot">AnjouHealth &times; SATS &nbsp;&bull;&nbsp; STOP SIF Campaign FY26&ndash;27 &nbsp;&bull;&nbsp; Booth 2</div>
 </div>
 
 <div class="screen" id="howtoScreen">
@@ -413,7 +424,7 @@
 'use strict';
 /* ================================================================
    STAY ALERT AROUND MHE — first-person pallet-jack safety kiosk game
-   AnjouHealth x SATS — Tackling SIF Promotion Campaign FY26-27
+   AnjouHealth x SATS — STOP SIF Campaign FY26-27
    ================================================================ */
 
 /* ---- TONE DIAL ---- */
@@ -505,7 +516,7 @@ const ZH = {
   '⚠ You left the walkway — see the beacon? The tail swings here!': '⚠ 你离开了人行道 — 看到警示灯了吗？车尾会摆到这里！',
   '✅ The driver has seen you — cross now.': '✅ 司机已看到你 — 现在通过。',
   '🎮 Controller connected — stick steers, RT = GO, LT = BRAKE, X = HORN, Y = REVERSE.': '🎮 手柄已连接 — 摇杆转向，RT = 前进，LT = 刹车，X = 喇叭，Y = 倒车。',
-  '🎮 Controller connected — stick steers, ZR = GO, ZL = BRAKE, Y = HORN, X = REVERSE.': '🎮 手柄已连接 — 摇杆转向，ZR = 前进，ZL = 刹车，Y = 喇叭，X = 倒车。',
+  '🎮 Controller connected — stick steers, A = GO, B = BRAKE, Y = HORN, X = REVERSE.': '🎮 手柄已连接 — 摇杆转向，A = 前进，B = 刹车，Y = 喇叭，X = 倒车。',
   '🎮 Controller connected — stick steers, A = GO, X = BRAKE, B = HORN, Y = REVERSE.': '🎮 手柄已连接 — 摇杆转向，A = 前进，X = 刹车，B = 喇叭，Y = 倒车。',
   '🎮 Controller connected — stick steers, bottom button = GO, right button = BRAKE.': '🎮 手柄已连接 — 摇杆转向，下方按键 = 前进，右侧按键 = 刹车。',
   '👀 Tap MAKE EYE CONTACT — then you can cross.': '👀 轻触「与司机目光确认」— 然后即可通过。',
@@ -2908,7 +2919,8 @@ window.addEventListener('keyup', e=>{
 /* =========================================================
    GAMEPAD / JOYSTICK — polled each frame, every connected pad merged.
    By standard-mapping index: stick or D-pad steers · 7/0 = GO ·
-   6/1 = BRAKE · 2/5 = HORN · 3 = REVERSE · 2/3 = the on-screen action ·
+   6/1 = BRAKE (0 and 1 swap on the Switch grip, so A drives) ·
+   2/5 = HORN · 3 = REVERSE · 2/3 = the on-screen action ·
    any face button = continue a card · 8/4 = RESET · 9 = OK.
    The letters printed on those buttons vary by controller — see
    PAD_GLYPHS, which drives the on-screen badges. Writes to `held` only
@@ -2937,8 +2949,13 @@ function updateGamepad(){
      the Switch console that normally fuses them — and reading just the first
      would leave one whole hand dead. Merging also means it does not matter
      which half a given button lives on. */
-  const live = [];
-  for(const p of pads) if(p && p.connected) live.push(p);
+  const all = [];
+  for(const p of pads) if(p && p.connected) all.push(p);
+  // When the browser fuses the grip into one two-stick pad it can leave the
+  // two halves listed as well. Read only the fused pad then, or every press
+  // lands twice under two different layouts — A would be GO and BRAKE at once.
+  const fused = all.filter(p => p.axes.length >= 4);
+  const live = (fused.length && fused.length < all.length) ? fused : all;
   refreshPadBadges(live);
   if(!live.length){
     if(padSeen){ padSeen=false; for(const k in padHeld) padSetHold(k,false); }
@@ -2966,10 +2983,16 @@ function updateGamepad(){
   const steer = axis(0) || axis(2);
   padSetHold('left',  steer < -0.3 || down(14));
   padSetHold('right', steer >  0.3 || down(15));
-  // throttle: triggers, bottom face button, D-pad up, or a stick pushed forward
-  padSetHold('go',    down(7) || down(0) || down(12) || axis(1) < -0.5 || axis(3) < -0.5);
-  // brake: left trigger, right face button, D-pad down, or a stick pulled back
-  padSetHold('brake', down(6) || down(1) || down(13) || axis(1) >  0.5 || axis(3) >  0.5);
+  /* Nintendo prints A and B where Xbox prints B and A. On the Switch grip A
+     drives and B brakes — the Mario Kart layout its players already know —
+     so the two face buttons swap roles for that family only. Everything
+     else keeps the Xbox convention: bottom (A) drives, right (B) brakes. */
+  const nin = padFam === 'switch';
+  const GO_FACE = nin ? 1 : 0, BRAKE_FACE = nin ? 0 : 1;
+  // throttle: right trigger, the go face button, D-pad up, or a stick forward
+  padSetHold('go',    down(7) || down(GO_FACE)    || down(12) || axis(1) < -0.5 || axis(3) < -0.5);
+  // brake: left trigger, the brake face button, D-pad down, or a stick back
+  padSetHold('brake', down(6) || down(BRAKE_FACE) || down(13) || axis(1) >  0.5 || axis(3) >  0.5);
 
   const vis = id => $(id).style.display === 'flex';
   const cardUp = $('cardWrap').classList.contains('show');
@@ -3013,11 +3036,14 @@ function padFamily(pads){
   let axes = 0;
   for(const p of pads) axes = Math.max(axes, p.axes.length);
   if(!/057e|nintendo|joy-?con|pro controller/.test(ids)) return 'xbox';
-  // two halves in the grip that stayed two devices keep their sideways layout
-  if(pads.length > 1) return 'joycon';
-  // one device with two sticks: the browser fused the grip, or a Pro Controller
-  if(axes >= 4 || ids.includes('combined') || ids.includes('2009')) return 'switch';
-  if(ids.includes('2007')) return 'joycon';          // lone right Joy-Con — measured
+  /* The grip — whether the browser fuses the halves into one two-stick pad or
+     lists them as a pair — reports standard UPRIGHT positions: B=0, A=1, Y=2,
+     X=3. Observed on the booth grip: A fired index 1, X index 3, B index 0.
+     A lone Joy-Con is different, because the browser treats it as a sideways
+     mini-controller; the same right half measured A=0 on its own. */
+  if(pads.length > 1 || axes >= 4 || ids.includes('combined') || ids.includes('2009'))
+    return 'switch';
+  if(ids.includes('2007')) return 'joycon';          // lone right Joy-Con, sideways — measured
   return null;                                       // unmeasured: label nothing
 }
 /* What is printed on the button that does each job. Every entry matches a
@@ -3025,19 +3051,22 @@ function padFamily(pads){
 const PAD_GLYPHS = {
   // standard mapping: 0 bottom · 1 right · 2 left · 3 top · 4 LB · 6/7 triggers
   xbox:   { go:'RT', brake:'LT', horn:'X', rev:'Y', reset:'LB', action:'Y', ok:'A' },
-  // the Switch grip or a Pro Controller: the same positions, Nintendo's letters
-  switch: { go:'ZR', brake:'ZL', horn:'Y', rev:'X', reset:'−',  action:'X', ok:'A' },
+  // the Switch grip or a Pro Controller. A and B are swapped in updateGamepad
+  // for this family, so A drives and B brakes — the Mario Kart layout. ZR/ZL
+  // work too, but the face buttons are the ones confirmed on the booth grip.
+  switch: { go:'A',  brake:'B',  horn:'Y', rev:'X', reset:'−',  action:'X', ok:'A' },
   // a right Joy-Con held sideways — A=0, X=1, B=2, Y=3, SL=4, measured
   joycon: { go:'A',  brake:'X',  horn:'B', rev:'Y', reset:'SL', action:'Y', ok:'A' }
 };
 const BADGED = { goPedal:'go', brakePedal:'brake', hornBtn:'horn', revBtn:'rev',
                  resetBtn:'reset', actionBtn:'action', cardBtn:'ok' };
-let badgeSig = null;
+let badgeSig = null, padFam = null;
 function refreshPadBadges(pads){
   const sig = pads.map(p => p.id + '/' + p.axes.length).join('|');
   if(sig === badgeSig) return;                       // only on connect / disconnect
   badgeSig = sig;
   const f = padFamily(pads), g = f && PAD_GLYPHS[f];
+  padFam = f;                                        // updateGamepad maps by this
   for(const id in BADGED){
     const el = $(id);
     if(!el) continue;
