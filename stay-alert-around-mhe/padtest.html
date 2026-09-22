@@ -73,6 +73,10 @@
        border:1px solid var(--line);font-family:ui-monospace,monospace;font-size:14px;color:var(--dim)}
   .btn.hit{background:var(--hot);border-color:var(--hot);color:#07120b;font-weight:700}
   .note{color:var(--dim);font-size:13px;margin-top:10px}
+  dd.ok{color:var(--hot);font-weight:700}
+  dd.warn{color:var(--warn);font-weight:700}
+  .padHead{color:var(--dim);font-size:12px;letter-spacing:.07em;text-transform:uppercase;
+           margin:2px 0 6px;border-top:1px solid var(--line);padding-top:8px}
   details{margin-top:16px}
   summary{color:var(--dim);cursor:pointer;font-size:14px;padding:6px 0}
 </style>
@@ -120,6 +124,7 @@
   <div class="panel">
     <h2>Device</h2>
     <dl>
+      <dt>Connected</dt><dd id="padCount" class="warn">none yet</dd>
       <dt>Controller</dt><dd id="padId">— not seen yet —</dd>
       <dt>Mapping</dt><dd id="padMap">—</dd>
       <dt>Axes / buttons</dt><dd id="padCounts">—</dd>
@@ -130,7 +135,8 @@
   <div class="panel">
     <h2>Live readout</h2>
     <div id="axes"><span class="note">Waiting for a controller…</span></div>
-    <div class="btns" id="btns" style="margin-top:10px"></div>
+    <div class="note">Press anything — the matching number lights up. If a half
+      is connected but its block never reacts, that half is the problem.</div>
   </div>
 </div>
 
@@ -364,41 +370,56 @@
     return best ? { pad:best.pad, i:best.i, v:best.v, mag:mag } : { i:-1, mag:0, v:0 };
   }
 
-  function renderLive(gp){
+  /* Every connected pad gets its own live block. Rendering only the first one
+     made a perfectly healthy second controller look dead, which is worse than
+     showing nothing — you cannot tell "not connected" from "not displayed". */
+  var liveSig = '';
+  function renderLive(pads){
     var host = $('axes');
-    if(host.childElementCount !== gp.axes.length){
+    var sig = pads.map(function(p){
+      return p.index + ':' + p.axes.length + ':' + p.buttons.length; }).join('|');
+    if(sig !== liveSig){
+      liveSig = sig;
       host.innerHTML = '';
-      for(var i=0;i<gp.axes.length;i++){
-        var row = document.createElement('div'); row.className = 'axrow';
-        row.innerHTML = '<span class="axname">axis ' + i + '</span>' +
-          '<span class="axbar"><span class="axmid"></span>' +
-          '<span class="axfill" id="axf' + i + '"></span></span>' +
-          '<span class="axval" id="axv' + i + '">0.00</span>';
-        host.appendChild(row);
+      for(var n=0;n<pads.length;n++){
+        var p = pads[n], blk = document.createElement('div');
+        blk.style.marginBottom = '12px';
+        var h = '';
+        if(pads.length > 1){
+          h += '<div class="padHead">pad ' + p.index + ' — ' +
+               (/2006|joy-con \(l\)/i.test(p.id||'') ? 'left half'
+                : /2007|joy-con \(r\)/i.test(p.id||'') ? 'right half' : 'controller') + '</div>';
+        }
+        for(var i=0;i<p.axes.length;i++){
+          h += '<div class="axrow"><span class="axname">axis ' + i + '</span>' +
+               '<span class="axbar"><span class="axmid"></span>' +
+               '<span class="axfill" id="axf' + p.index + '_' + i + '"></span></span>' +
+               '<span class="axval" id="axv' + p.index + '_' + i + '">0.00</span></div>';
+        }
+        h += '<div class="btns">';
+        for(var k=0;k<p.buttons.length;k++)
+          h += '<div class="btn" id="lb' + p.index + '_' + k + '">' + k + '</div>';
+        h += '</div>';
+        blk.innerHTML = h;
+        host.appendChild(blk);
       }
     }
-    for(var j=0;j<gp.axes.length;j++){
-      var v = gp.axes[j] || 0, f = $('axf'+j);
-      if(f){
-        var half = Math.min(Math.abs(v),1) * 50;
-        f.style.left = (v < 0 ? 50 - half : 50) + '%';
-        f.style.width = half + '%';
-        f.style.background = Math.abs(v) > 0.3 ? 'var(--hot)' : 'var(--line)';
+    for(var m=0;m<pads.length;m++){
+      var gp = pads[m];
+      for(var j=0;j<gp.axes.length;j++){
+        var v = gp.axes[j] || 0, f = $('axf' + gp.index + '_' + j);
+        if(f){
+          var half = Math.min(Math.abs(v),1) * 50;
+          f.style.left = (v < 0 ? 50 - half : 50) + '%';
+          f.style.width = half + '%';
+          f.style.background = Math.abs(v) > 0.3 ? 'var(--hot)' : 'var(--line)';
+        }
+        var tv = $('axv' + gp.index + '_' + j); if(tv) tv.textContent = v.toFixed(2);
       }
-      var tv = $('axv'+j); if(tv) tv.textContent = v.toFixed(2);
-    }
-    var bh = $('btns');
-    if(bh.childElementCount !== gp.buttons.length){
-      bh.innerHTML = '';
-      for(var k=0;k<gp.buttons.length;k++){
-        var el = document.createElement('div');
-        el.className = 'btn'; el.id = 'lb'+k; el.textContent = k;
-        bh.appendChild(el);
+      for(var q=0;q<gp.buttons.length;q++){
+        var bb = gp.buttons[q], el2 = $('lb' + gp.index + '_' + q);
+        if(el2) el2.className = 'btn' + ((bb && (bb.pressed || bb.value > 0.4)) ? ' hit' : '');
       }
-    }
-    for(var n=0;n<gp.buttons.length;n++){
-      var bb = gp.buttons[n], el2 = $('lb'+n);
-      if(el2) el2.className = 'btn' + ((bb && (bb.pressed || bb.value > 0.4)) ? ' hit' : '');
     }
   }
 
@@ -416,7 +437,9 @@
       $('padId').textContent = (pads.length > 1 ? pads.length + ' devices — ' : '') + idTxt.join('  |  ');
       $('padMap').textContent = mapTxt.join('  |  ');
       $('padCounts').textContent = cntTxt.join('  |  ');
-      renderLive(gp);
+      $('padCount').textContent = pads.length + (pads.length === 1 ? ' device' : ' devices');
+      $('padCount').className = pads.length >= 2 ? 'ok' : 'warn';
+      renderLive(pads);
 
       if(started && !finished){
         var s = STEPS[step];
@@ -438,6 +461,8 @@
       seen = false;
       $('stage').classList.remove('live');
       $('padId').textContent = '— disconnected —';
+      $('padCount').textContent = 'none'; $('padCount').className = 'warn';
+      liveSig = ''; $('axes').innerHTML = '<span class="note">Waiting for a controller…</span>';
     }
     requestAnimationFrame(tick);
   }
