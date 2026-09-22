@@ -2907,26 +2907,43 @@ function updateGamepad(){
   try { pads = navigator.getGamepads ? navigator.getGamepads() : null; }
   catch(err){ return; }                       // some browsers throw when blocked
   if(!pads) return;
-  let gp = null;
-  for(const p of pads) if(p && p.connected){ gp = p; break; }
-  if(!gp){
+  /* Every connected pad is merged into one set of inputs. Two Joy-Cons in the
+     grip can arrive as two separate devices — the grip is only plastic, it is
+     the Switch console that normally fuses them — and reading just the first
+     would leave one whole hand dead. Merging also means it does not matter
+     which half a given button lives on. */
+  const live = [];
+  for(const p of pads) if(p && p.connected) live.push(p);
+  if(!live.length){
     if(padSeen){ padSeen=false; for(const k in padHeld) padSetHold(k,false); }
     return;
   }
-  if(!padSeen){ padSeen = true; console.info('[MHE] gamepad connected:', gp.id); }
+  if(!padSeen){
+    padSeen = true;
+    console.info('[MHE] gamepad(s) connected:', live.map(p=>p.id).join(' + '));
+  }
 
-  const ax = gp.axes || [], bt = gp.buttons || [];
-  const down = i => !!(bt[i] && (bt[i].pressed || bt[i].value > 0.4));
-  const axis = i => (ax.length > i && Math.abs(ax[i]) > 0.3) ? ax[i] : 0;
+  const down = i => live.some(p =>
+    p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > 0.4));
+  // strongest deflection across the pads wins, so either stick can steer
+  const axis = i => {
+    let best = 0;
+    for(const p of live){
+      const v = p.axes.length > i ? (p.axes[i] || 0) : 0;
+      if(Math.abs(v) > Math.abs(best)) best = v;
+    }
+    return Math.abs(best) > 0.3 ? best : 0;
+  };
 
-  // steering: left stick X or D-pad
-  const steer = axis(0);
+  // steering: stick X (either stick), D-pad, or the right stick's X on a
+  // composite pad, where axis 2 is the second stick
+  const steer = axis(0) || axis(2);
   padSetHold('left',  steer < -0.3 || down(14));
   padSetHold('right', steer >  0.3 || down(15));
-  // throttle: right trigger, A, D-pad up, or stick pushed forward
-  padSetHold('go',    down(7) || down(0) || down(12) || axis(1) < -0.5);
-  // brake: left trigger, B, D-pad down, or stick pulled back
-  padSetHold('brake', down(6) || down(1) || down(13) || axis(1) >  0.5);
+  // throttle: triggers, bottom face button, D-pad up, or a stick pushed forward
+  padSetHold('go',    down(7) || down(0) || down(12) || axis(1) < -0.5 || axis(3) < -0.5);
+  // brake: left trigger, right face button, D-pad down, or a stick pulled back
+  padSetHold('brake', down(6) || down(1) || down(13) || axis(1) >  0.5 || axis(3) >  0.5);
 
   const vis = id => $(id).style.display === 'flex';
   // 5 (RB/SR) doubles for the horn, and 4 (LB/SL) for reset: a lone Joy-Con has
@@ -2949,22 +2966,36 @@ function updateGamepad(){
    Joy-Con held sideways rotates again — A=0, X=1, B=2, Y=3, measured on the
    booth hardware. Telling a player the wrong letter is worse than telling them
    nothing, so anything unrecognised gets described by position instead. */
-function padHint(id){
-  const s = (id||'').toLowerCase();
-  const nintendo = s.includes('057e') || s.includes('nintendo') ||
-                   s.includes('joy-con') || s.includes('pro controller');
-  if(nintendo){
-    if(s.includes('2007')) return 'A = GO, X = BRAKE, B = HORN, Y = REVERSE';
-    if(s.includes('2009')) return 'B = GO, A = BRAKE, Y = HORN, X = REVERSE';
-    if(s.includes('2006')) return 'bottom arrow = GO, right arrow = BRAKE';
-    return 'bottom button = GO, right button = BRAKE';
-  }
-  return 'A = GO, B = BRAKE, X = HORN, Y = REVERSE';
+function padHint(pads){
+  const ids = pads.map(p => (p.id||'').toLowerCase()).join(' ');
+  let axes = 0;
+  for(const p of pads) axes = Math.max(axes, p.axes.length);
+  if(!/057e|nintendo|joy-?con|pro controller/.test(ids))
+    return 'A = GO, B = BRAKE, X = HORN, Y = REVERSE';      // Xbox-style
+  // two halves in the grip stay two devices, each keeping its sideways layout
+  if(pads.length > 1)      return 'A = GO, X = BRAKE, B = HORN, Y = REVERSE';
+  // one device with two sticks = the browser fused them, or a Pro Controller
+  if(axes >= 4 || ids.includes('combined') || ids.includes('2009'))
+    return 'B = GO, A = BRAKE, Y = HORN, X = REVERSE';
+  if(ids.includes('2007')) return 'A = GO, X = BRAKE, B = HORN, Y = REVERSE';
+  if(ids.includes('2006')) return 'bottom arrow = GO, right arrow = BRAKE';
+  return 'bottom button = GO, right button = BRAKE';
 }
+let padToastT = null;
 window.addEventListener('gamepadconnected', e=>{
-  const id = e.gamepad && e.gamepad.id;
-  toast('🎮 Controller connected — stick steers, ' + padHint(id) + '.', 3600);
-  console.info('[MHE] gamepad connected:', id);
+  console.info('[MHE] gamepad connected:', e.gamepad && e.gamepad.id);
+  // the two halves of a grip announce themselves separately — wait for both
+  // before naming buttons, or the advice is written for half a controller
+  clearTimeout(padToastT);
+  padToastT = setTimeout(()=>{
+    let pads = [];
+    try {
+      const all = navigator.getGamepads ? navigator.getGamepads() : [];
+      for(const p of all) if(p && p.connected) pads.push(p);
+    } catch(err){ return; }
+    if(!pads.length) return;
+    toast('🎮 Controller connected — stick steers, ' + padHint(pads) + '.', 3600);
+  }, 700);
 });
 window.addEventListener('gamepaddisconnected', ()=>{
   for(const k in padHeld) padSetHold(k,false);

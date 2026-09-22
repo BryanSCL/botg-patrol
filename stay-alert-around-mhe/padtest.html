@@ -85,8 +85,9 @@
 <div id="pick">
   <div id="pickTitle">Which controller are you testing?</div>
   <div class="pickRow">
-    <button class="go pickBtn" data-layout="left">Left Joy‑Con<small>arrows · square · −</small></button>
-    <button class="go pickBtn" data-layout="right">Right Joy‑Con<small>A B X Y · + · HOME</small></button>
+    <button class="go pickBtn" data-layout="grip">Both, in the grip<small>two hands, the usual way</small></button>
+    <button class="pickBtn" data-layout="left">Left Joy‑Con only<small>arrows · square · −</small></button>
+    <button class="pickBtn" data-layout="right">Right Joy‑Con only<small>A B X Y · + · HOME</small></button>
     <button class="pickBtn" data-layout="other">Something else<small>Xbox, PlayStation, generic USB</small></button>
   </div>
 </div>
@@ -208,7 +209,36 @@
     ])
   };
 
-  var STEPS = LAYOUTS.left, layoutName = 'Left Joy-Con';
+  // held in the grip, two hands, upright — the normal Switch grip
+  LAYOUTS.grip = [
+    { type:'wake', prompt:'Press any button on the controller',
+      where:'Any button at all — this just wakes it up.' },
+    { type:'axis', key:'LEFT stick — left',  prompt:'Push the LEFT stick LEFT',
+      where:'Hold the grip in two hands, upright, as normal. Hold until it moves on.' },
+    { type:'axis', key:'LEFT stick — right', prompt:'Push the LEFT stick RIGHT', where:'Hold it.' },
+    { type:'axis', key:'LEFT stick — up',    prompt:'Push the LEFT stick UP',    where:'Hold it.' },
+    { type:'axis', key:'LEFT stick — down',  prompt:'Push the LEFT stick DOWN',  where:'Hold it.' },
+    { type:'axis', key:'RIGHT stick — left', prompt:'Push the RIGHT stick LEFT', where:'Hold it.' },
+    { type:'axis', key:'RIGHT stick — up',   prompt:'Push the RIGHT stick UP',   where:'Hold it.' },
+    { type:'btn', key:'D-pad ▲', prompt:'Press ▲ on the left half', where:'The four arrow buttons.' },
+    { type:'btn', key:'D-pad ▼', prompt:'Press ▼ on the left half', where:'' },
+    { type:'btn', key:'D-pad ◀', prompt:'Press ◀ on the left half', where:'' },
+    { type:'btn', key:'D-pad ▶', prompt:'Press ▶ on the left half', where:'' },
+    { type:'btn', key:'A', prompt:'Press A', where:'Right half — A is the button on the RIGHT.' },
+    { type:'btn', key:'B', prompt:'Press B', where:'The BOTTOM one.' },
+    { type:'btn', key:'X', prompt:'Press X', where:'The TOP one.' },
+    { type:'btn', key:'Y', prompt:'Press Y', where:'The one on the LEFT.' },
+    { type:'btn', key:'L',  prompt:'Press L',  where:'Top edge, left half — the nearer shoulder.' },
+    { type:'btn', key:'ZL', prompt:'Squeeze ZL', where:'Top edge, left half — behind L.' },
+    { type:'btn', key:'R',  prompt:'Press R',  where:'Top edge, right half.' },
+    { type:'btn', key:'ZR', prompt:'Squeeze ZR', where:'Top edge, right half — behind R.' },
+    { type:'btn', key:'Minus (−)', prompt:'Press the − button', where:'Left half, by the corner.' },
+    { type:'btn', key:'Plus (+)',  prompt:'Press the + button',  where:'Right half, by the corner.' },
+    { type:'btn', key:'Left stick click',  prompt:'Press the LEFT stick IN',  where:'Until it clicks.' },
+    { type:'btn', key:'Right stick click', prompt:'Press the RIGHT stick IN', where:'Until it clicks.' }
+  ];
+
+  var STEPS = LAYOUTS.grip, layoutName = 'Both Joy-Cons in the grip';
   var step = 0, armed = false, results = [], seen = false, finished = false;
   var started = false;
 
@@ -243,14 +273,21 @@
     $('stage').style.display = 'none';
     var t = $('resTable'), html = '';
     // the device facts go in the same table, so one screenshot carries everything
-    var gp = firstPad();
+    var pads = allPads();
     html += '<tr><td class="k">Tested as</td><td class="v">' + layoutName + '</td></tr>';
-    html += '<tr><td class="k">Controller</td><td class="v">' +
-            (gp ? (gp.id || '(no id)') : '(disconnected)') + '</td></tr>';
-    html += '<tr><td class="k">Mapping</td><td class="v">' +
-            (gp && gp.mapping ? gp.mapping : '(blank — non-standard)') + '</td></tr>';
-    html += '<tr><td class="k">Axes / buttons</td><td class="v">' +
-            (gp ? gp.axes.length + ' / ' + gp.buttons.length : '—') + '</td></tr>';
+    html += '<tr><td class="k">Devices seen</td><td class="v">' + pads.length + '</td></tr>';
+    if(!pads.length){
+      html += '<tr><td class="k">Controller</td><td class="v none">(disconnected)</td></tr>';
+    }
+    for(var n=0;n<pads.length;n++){
+      var pre = pads.length > 1 ? ('pad ' + pads[n].index + ' — ') : '';
+      html += '<tr><td class="k">' + pre + 'controller</td><td class="v">' +
+              (pads[n].id || '(no id)') + '</td></tr>';
+      html += '<tr><td class="k">' + pre + 'mapping</td><td class="v">' +
+              (pads[n].mapping ? pads[n].mapping : '(blank — non-standard)') + '</td></tr>';
+      html += '<tr><td class="k">' + pre + 'axes / buttons</td><td class="v">' +
+              pads[n].axes.length + ' / ' + pads[n].buttons.length + '</td></tr>';
+    }
     html += '<tr><td class="k">Browser</td><td class="v" style="font-weight:400;font-size:.8em">' +
             navigator.userAgent + '</td></tr>';
     for(var i=0;i<results.length;i++){
@@ -268,8 +305,8 @@
     picks[pi].onclick = function(){
       var which = this.getAttribute('data-layout');
       STEPS = LAYOUTS[which];
-      layoutName = which === 'left' ? 'Left Joy-Con'
-                 : which === 'right' ? 'Right Joy-Con' : 'Other controller';
+      layoutName = { grip:'Both Joy-Cons in the grip', left:'Left Joy-Con only',
+                     right:'Right Joy-Con only', other:'Other controller' }[which] || which;
       started = true;
       $('pick').style.display = 'none';
       $('stage').style.display = '';
@@ -291,28 +328,40 @@
     $('gotIt').textContent = '';
   };
 
-  function firstPad(){
-    var pads;
+  /* Two Joy-Cons in the grip may arrive as two separate devices, so every
+     lookup runs across all of them and the answer says which one it came
+     from. That distinction is the whole point of the grip test. */
+  function allPads(){
+    var pads, out = [];
     try { pads = navigator.getGamepads ? navigator.getGamepads() : []; }
-    catch(e){ return null; }
-    if(!pads) return null;
-    for(var i=0;i<pads.length;i++) if(pads[i] && pads[i].connected) return pads[i];
+    catch(e){ return out; }
+    if(!pads) return out;
+    for(var i=0;i<pads.length;i++) if(pads[i] && pads[i].connected) out.push(pads[i]);
+    return out;
+  }
+  function firstPad(){ var p = allPads(); return p.length ? p[0] : null; }
+  function padTag(pads, p){ return pads.length > 1 ? ('pad ' + p.index + ' · ') : ''; }
+
+  function anyDown(pads){
+    for(var n=0;n<pads.length;n++){
+      var gp = pads[n];
+      for(var i=0;i<gp.buttons.length;i++){
+        var b = gp.buttons[i];
+        if(b && (b.pressed || b.value > 0.4)) return { pad:gp, i:i };
+      }
+    }
     return null;
   }
-  function anyDown(gp){
-    for(var i=0;i<gp.buttons.length;i++){
-      var b = gp.buttons[i];
-      if(b && (b.pressed || b.value > 0.4)) return i;
+  function biggestAxis(pads){
+    var best = null, mag = 0;
+    for(var n=0;n<pads.length;n++){
+      var gp = pads[n];
+      for(var i=0;i<gp.axes.length;i++){
+        var m = Math.abs(gp.axes[i] || 0);
+        if(m > mag){ mag = m; best = { pad:gp, i:i, v:gp.axes[i] || 0 }; }
+      }
     }
-    return -1;
-  }
-  function biggestAxis(gp){
-    var best = -1, mag = 0;
-    for(var i=0;i<gp.axes.length;i++){
-      var m = Math.abs(gp.axes[i] || 0);
-      if(m > mag){ mag = m; best = i; }
-    }
-    return { i:best, mag:mag, v: best < 0 ? 0 : (gp.axes[best] || 0) };
+    return best ? { pad:best.pad, i:best.i, v:best.v, mag:mag } : { i:-1, mag:0, v:0 };
   }
 
   function renderLive(gp){
@@ -354,30 +403,34 @@
   }
 
   function tick(){
-    var gp = firstPad();
+    var pads = allPads(), gp = pads.length ? pads[0] : null;
     if(gp){
-      if(!seen){
-        seen = true;
-        $('stage').classList.add('live');
-        $('padId').textContent = gp.id || '(no id)';
+      if(!seen){ seen = true; $('stage').classList.add('live'); }
+      var idTxt = [], mapTxt = [], cntTxt = [];
+      for(var n=0;n<pads.length;n++){
+        var pre = pads.length > 1 ? ('pad ' + pads[n].index + ': ') : '';
+        idTxt.push(pre + (pads[n].id || '(no id)'));
+        mapTxt.push(pre + (pads[n].mapping ? pads[n].mapping : '(blank — non-standard)'));
+        cntTxt.push(pre + pads[n].axes.length + ' axes, ' + pads[n].buttons.length + ' buttons');
       }
-      $('padId').textContent = gp.id || '(no id)';
-      $('padMap').textContent = gp.mapping ? gp.mapping : '(blank — non-standard)';
-      $('padCounts').textContent = gp.axes.length + ' axes, ' + gp.buttons.length + ' buttons';
+      $('padId').textContent = (pads.length > 1 ? pads.length + ' devices — ' : '') + idTxt.join('  |  ');
+      $('padMap').textContent = mapTxt.join('  |  ');
+      $('padCounts').textContent = cntTxt.join('  |  ');
       renderLive(gp);
 
       if(started && !finished){
         var s = STEPS[step];
-        var btn = anyDown(gp), ax = biggestAxis(gp);
-        var quiet = (btn < 0 && ax.mag < 0.3);
+        var btn = anyDown(pads), ax = biggestAxis(pads);
+        var quiet = (!btn && ax.mag < 0.3);
         if(!armed){ if(quiet) armed = true; }
         else if(s.type === 'wake'){
-          if(btn >= 0 || ax.mag > 0.6) record(null, '');
+          if(btn || ax.mag > 0.6) record(null, '');
         } else if(s.type === 'btn'){
-          if(btn >= 0) record(s.key, 'button ' + btn);
+          if(btn) record(s.key, padTag(pads, btn.pad) + 'button ' + btn.i);
         } else if(s.type === 'axis'){
           if(ax.mag > 0.6){
-            record(s.key, 'axis ' + ax.i + ' = ' + (ax.v > 0 ? '+' : '') + ax.v.toFixed(2));
+            record(s.key, padTag(pads, ax.pad) + 'axis ' + ax.i +
+                          ' = ' + (ax.v > 0 ? '+' : '') + ax.v.toFixed(2));
           }
         }
       }
