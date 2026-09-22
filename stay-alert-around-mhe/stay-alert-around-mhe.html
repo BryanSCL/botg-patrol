@@ -2034,17 +2034,44 @@ function updateSeg1(dt){
         toast('Someone is behind you!',1500);
       }
       const p = seg.d.ped;
+      /* Same rule as the run home: warned, they get out of your way. They used
+         to just freeze on the spot — right in the path — and the collision
+         check only ran while they were walking, so the truck ghosted through
+         them. Now a horn sends them back out of the lane to whichever side is
+         nearer (never re-crossing in front of you), where they wave you past.
+         No horn and they keep walking — straight into the path. */
+      if(p && p.state==='cross' && hornedRecently(0.4)){
+        p.state = 'retreat';
+        p.clearX = p.group.position.x > 0 ? 3.6 : -3.6;
+        toast('👍 They heard the horn — stepping back out of your way.', 2400);
+      }
       if(p && p.state==='cross'){
         p.group.position.x -= 1.3*dt;
         pedWalkAnim(p, clockNow, 0.9);
-        if(hornedRecently(0.4)){ p.state='stopped'; toast('They stopped — horn works.',1600); }
         if(p.group.position.x<-4) p.state='done';
+      }
+      if(p && p.state==='retreat'){
+        const dir = Math.sign(p.clearX - p.group.position.x);
+        p.group.position.x += dir * 1.8*dt;
+        pedWalkAnim(p, clockNow, 0.9);
+        if((p.group.position.x - p.clearX) * dir >= 0){
+          p.group.position.x = p.clearX;
+          // face back across the aisle, towards the driver
+          p.group.rotation.y = p.clearX > 0 ? -Math.PI/2 : Math.PI/2;
+          p.state = 'waiting';
+        }
+      }
+      if(p && p.state==='waiting'){                 // stands clear and waves you through
+        pedIdleAnim(p, clockNow);
+        p.armR.rotation.z = -2.4 + Math.sin(clockNow*6)*0.3;
+      }
+      // a horn does not excuse reversing into someone still in the lane
+      if(p && (p.state==='cross' || p.state==='retreat')){
         if(truckHitsPed(p) && player.speed>TUNE.strikeSpeed){
           strike(p,'Struck while reversing.',
             'A loaded pallet jack’s rear view is poor. Reverse at creep speed, look over your shoulder, and use the horn.');
         } else if(truckHitsPed(p,0.4)){ player.speed=0; }
       }
-      if(p && p.state==='stopped') pedIdleAnim(p, clockNow);
       if(player.z>-13.6 && seg.state==='reversing'){
         safeMoment('Backed out safely.',
           'Slow, checked, warned. Reversing causes many struck-by injuries — creep speed saves lives.',
