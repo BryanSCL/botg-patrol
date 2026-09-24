@@ -280,6 +280,11 @@
   #resetBtn { position:fixed; right:22px; top:58px; z-index:56; pointer-events:auto;
       font-size:20px; padding:10px 18px; border-radius:16px; box-shadow:0 5px 0 rgba(0,0,0,.4); }
   #resetBtn small { font-size:13px; font-weight:700; opacity:.9; }
+  #soundBtn { position:fixed; left:50%; transform:translateX(-50%); top:14px; z-index:70;
+      pointer-events:auto; display:none; font-size:19px; padding:11px 22px; border-radius:16px;
+      box-shadow:0 5px 0 rgba(0,0,0,.4); }
+  #soundBtn.show { display:flex; }
+  #soundBtn .zh { font-size:.62em; }
   #exitBtn { position:fixed; left:18px; top:148px; z-index:56; pointer-events:auto;
       font-size:16px; padding:8px 16px; border-radius:14px; box-shadow:0 4px 0 rgba(0,0,0,.4); }
 
@@ -316,6 +321,8 @@
   <button class="btn amber ctl" id="actionBtn">ACTION</button>
   <button class="btn grey" id="resetBtn" aria-label="Reset to last safe point">&#10226; RESET<span class="zh">重置</span></button>
   <button class="btn grey" id="exitBtn" aria-label="Exit to title screen">&#10005; EXIT<span class="zh">退出</span></button>
+  <!-- only appears when the browser is still blocking sound; one real tap fixes it -->
+  <button class="btn amber" id="soundBtn" aria-label="Enable sound">&#128266; TAP FOR SOUND<span class="zh">轻触开启声音</span></button>
 </div>
 
 <div id="toast"></div>
@@ -646,7 +653,6 @@ window.addEventListener('error', e => {
 const AudioSys = (() => {
   let ctx=null, master=null;
   let engOsc=null, engOsc2=null, engGain=null, engFilter=null;
-  let beepTimer=0, beeping=false;
 
   function init(){
     if(ctx) return;
@@ -662,6 +668,13 @@ const AudioSys = (() => {
     engOsc.start(); engOsc2.start();
   }
   function resume(){ if(ctx && ctx.state==='suspended') ctx.resume(); }
+  function state(){ return ctx ? ctx.state : 'none'; }
+  /* A browser only allows sound after a REAL user gesture. A gamepad press is
+     not one — and neither are the synthetic clicks the pad code sends — so a
+     session started on the controller used to create a suspended context and
+     stay silent for good. Any genuine tap, click or key now unlocks it, the
+     loop keeps retrying, and the HUD offers a button if it is still blocked. */
+  function unlock(){ init(); resume(); }
 
   function engine(speedRatio, on){
     if(!ctx) return;
@@ -683,11 +696,14 @@ const AudioSys = (() => {
     g.gain.exponentialRampToValueAtTime(0.0008, t+dur);
     o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.05);
   }
-  // reverse beep — call every frame while reversing; dist = 0(near)..1(far)
-  function reverseBeep(dt, active, vol=0.14){
-    if(!ctx || !active) { beepTimer=0; return; }
-    beepTimer -= dt;
-    if(beepTimer<=0){ blip(1150, 0.16, 'square', vol); beepTimer = 0.55; }
+  /* reverse beep — call every frame while reversing. Keyed, because the truck
+     you are driving and the AI ones beep at the same time and a single shared
+     timer made them swallow each other's beeps. */
+  const beepT = {};
+  function reverseBeep(dt, active, vol=0.14, key='ai'){
+    if(!ctx || !active) { beepT[key] = 0; return; }
+    beepT[key] = (beepT[key] || 0) - dt;
+    if(beepT[key] <= 0){ blip(1150, 0.16, 'square', vol); beepT[key] = 0.55; }
   }
   function horn(){ if(!ctx) return;
     blip(410, 0.55, 'sawtooth', 0.22); blip(322, 0.55, 'sawtooth', 0.18); }
@@ -711,8 +727,96 @@ const AudioSys = (() => {
   }
   function chime(){ blip(660,0.14,'sine',0.16); blip(880,0.16,'sine',0.16,0.13); blip(1320,0.26,'sine',0.14,0.27); }
   function alarm(){ blip(950,0.12,'square',0.1); blip(950,0.12,'square',0.1,0.18); }
-  return { init, resume, engine, reverseBeep, horn, hornFar, click, buckle, thud, chime, alarm };
+
+  /* ---- a burst of filtered noise, the basis of most physical sounds ---- */
+  function noiseBurst(dur, cut, vol, type='lowpass', decay=2.2){
+    if(!ctx) return;
+    const t = ctx.currentTime, len = Math.max(1, Math.floor(ctx.sampleRate*dur));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/len, decay);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = cut; f.Q.value = 1.1;
+    const g = ctx.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(master); src.start(t);
+  }
+  // boots on concrete — pitch wanders a little so a walk does not tick
+  function footstep(){ noiseBurst(0.09, 520 + Math.random()*260, 0.075, 'lowpass', 3.2); }
+  // hard braking at speed
+  function skid(){ noiseBurst(0.42, 1500, 0.10, 'bandpass', 1.1); }
+  // clipping racking, a fence rail, a pallet — a knock, not a body blow
+  function bump(){ blip(120, 0.16, 'sine', 0.22, 0, -50); noiseBurst(0.16, 700, 0.14); }
+  // someone warning you off — two sharp whistle notes
+  function whistle(){ blip(1900, 0.13, 'sine', 0.13); blip(2350, 0.17, 'sine', 0.12, 0.14); }
+
+  /* ---- continuous beds: warehouse room tone, and the nearest working MHE ---- */
+  let toneGain=null, humOsc=null, humOsc2=null, humGain=null;
+  function roomTone(on){
+    if(!ctx) return;
+    if(!toneGain){
+      const len = ctx.sampleRate*2;
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      let last = 0;                                   // brown-ish noise: a room, not a hiss
+      for(let i=0;i<len;i++){ last = last*0.965 + (Math.random()*2-1)*0.035; d[i] = last*3.4; }
+      const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=430;
+      toneGain = ctx.createGain(); toneGain.gain.value = 0;
+      src.connect(f); f.connect(toneGain); toneGain.connect(master); src.start();
+    }
+    toneGain.gain.setTargetAtTime(on ? 0.05 : 0, ctx.currentTime, 0.5);
+  }
+  // level 0..1 by how close the nearest moving truck is
+  function nearHum(level){
+    if(!ctx) return;
+    if(!humGain){
+      humOsc = ctx.createOscillator(); humOsc.type='sawtooth'; humOsc.frequency.value=61;
+      humOsc2 = ctx.createOscillator(); humOsc2.type='triangle'; humOsc2.frequency.value=122;
+      const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=300;
+      humGain = ctx.createGain(); humGain.gain.value = 0;
+      humOsc.connect(f); humOsc2.connect(f); f.connect(humGain); humGain.connect(master);
+      humOsc.start(); humOsc2.start();
+    }
+    humGain.gain.setTargetAtTime(clamp(level,0,1)*0.055, ctx.currentTime, 0.2);
+  }
+  return { init, resume, state, unlock, engine, reverseBeep, horn, hornFar, click, buckle,
+           thud, chime, alarm, footstep, skid, bump, whistle, roomTone, nearHum };
 })();
+/* Any genuine gesture anywhere unlocks sound — not just the title button, so a
+   stray click on the page is enough to rescue a controller-started session. */
+for(const ev of ['pointerdown','keydown','touchstart'])
+  window.addEventListener(ev, e => { if(e.isTrusted) AudioSys.unlock(); }, {capture:true, passive:true});
+
+/* Keeps asking, and if the browser is still refusing, puts a button on screen.
+   A controller can never unlock audio by itself, so without this a booth
+   running on a gamepad alone would play the whole game in silence. */
+/* The nearest working MHE hums, louder as it gets closer — so you hear one
+   coming before you see it, which is the whole point of listening on foot. */
+function updateNearHum(){
+  if(seg.mode !== 'seg1' && seg.mode !== 'seg2'){ AudioSys.nearHum(0); return; }
+  let best = 0;
+  const consider = (x, z, moving) => {
+    if(!moving) return;
+    const d = Math.hypot(x - player.x, z - player.z);
+    best = Math.max(best, 1 - d/16);
+  };
+  for(const a of aiTrucks) consider(a.x, a.z, a.speed > 0.05 || a.turning);
+  for(const t of traffic)  consider(t.x, t.z, t.speed > 0.05);
+  if(ambient.on && ambient.fk){
+    const p = ambient.fk.group.position; consider(p.x, p.z, true);
+  }
+  AudioSys.nearHum(best);
+}
+
+let audioWatchT = 0;
+function updateAudioWatch(dt){
+  audioWatchT -= dt;
+  if(audioWatchT > 0) return;
+  audioWatchT = 0.5;
+  const blocked = AudioSys.state() !== 'running';
+  if(blocked) AudioSys.resume();
+  const playing = seg.mode === 'seg1' || seg.mode === 'seg2';
+  $('soundBtn').classList.toggle('show', blocked && playing);
+}
+
 /* =========================================================
    PROCEDURAL TEXTURES (canvas — no asset files)
    ========================================================= */
@@ -1411,6 +1515,8 @@ function updateDrive(dt){
     // a finger often rests on both triggers, and GO used to silently cancel
     // the brake — exactly the moment you most need it to work.
     if(held.brake){
+      // one skid per stab of the brake, only when there is real speed to lose
+      if(player.speed > 2.6 && !player.skidding){ AudioSys.skid(); player.skidding = true; }
       player.speed = Math.max(0, player.speed - t.brake*dt);
     } else if(held.go && player.belted){
       const cap = player.gear>0 ? t.maxFwd : t.maxRev;
@@ -1433,7 +1539,16 @@ function updateDrive(dt){
     collideCircle(x - fwdX()*0.75, z - fwdZ()*0.75, 0.7) ||
     collideCircle(x, z, 0.95) ||
     collideCircle(x + fwdX()*1.9, z + fwdZ()*1.9, 0.85);
-  if(!blocked(nx,nz)){
+  /* A knock is worth hearing however it lands. Against a flat wall the slide
+     branches below usually take over, so listening only for head-on contact
+     missed almost every real collision — test it by driving into the racking. */
+  const impactSpeed = player.speed;
+  const hitSomething = blocked(nx,nz);
+  if(hitSomething && impactSpeed > 1.0 && !player.bumping){
+    AudioSys.bump(); player.bumping = true;
+  } else if(!hitSomething) player.bumping = false;
+
+  if(!hitSomething){
     player.x=nx; player.z=nz;
   } else if(!blocked(nx,player.z)){
     player.x=nx;                                    // slide along Z-facing surface
@@ -1453,7 +1568,10 @@ function updateDrive(dt){
   setBeacon(playerTruck, turning || player.speed>0.1, clockNow);
   setRevLights(playerTruck, player.gear<0 && player.speed>0.05);
   // audio
+  if(!held.brake) player.skidding = false;
   AudioSys.engine(player.speed/t.maxFwd, player.belted && !player.frozen);
+  // your own truck beeps when you reverse, just like the ones around you
+  AudioSys.reverseBeep(dt, player.gear < 0 && player.speed > 0.08 && !player.frozen, 0.11, 'me');
   AudioSys.reverseBeep(dt, player.gear<0 && player.speed>0.1);
   // camera — driver eye height inside the cab
   const backOff = 0.35;   // sit slightly behind origin
@@ -1484,8 +1602,11 @@ function updateWalk(dt){
   else if(!collideCircle(nx,player.z,0.35)){ player.x=nx; }   // slide
   else if(!collideCircle(player.x,nz,0.35)){ player.z=nz; }
   else player.speed=0;
-  // camera bob
+  // camera bob — and a footstep at the bottom of each stride
+  const bobPrev = player.bobT;
   player.bobT += dt * (2 + player.speed*4.2);
+  if(player.speed > 0.35 && Math.floor(bobPrev/Math.PI) !== Math.floor(player.bobT/Math.PI))
+    AudioSys.footstep();
   const bob = Math.sin(player.bobT)*0.045*Math.min(1,player.speed/1.2);
   camera.position.set(player.x, 1.62+bob, player.z);
   const lx = player.x + fwdX()*6, lz = player.z + fwdZ()*6;
@@ -1979,6 +2100,7 @@ function startSeg1(){
   setGear(1);
   playerTruck.group.visible=true;
   setAmbient(false); setTagsVisible(false); clearTraffic();
+  AudioSys.roomTone(true);          // the warehouse is never silent
   setSwingBay(false);
   $('beltStrap').classList.remove('show');
   $('hud').classList.add('show');
@@ -2368,7 +2490,7 @@ function updateSeg1(dt){
       const side = p.state==='cross' ? 1.9 : 1.4;
       if(lf > -2.0 && lf < 3.0 && Math.abs(lr) < side && player.speed > 1.6){
         seg.state='failed'; player.frozen=true; player.speed=0;
-        AudioSys.alarm(); flash('#e8a400',0.5,0.8); shake(0.07);
+        AudioSys.whistle(); AudioSys.alarm(); flash('#e8a400',0.5,0.8); shake(0.07);
         banner('&#9888;&#65039; <span class="em">NEAR MISS</span>', true);
         setTimeout(()=>{
           if(seg.mode!=='seg1') return;
@@ -2689,6 +2811,7 @@ function updateTrafficHits(dt){
   // one warning the first time they stray off the walkway near a live lane
   if(!offPathWarned && player.x > -9.3 && player.z > -6 && player.z < 21){
     offPathWarned = true;
+    AudioSys.whistle();
     toast('⚠ Off the walkway — MHE traffic runs here. Get back inside the yellow lines.', 3000);
   }
   if(seg.state === 'struck' || seg.state === 'cleared') return;
@@ -2714,6 +2837,7 @@ function startSeg2(){
   setSwingBay(false);        // seg 2 walks across the bay floor — no fence here
   clearWorkers();            // they belong to the driving segment
   spawnTraffic(); offPathWarned = false;
+  AudioSys.roomTone(true);
   $('beltStrap').classList.remove('show');
   meetPoint.visible=true;
   setDots(3,0);
@@ -2920,6 +3044,7 @@ function resetAll(){
   clearAI(); removePeds(); clearWorkers(); clearTraffic(); clearBlood(); strikeAnim=null;
   bloodVignette(false);
   setAmbient(false); setTagsVisible(false); resetTags();
+  AudioSys.roomTone(false); AudioSys.nearHum(0); AudioSys.engine(0,false);
   $('finishScreen').classList.remove('show');
   $('howtoScreen').classList.remove('show');   // or it would sit over the title
   $('cardWrap').classList.remove('show');
@@ -3020,6 +3145,8 @@ function tick(dt){
   clockNow += dt;
   checkResize();
   updateGamepad();
+  updateAudioWatch(dt);
+  updateNearHum();
 
   if(seg.mode==='title'||seg.mode==='howto'||seg.mode==='finish'){
     attractCam(clockNow);
