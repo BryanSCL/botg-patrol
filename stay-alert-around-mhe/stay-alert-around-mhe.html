@@ -3421,11 +3421,19 @@ function padFamily(pads){
      lists them as a pair — reports standard UPRIGHT positions: B=0, A=1, Y=2,
      X=3. Observed on the booth grip: A fired index 1, X index 3, B index 0.
      A lone Joy-Con is different, because the browser treats it as a sideways
-     mini-controller; the same right half measured A=0 on its own. */
-  if(pads.length > 1 || axes >= 4 || ids.includes('combined') || ids.includes('2009'))
-    return 'switch';
-  if(ids.includes('2007')) return 'joycon';          // lone right Joy-Con, sideways — measured
-  return null;                                       // unmeasured: label nothing
+     mini-controller; the same right half measured A=0 on its own.
+
+     So a grip is decided by seeing BOTH halves, not by counting devices.
+     Windows happily pairs one Joy-Con twice and lists two "Joy-Con (R)",
+     one of them a phantom — counting devices then guessed "grip" and every
+     button did the wrong job. Two rights is still just a right. */
+  const hasL = /2006|joy-?con \(l\)/.test(ids);
+  const hasR = /2007|joy-?con \(r\)/.test(ids);
+  if(axes >= 4 || ids.includes('combined') || ids.includes('2009')) return 'switch';
+  if(hasL && hasR) return 'switch';                  // a real grip: both halves present
+  if(hasR)         return 'joycon';                  // right half only, sideways — measured
+  if(hasL)         return null;                      // left half only: unmeasured, label nothing
+  return pads.length > 1 ? 'switch' : null;
 }
 /* What is printed on the button that does each job. Every entry matches a
    binding in updateGamepad — change one, change both. */
