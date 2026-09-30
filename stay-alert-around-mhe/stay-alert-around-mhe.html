@@ -280,17 +280,25 @@
   #resetBtn { position:fixed; right:22px; top:58px; z-index:56; pointer-events:auto;
       font-size:20px; padding:10px 18px; border-radius:16px; box-shadow:0 5px 0 rgba(0,0,0,.4); }
   #resetBtn small { font-size:13px; font-weight:700; opacity:.9; }
-  #padMini { position:fixed; left:20px; bottom:180px; z-index:55; width:238px;
-      pointer-events:none; background:rgba(12,18,30,.62); border:2px solid rgba(255,255,255,.16);
-      border-radius:16px; padding:8px 10px 6px; }
-  #padMini svg { width:100%; height:auto; display:block; }
-  #padMini .mCap { font:700 11px system-ui,sans-serif; fill:#9fb2d4; text-anchor:middle;
-      letter-spacing:.06em; }
-  #padMini .mBtn { font:800 15px system-ui,sans-serif; fill:#0e1726; text-anchor:middle;
+  /* sits where the pedals were — with a controller in hand they are redundant */
+  #padBig { position:fixed; right:18px; bottom:20px; z-index:58; width:min(580px, 47vw);
+      pointer-events:none; background:rgba(10,16,26,.72); border:2px solid rgba(255,255,255,.18);
+      border-radius:22px; padding:12px 14px; box-shadow:0 10px 30px rgba(0,0,0,.45); }
+  #padBig svg { width:100%; height:auto; display:block; }
+  #padBig .pBtn { font:800 19px system-ui,sans-serif; fill:#0b111c; text-anchor:middle;
       dominant-baseline:central; }
-  #padMini .mNub { font:800 11px system-ui,sans-serif; fill:#0e1726; text-anchor:middle;
+  #padBig .pNub { font:800 13px system-ui,sans-serif; fill:#0b111c; text-anchor:middle;
       dominant-baseline:central; }
-  @media (max-height: 780px){ #padMini { width:200px; bottom:172px; } }
+  #padBig .pEn  { font:800 20px system-ui,sans-serif; fill:#ffffff; }
+  #padBig .pZh  { font:700 15px system-ui,sans-serif; fill:#a9bcd8; }
+  #padBig .pCap { font:700 14px system-ui,sans-serif; fill:#93a6c4; text-anchor:middle;
+      letter-spacing:.05em; }
+  /* the touch buttons the map replaces. !important beats showBtns' inline style,
+     and their inline display stays 'flex' so the pad/key handlers still fire. */
+  #hud.padmode #goPedal, #hud.padmode #brakePedal,
+  #hud.padmode #hornBtn, #hud.padmode #revBtn { display:none !important; }
+  #hud.padmode #actionBtn { max-width:min(520px, calc(100vw - 940px)); }
+  @media (max-height: 780px){ #padBig { width:min(500px, 42vw); bottom:14px; } }
   #padDiagram { margin-top:6px; width:min(760px, 94vw); }
   #padDiagram svg { width:100%; height:auto; display:block; }
   #padDiagram .dgLbl { font:700 15px system-ui,-apple-system,"Segoe UI",sans-serif; fill:#eaf2ff; }
@@ -346,9 +354,9 @@
   <button class="btn amber ctl" id="actionBtn">ACTION</button>
   <button class="btn grey" id="resetBtn" aria-label="Reset to last safe point">&#10226; RESET<span class="zh">重置</span></button>
   <button class="btn grey" id="exitBtn" aria-label="Exit to title screen">&#10005; EXIT<span class="zh">退出</span></button>
-  <!-- in-play controller map: same colours as the big buttons, so it reads
-       without words — the green one on your controller is the green one here -->
-  <div id="padMini" hidden aria-hidden="true"></div>
+  <!-- in-play controller map. With a controller in hand the touch buttons are
+       redundant, so this takes their place at full size -->
+  <div id="padBig" hidden aria-hidden="true"></div>
   <!-- only appears when the browser is still blocking sound; one real tap fixes it -->
   <button class="btn amber" id="soundBtn" aria-label="Enable sound">&#128266; TAP FOR SOUND<span class="zh">轻触开启声音</span></button>
 </div>
@@ -841,14 +849,16 @@ function updateNearHum(){
    when the segment changes because two of the buttons change job on foot. */
 let miniKey = '';
 function refreshPadMini(){
-  const mn = $('padMini');
+  const mn = $('padBig');
   if(!mn) return;
   const dd = padFam && PAD_DIAGRAM[padFam];
   const walking = seg.mode === 'seg2';
   const want = !!dd && inputMode === 'pad' && (seg.mode === 'seg1' || seg.mode === 'seg2');
   mn.hidden = !want;
+  // with the map up, the touch pedals it replaces come off the screen
+  $('hud').classList.toggle('padmode', want);
   const key = want ? padFam + (walking ? ':walk' : ':drive') : '';
-  if(want && key !== miniKey){ miniKey = key; mn.innerHTML = padMiniSVG(dd, walking); }
+  if(want && key !== miniKey){ miniKey = key; mn.innerHTML = padBigSVG(dd, walking); }
   if(!want) miniKey = '';
 }
 
@@ -3555,37 +3565,45 @@ function padDiagramSVG(d){
    green one on the controller is plainly the green one on the display. */
 const MINI_COLOUR = { GO:'#3fae6a', BRAKE:'#e05450', HORN:'#f2a41c', REVERSE:'#5c6b82',
                       ACTION:'#f2a41c', RESET:'#8fa3c8', EXIT:'#8fa3c8' };
-function padMiniSVG(d, walking){
+const MINI_ZH = { GO:'前进', BRAKE:'刹车', HORN:'喇叭', REVERSE:'倒车',
+                  ACTION:'操作', RESET:'重置', EXIT:'退出' };
+function padBigSVG(d, walking){
   const col = job => MINI_COLOUR[job] || '#cfd8e6';
   /* On foot there is no horn or reverse — those same two buttons work the
      on-screen action instead (report a hazard, make eye contact), so the map
-     must recolour or it would be telling a lie. */
+     must relabel or it would be telling a lie. */
   const top  = walking ? [d.top[0],  'ACTION'] : d.top;
   const left = walking ? [d.left[0], 'ACTION'] : d.left;
-  const btn = (x,y,r,letter,job,cls='mBtn') =>
-    `<circle cx="${x}" cy="${y}" r="${r}" fill="${col(job)}" stroke="#0b111c" stroke-width="2"/>` +
+  const btn = (x,y,r,letter,job,cls='pBtn') =>
+    `<circle cx="${x}" cy="${y}" r="${r}" fill="${col(job)}" stroke="#0b111c" stroke-width="2.5"/>` +
     `<text class="${cls}" x="${x}" y="${y}">${letter}</text>`;
-  let s = `<svg viewBox="0 0 300 132" role="img" aria-label="Controller map">`;
-  s += `<rect x="18" y="26" width="264" height="74" rx="24" fill="#2a3444"/>`;
-  s += `<rect x="128" y="26" width="44" height="74" fill="#1c2534"/>`;
-  // shoulders, coloured by what they do
-  if(d.lt) s += `<rect x="42" y="12" width="52" height="16" rx="8" fill="${col(d.lt[1])}"/>` +
-                `<text class="mNub" x="68" y="20">${d.lt[0]}</text>`;
-  if(d.rt) s += `<rect x="206" y="12" width="52" height="16" rx="8" fill="${col(d.rt[1])}"/>` +
-                `<text class="mNub" x="232" y="20">${d.rt[0]}</text>`;
-  // left: the stick, with arrows to say it steers
-  s += `<circle cx="72" cy="62" r="19" fill="#39424f" stroke="#0b111c" stroke-width="2"/>`;
-  s += `<circle cx="72" cy="62" r="10" fill="#20262f"/>`;
-  s += `<path d="M40 62 l9 -6 v12 z M104 62 l-9 -6 v12 z" fill="#93a6c4"/>`;
-  s += btn(72, 96, 10, d.minus[0], d.minus[1], 'mNub');
-  // right: the four face buttons where they really sit
-  const cx = 222, cy = 62, g = 26, r = 14;
+  /* Deliberately sparse: the stick and the four buttons, nothing else. An
+     earlier version drew the shoulders and the −/+ too and read as clutter. */
+  let s = `<svg viewBox="0 0 460 212" role="img" aria-label="Controller map">`;
+  // ---- the controller, left side, drawn big ----
+  s += `<rect x="14" y="30" width="268" height="124" rx="38" fill="#2a3444"/>`;
+  s += `<rect x="14" y="30" width="104" height="124" rx="36" fill="${d.pink?'#efe2ec':'#c9d2e0'}"/>`;
+  s += `<rect x="178" y="30" width="104" height="124" rx="36" fill="${d.pink?'#e2564e':'#c9d2e0'}"/>`;
+  s += `<rect x="118" y="30" width="60" height="124" fill="#1c2534"/>`;
+  // left stick, with arrows to say it steers
+  s += `<circle cx="66" cy="92" r="34" fill="#39424f" stroke="#0b111c" stroke-width="3"/>`;
+  s += `<circle cx="66" cy="92" r="18" fill="#20262f"/>`;
+  s += `<path d="M16 92 l13 -9 v18 z M116 92 l-13 -9 v18 z" fill="#9fb3d1"/>`;
+  s += `<text class="pCap" x="66" y="176">STEER 转向</text>`;   // below the body, not on the pale half
+  // the four face buttons, in their real diamond
+  const cx = 230, cy = 92, g = 40, r = 25;
   s += btn(cx, cy-g, r, top[0], top[1]);
   s += btn(cx+g, cy, r, d.right[0], d.right[1]);
   s += btn(cx-g, cy, r, left[0], left[1]);
   s += btn(cx, cy+g, r, d.bottom[0], d.bottom[1]);
-  s += btn(cx, 96+10, 10, d.plus[0], d.plus[1], 'mNub');
-  s += `<text class="mCap" x="150" y="128">YOUR CONTROLLER 你的手柄</text>`;
+  // ---- legend, right side: same colour, spelled out ----
+  [ d.right, d.bottom, left, top ].forEach((row, i) => {
+    const y = 32 + i*44;
+    s += btn(320, y, 19, row[0], row[1]);
+    s += `<text class="pEn" x="350" y="${y-1}">${row[1]}</text>`;
+    s += `<text class="pZh" x="350" y="${y+17}">${MINI_ZH[row[1]] || ''}</text>`;
+  });
+  s += `<text class="pCap" x="230" y="202">${d.minus[0]} = RESET 重置 &#160;·&#160; ${d.plus[0]} = EXIT 退出</text>`;
   s += `</svg>`;
   return s;
 }
