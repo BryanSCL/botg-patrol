@@ -1,0 +1,3700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Driving MHE — Stay Alert</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+      user-select:none; -webkit-user-select:none; touch-action:none; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0b1220;
+      font-family:'Segoe UI',system-ui,-apple-system,sans-serif; }
+  #c3d { position:fixed; inset:0; display:block; }
+
+  /* ============ generic overlay screens ============ */
+  .screen { position:fixed; inset:0; z-index:100; display:none; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      background:
+        radial-gradient(900px 420px at 82% -8%, rgba(77,141,240,.16), transparent 60%),
+        radial-gradient(760px 420px at 4% 108%, rgba(255,176,32,.13), transparent 60%),
+        linear-gradient(160deg,#101b30 0%,#182a4a 60%,#12203a 100%);
+      color:#fff; }
+  .screen.show { display:flex; }
+  /* never let a short screen (tablet landscape) hide the primary button */
+  .screen { overflow-y:auto; padding:14px 12px; }
+  .hazardBar { width:min(520px,70vw); height:8px; border-radius:5px; margin-top:20px; opacity:.85;
+      background:repeating-linear-gradient(-45deg,#e6b800 0 18px,#15161a 18px 36px); }
+  /* title & finish let the live 3D warehouse show through behind a dark scrim */
+  #titleScreen, #finishScreen { background:
+      linear-gradient(180deg, rgba(9,15,28,.80) 0%, rgba(9,15,28,.52) 46%, rgba(10,16,30,.88) 100%); }
+  .titleBadge { width:112px; height:112px; border-radius:28px; margin-bottom:18px;
+      background:linear-gradient(180deg,#f6b23a,#c98708);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 14px 34px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.4); }
+  .titleBadge svg { width:74px; height:74px; }
+  .chipRow { display:flex; gap:12px; margin-top:24px; flex-wrap:wrap; justify-content:center; }
+  .tchip { font-size:min(2vw,19px); font-weight:700; color:#e6eefc; padding:9px 20px;
+      border-radius:999px; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.2);
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+
+  /* ============ bilingual: Chinese sits under the English ============ */
+  .zh { display:block; font-weight:700; letter-spacing:0; opacity:.9;
+        font-size:.72em; margin-top:.1em; }
+  #banner .zh { font-size:.68em; opacity:.86; margin-top:.14em; }
+  #toast .zh { font-size:.76em; opacity:.85; }
+  #cardTitle .zh { font-size:.6em; margin-top:.22em; color:#46505f; }
+  #cardFact .zh { font-size:.8em; margin-top:.45em; opacity:.95; }
+  #cardBtn .zh, #goBtn .zh, #againBtn .zh { font-size:.6em; margin-top:.05em; }
+  .ctl .zh { font-size:.4em; margin-top:.04em; opacity:.95; }
+  .ctl small .zh { font-size:13px; margin-top:.02em; }
+  #actionBtn .zh { font-size:.7em; }
+  #resetBtn .zh, #exitBtn .zh { font-size:.62em; }
+  #startRow .btn .zh { font-size:.52em; margin-top:.12em; }
+  .demoBtn .zh { font-size:12px; font-weight:700; }
+  .howTxt .zh { font-size:.76em; color:#a9bcdb; margin-top:.2em; }
+  .rule .zh { font-size:.8em; color:#bcd0ee; margin-top:.15em; }
+  #speedTags .zh { display:inline; font-size:11px; margin-left:3px; }
+
+  /* ============ big tap buttons ============ */
+  .btn { border:none; cursor:pointer; font-family:inherit; font-weight:800; color:#fff;
+      border-radius:26px; letter-spacing:1px;
+      box-shadow:inset 0 2px 0 rgba(255,255,255,.28), 0 9px 0 rgba(0,0,0,.4), 0 14px 28px rgba(0,0,0,.45);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .btn:active { transform:translateY(5px); box-shadow:0 3px 0 rgba(0,0,0,.4); }
+  .btn:focus-visible { outline:4px solid #fff; outline-offset:3px; }
+  .btn.green { background:linear-gradient(180deg,#3fae6a,#2c8a50); }
+  .btn.red   { background:linear-gradient(180deg,#e05450,#c03531); }
+  .btn.amber { background:linear-gradient(180deg,#f2a41c,#d3860a); color:#231a00; }
+  .btn.blue  { background:linear-gradient(180deg,#3f7bd9,#2c5cb0); }
+  .btn.grey  { background:linear-gradient(180deg,#5c6b82,#46536a); }
+  .pulse { animation:pulse 1.05s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { box-shadow:0 9px 0 rgba(0,0,0,.4), 0 0 0 0 rgba(255,255,255,.8); }
+    50%     { box-shadow:0 9px 0 rgba(0,0,0,.4), 0 0 0 24px rgba(255,255,255,0); } }
+
+  /* ============ title screen ============ */
+  #titleScreen h1 { font-size:min(7.2vw,84px); font-weight:900; line-height:1.05;
+      letter-spacing:1px; text-shadow:0 4px 26px rgba(0,0,0,.75), 0 2px 6px rgba(0,0,0,.6); }
+  #titleScreen h1 .hl { color:#ffcc00; }
+  #titleScreen .theme { font-size:min(3vw,34px); font-weight:600; color:#cfe0ff; margin-top:14px; }
+  #startRow { display:flex; gap:28px; margin-top:44px; flex-wrap:wrap; justify-content:center; }
+  #startRow .btn { font-size:min(3.4vw,38px); padding:20px 38px; }
+  #startRow .btn small { font-size:min(1.9vw,20px); font-weight:700; opacity:.92; }
+  #titleFoot { position:absolute; bottom:22px; width:100%; text-align:center;
+      font-size:min(1.8vw,20px); color:#8fa3c8; font-weight:600; }
+  .titleIcon { font-size:min(9vw,96px); line-height:1; margin-bottom:10px;
+      filter:drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
+
+  /* ============ how-to screen ============ */
+  #howtoScreen h2 { font-size:min(4.6vw,50px); font-weight:900; margin-bottom:26px; }
+  .howRow { display:flex; align-items:center; gap:26px; margin:12px 0; }
+  .howPic { display:flex; gap:10px; }
+  .demoBtn { width:110px; height:86px; border-radius:20px; font-size:30px; font-weight:900;
+      color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      box-shadow:0 6px 0 rgba(0,0,0,.4); }
+  .demoBtn small { font-size:16px; font-weight:700; }
+  .howTxt { font-size:min(3vw,32px); font-weight:700; text-align:left; min-width:280px; }
+  #goBtn { margin-top:24px; font-size:min(4.6vw,50px); padding:20px 100px; }
+  .hint { margin-top:10px; font-size:min(2vw,22px); color:#9fb2d4; font-weight:700; }
+  .hint.dim { margin-top:7px; font-size:min(2vw,20px); color:#7d90b5; }
+
+  /* ============ HUD ============ */
+  #hud { position:fixed; inset:0; z-index:50; display:none; pointer-events:none; }
+  #hud.show { display:block; }
+  /* wraps instead of running off the pill, and stays clear of the speed panel
+     on the left and the progress dots / RESET on the right (tablet widths) */
+  #banner { position:fixed; top:14px; left:50%; transform:translateX(-50%);
+      background:rgba(10,17,30,.72); border:2px solid rgba(255,255,255,.28);
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      color:#fff; font-size:clamp(16px,2.5vw,34px); font-weight:800;
+      padding:12px 30px; line-height:1.25; text-align:center;
+      border-radius:28px; z-index:55; max-width:min(58vw,900px); }
+  #banner .em { color:#ffcc00; }
+  #banner.urgent { border-color:#ffcc00; background:rgba(120,40,10,.9); }
+
+  /* speed panel */
+  #speedPanel { position:fixed; left:18px; top:14px; z-index:55;
+      background:rgba(10,17,30,.66); border-radius:20px; padding:10px 18px 12px; width:190px;
+      border:2px solid rgba(255,255,255,.22); text-align:center;
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  #speedNum { font-size:52px; font-weight:900; color:#fff; line-height:1; }
+  #speedNum small { font-size:18px; font-weight:700; color:#9fb2d4; }
+  #speedBarWrap { height:16px; border-radius:8px; background:#22304a; margin-top:8px; overflow:hidden;
+      border:1px solid rgba(255,255,255,.25); }
+  #speedBar { height:100%; width:0%; border-radius:8px;
+      background:linear-gradient(90deg,#3fae6a 0%,#f2a41c 60%,#e05450 100%);
+      background-size:170px 100%; transition:width .1s; }
+  #speedTags { display:flex; justify-content:space-between; font-size:13px; font-weight:800;
+      color:#9fb2d4; margin-top:3px; }
+  #limiterTag { font-size:14px; font-weight:900; color:#ffcc00; height:18px; margin-top:2px; }
+
+  /* progress dots */
+  #dots { position:fixed; top:20px; right:22px; display:flex; gap:10px; z-index:55; }
+  #dots .dot { width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,.25);
+      border:3px solid rgba(255,255,255,.45); }
+  #dots .dot.done { background:#3fae6a; border-color:#fff; }
+  #dots .dot.now  { background:#ffcc00; border-color:#fff; transform:scale(1.25); }
+
+  /* control clusters */
+  .ctl { position:fixed; z-index:60; pointer-events:auto; }
+  #steerL { left:20px;  bottom:24px; width:150px; height:140px; font-size:64px; }
+  #steerR { left:186px; bottom:24px; width:150px; height:140px; font-size:64px; }
+  #goPedal    { right:20px;  bottom:24px; width:170px; height:170px; font-size:40px; border-radius:50%; }
+  #brakePedal { right:206px; bottom:24px; width:170px; height:170px; font-size:32px; border-radius:50%; }
+  #hornBtn { right:20px; bottom:214px; width:130px; height:130px; border-radius:50%; font-size:24px; }
+  #hornBtn .ico { font-size:48px; }
+  #revBtn { right:206px; bottom:214px; width:130px; height:74px; font-size:24px; display:none; }
+  /* sized to the gap between the steering cluster and the pedals, so it can
+     never overlap them on a narrow laptop or tablet screen */
+  /* the free gap runs from the steering cluster (ends 336px) to the pedals
+     (start at 100vw-376px), so centre on that gap and cap the width to it */
+  #actionBtn { left:calc(50% - 20px); bottom:46px; transform:translateX(-50%);
+      width:max-content; min-width:0; max-width:min(680px, calc(100vw - 740px));
+      height:110px; font-size:clamp(15px,2.2vw,36px); padding:0 18px;
+      white-space:normal; line-height:1.15; display:none; }
+  .ctl small { font-size:16px; font-weight:700; opacity:.9; }
+  .ctl .ico { font-size:52px; line-height:1; }
+
+  /* controller button badges. Held in a data attribute rather than the
+     button's markup, because several of these buttons rewrite their own
+     innerHTML (REVERSE ↔ FORWARD, every action label, every card) and a
+     child element would be wiped each time. Only set while a controller is
+     connected, so touch players never see them. */
+  [data-pad]::after {
+      content:attr(data-pad); position:absolute; top:-14px; right:-14px; z-index:2;
+      min-width:40px; height:40px; padding:0 9px; box-sizing:border-box;
+      border-radius:20px; background:#0f1520; color:#fff;
+      border:3px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,.45);
+      font:900 19px/34px system-ui,-apple-system,"Segoe UI",sans-serif;
+      letter-spacing:0; text-align:center; pointer-events:none; }
+  /* the round pedals get theirs centred on the top rim — a corner badge
+     would float in empty space off the circle */
+  #goPedal[data-pad]::after, #brakePedal[data-pad]::after, #hornBtn[data-pad]::after {
+      top:-12px; right:auto; left:50%; transform:translateX(-50%); }
+  /* EXIT sits right under the speed panel, so its badge goes beside it */
+  #exitBtn[data-pad]::after { top:50%; right:-50px; transform:translateY(-50%); }
+  /* the menu buttons are in normal flow, so they need an anchor for the badge */
+  #cardBtn, #goBtn, #againBtn, #startRow .btn { position:relative; }
+  [hidden] { display:none !important; }
+
+  /* subtle cinematic vignette while playing */
+  #camVignette { position:fixed; inset:0; z-index:40; pointer-events:none;
+      background:radial-gradient(ellipse at center, rgba(0,0,0,0) 56%, rgba(0,0,0,.36) 100%); }
+
+  /* seatbelt strap (visible once buckled) */
+  #beltStrap { position:fixed; z-index:52; left:-12%; bottom:-30%; width:130%; height:26%;
+      transform:rotate(-14deg); display:none; pointer-events:none;
+      background:linear-gradient(180deg, rgba(30,34,40,0) 0%, rgba(30,34,40,0) 34%,
+        #262b33 35%, #3a414d 48%, #262b33 62%, rgba(30,34,40,0) 63%); }
+  #beltStrap.show { display:block; }
+
+  /* toast nudge */
+  #toast { position:fixed; left:50%; bottom:200px; transform:translateX(-50%) scale(0);
+      background:#ffcc00; color:#1c2536; font-size:min(3.2vw,34px); font-weight:800;
+      text-align:center; padding:16px 38px; border-radius:22px; max-width:80vw;
+      border:4px solid #1c2536; z-index:90; transition:transform .22s cubic-bezier(.34,1.56,.64,1);
+      pointer-events:none; }
+  #toast.show { transform:translateX(-50%) scale(1); }
+
+  /* impact flash + blood vignette + blood-on-lens droplets */
+  #flash { position:fixed; inset:0; z-index:80; background:#fff; opacity:0; pointer-events:none; }
+  #vignette { position:fixed; inset:0; z-index:81; opacity:0; pointer-events:none;
+      background:radial-gradient(ellipse at center, rgba(120,0,0,0) 36%, rgba(110,0,0,.95) 100%); }
+  #bloodCam { position:fixed; inset:0; z-index:82; opacity:0; pointer-events:none; transition:opacity .25s;
+      background:
+        radial-gradient(circle at 22% 28%, rgba(150,5,8,.9) 0 2.2%, rgba(150,5,8,0) 4.5%),
+        radial-gradient(circle at 68% 16%, rgba(130,4,7,.85) 0 1.5%, rgba(130,4,7,0) 3.2%),
+        radial-gradient(circle at 46% 58%, rgba(145,4,8,.95) 0 3.2%, rgba(145,4,8,0) 7%),
+        radial-gradient(circle at 81% 52%, rgba(120,3,6,.8) 0 1.9%, rgba(120,3,6,0) 4.2%),
+        radial-gradient(circle at 12% 66%, rgba(140,4,8,.85) 0 2.6%, rgba(140,4,8,0) 5.4%),
+        radial-gradient(circle at 33% 82%, rgba(150,5,8,.85) 0 2.4%, rgba(150,5,8,0) 5%); }
+
+  /* ============ teaching card ============ */
+  #cardWrap { position:fixed; inset:0; z-index:110; display:none; align-items:center;
+      justify-content:center; background:rgba(8,13,24,.78); }
+  #cardWrap.show { display:flex; }
+  #card { background:#fff; border-radius:26px; padding:36px 48px 34px; width:min(860px,92vw);
+      text-align:center; animation:popin .32s cubic-bezier(.34,1.56,.64,1);
+      box-shadow:0 34px 90px rgba(0,0,0,.55); }
+  #card.bad  { border-top:12px solid #e05450; }
+  #card.good { border-top:12px solid #3fae6a; }
+  @keyframes popin { from { transform:scale(.65); opacity:0; } to { transform:scale(1); opacity:1; } }
+  #cardIcon { font-size:84px; line-height:1; }
+  #cardTitle { font-size:min(5vw,46px); font-weight:900; color:#1c2536; margin-top:8px; line-height:1.15; }
+  #cardFact { margin-top:20px; border-radius:18px; font-size:min(3.2vw,30px); font-weight:700;
+      padding:18px 26px; line-height:1.35; }
+  #card.bad  #cardFact { background:#fdeeee; border:4px solid #e05450; color:#5c1a18; }
+  #card.good #cardFact { background:#eaf6ef; border:4px solid #3fae6a; color:#1e4d33; }
+  #cardBtn { margin:26px auto 0; font-size:min(4vw,40px); padding:18px 64px; }
+
+  /* ============ finish screen ============ */
+  #finishScreen h2 { font-size:min(5.4vw,56px); font-weight:900; }
+  #finishScreen .sub { font-size:min(3vw,30px); color:#cfe0ff; font-weight:600; margin-top:8px; }
+  #rules { margin-top:20px; display:flex; flex-direction:column; gap:8px; width:min(820px,92vw); }
+  .rule { background:rgba(255,255,255,.09); border:2px solid rgba(255,255,255,.22);
+      border-radius:16px; padding:10px 20px; font-size:min(2.6vw,26px); font-weight:700;
+      text-align:left; display:flex; align-items:center; gap:16px; }
+  .rule .ric { font-size:30px; }
+  #againBtn { margin-top:20px; font-size:min(4.6vw,48px); padding:18px 80px; }
+
+  /* short screens: 1366x768 and 1280x720 laptops, and iPad landscape.
+     Keeps the finish screen's PLAY AGAIN button on screen. */
+  @media (max-height: 780px){
+    #finishScreen h2 { font-size:min(4.4vw,42px); }
+    #finishScreen .sub { font-size:min(2.4vw,22px); margin-top:4px; }
+    #rules { margin-top:12px; gap:6px; }
+    .rule { padding:7px 16px; font-size:min(2.2vw,20px); }
+    .rule .ric { font-size:24px; }
+    #againBtn { margin-top:14px; font-size:min(4vw,38px); padding:14px 60px; }
+    #howtoScreen h2 { font-size:min(3.2vw,30px); margin-bottom:6px; }
+    .howRow { gap:14px; margin:4px 0; }
+    .demoBtn { width:72px; height:54px; font-size:19px; border-radius:13px; }
+    .demoBtn small { font-size:11px; }
+    .howTxt { font-size:min(2.1vw,21px); min-width:210px; }
+    .hint { margin-top:5px; font-size:min(1.65vw,17px); }
+    .hint.dim { margin-top:4px; font-size:min(1.55vw,16px); }
+    #goBtn { margin-top:10px; font-size:min(3.2vw,32px); padding:11px 56px; }
+    /* the bilingual banner gets tall on short screens — keep it off the view */
+    #banner { font-size:clamp(14px,1.9vw,26px); padding:9px 22px; }
+    /* title: the footer was pinned to the bottom edge, and on a 720-768px
+       screen the start buttons run down past it, so the campaign line printed
+       straight across both buttons. Let it flow beneath them instead, and
+       tighten the stack so the whole page still fits without scrolling. */
+    .titleIcon { font-size:min(7vw,72px); margin-bottom:4px; }
+    #titleScreen h1 { font-size:min(6.4vw,70px); }
+    #titleScreen .theme { margin-top:8px; }
+    .hazardBar { margin-top:12px; }
+    .chipRow { margin-top:14px; }
+    #startRow { margin-top:22px; }
+    #titleFoot { position:static; margin-top:16px; }
+  }
+
+  /* rotate-device overlay — touch devices only (never block a desktop window) */
+  #rotate { position:fixed; inset:0; z-index:300; background:#0b1220; color:#fff; display:none;
+      align-items:center; justify-content:center; font-size:34px; font-weight:800; text-align:center; }
+  @media (orientation:portrait) and (pointer:coarse) { #rotate { display:flex; } }
+
+  /* recovery controls (always visible during play) */
+  #resetBtn { position:fixed; right:22px; top:58px; z-index:56; pointer-events:auto;
+      font-size:20px; padding:10px 18px; border-radius:16px; box-shadow:0 5px 0 rgba(0,0,0,.4); }
+  #resetBtn small { font-size:13px; font-weight:700; opacity:.9; }
+  /* sits where the pedals were — with a controller in hand they are redundant */
+  #padBig { position:fixed; right:18px; bottom:20px; z-index:58; width:min(580px, 47vw);
+      pointer-events:none; background:rgba(10,16,26,.72); border:2px solid rgba(255,255,255,.18);
+      border-radius:22px; padding:12px 14px; box-shadow:0 10px 30px rgba(0,0,0,.45); }
+  #padBig svg { width:100%; height:auto; display:block; }
+  #padBig .pBtn { font:800 19px system-ui,sans-serif; fill:#0b111c; text-anchor:middle;
+      dominant-baseline:central; }
+  #padBig .pNub { font:800 13px system-ui,sans-serif; fill:#0b111c; text-anchor:middle;
+      dominant-baseline:central; }
+  #padBig .pEn  { font:800 20px system-ui,sans-serif; fill:#ffffff; }
+  #padBig .pZh  { font:700 15px system-ui,sans-serif; fill:#a9bcd8; }
+  #padBig .pCap { font:700 14px system-ui,sans-serif; fill:#93a6c4; text-anchor:middle;
+      letter-spacing:.05em; }
+  /* the touch buttons the map replaces. !important beats showBtns' inline style,
+     and their inline display stays 'flex' so the pad/key handlers still fire. */
+  #hud.padmode #goPedal, #hud.padmode #brakePedal,
+  #hud.padmode #hornBtn, #hud.padmode #revBtn { display:none !important; }
+  #hud.padmode #actionBtn { max-width:min(520px, calc(100vw - 940px)); }
+  @media (max-height: 780px){ #padBig { width:min(500px, 42vw); bottom:14px; } }
+  #padDiagram { margin-top:6px; width:min(760px, 94vw); }
+  #padDiagram svg { width:100%; height:auto; display:block; }
+  #padDiagram .dgLbl { font:700 15px system-ui,-apple-system,"Segoe UI",sans-serif; fill:#eaf2ff; }
+  #padDiagram .dgZh  { font:600 12px system-ui,-apple-system,"Segoe UI",sans-serif; fill:#9fb2d4; }
+  #padDiagram .dgBtn { font:800 17px system-ui,-apple-system,"Segoe UI",sans-serif; fill:#12203a;
+                       text-anchor:middle; dominant-baseline:central; }
+  #padDiagram .dgCap { font:700 13px system-ui,-apple-system,"Segoe UI",sans-serif; fill:#8fa3c8;
+                       text-anchor:middle; }
+  @media (max-height: 780px){
+    #padDiagram { width:min(496px, 78vw); margin-top:0; }
+    #padDiagram .dgLbl { font-size:17px; }   /* smaller box, so scale the type up */
+    #padDiagram .dgZh  { font-size:14px; }
+    #padDiagram .dgCap { font-size:15px; }
+  }
+  #soundBtn { position:fixed; left:50%; transform:translateX(-50%); top:14px; z-index:70;
+      pointer-events:auto; display:none; font-size:19px; padding:11px 22px; border-radius:16px;
+      box-shadow:0 5px 0 rgba(0,0,0,.4); }
+  #soundBtn.show { display:flex; }
+  #soundBtn .zh { font-size:.62em; }
+  #exitBtn { position:fixed; left:18px; top:148px; z-index:56; pointer-events:auto;
+      font-size:16px; padding:8px 16px; border-radius:14px; box-shadow:0 4px 0 rgba(0,0,0,.4); }
+
+  /* fatal error screen */
+  #errScreen { position:fixed; inset:0; z-index:400; display:none; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center; gap:18px;
+      background:#101b30; color:#fff; padding:24px; }
+  #errScreen.show { display:flex; }
+  #errScreen h2 { font-size:min(5vw,42px); font-weight:900; }
+  #errScreen p { font-size:min(3vw,24px); color:#cfe0ff; font-weight:600; max-width:640px; }
+  #errScreen .btn { font-size:min(4vw,34px); padding:16px 60px; }
+</style>
+</head>
+<body>
+<canvas id="c3d"></canvas>
+
+<div id="hud">
+  <div id="camVignette" aria-hidden="true"></div>
+  <div id="banner">Get ready…</div>
+  <div id="speedPanel">
+    <div id="speedNum">0<small> km/h</small></div>
+    <div id="speedBarWrap"><div id="speedBar"></div></div>
+    <div id="speedTags"><span>SLOW<span class="zh">慢</span></span><span>FAST<span class="zh">快</span></span></div>
+    <div id="limiterTag"></div>
+  </div>
+  <div id="dots"></div>
+  <div id="beltStrap"></div>
+  <button class="btn blue ctl"  id="steerL"><span>&#9664;</span><small>LEFT<span class="zh">左转</span></small></button>
+  <button class="btn blue ctl"  id="steerR"><span>&#9654;</span><small>RIGHT<span class="zh">右转</span></small></button>
+  <button class="btn green ctl" id="goPedal"><span class="ico">&#9650;</span>GO<span class="zh">前进</span></button>
+  <button class="btn red ctl"   id="brakePedal"><span class="ico">&#9632;</span>BRAKE<span class="zh">刹车</span></button>
+  <button class="btn amber ctl" id="hornBtn"><span class="ico">&#128226;</span>HORN<span class="zh">喇叭</span></button>
+  <button class="btn grey ctl"  id="revBtn">REVERSE<span class="zh">倒车</span></button>
+  <button class="btn amber ctl" id="actionBtn">ACTION</button>
+  <button class="btn grey" id="resetBtn" aria-label="Reset to last safe point">&#10226; RESET<span class="zh">重置</span></button>
+  <button class="btn grey" id="exitBtn" aria-label="Exit to title screen">&#10005; EXIT<span class="zh">退出</span></button>
+  <!-- in-play controller map. With a controller in hand the touch buttons are
+       redundant, so this takes their place at full size -->
+  <div id="padBig" hidden aria-hidden="true"></div>
+  <!-- only appears when the browser is still blocking sound; one real tap fixes it -->
+  <button class="btn amber" id="soundBtn" aria-label="Enable sound">&#128266; TAP FOR SOUND<span class="zh">轻触开启声音</span></button>
+</div>
+
+<div id="toast"></div>
+<div id="flash"></div>
+<div id="vignette"></div>
+<div id="bloodCam"></div>
+
+<div class="screen show" id="titleScreen">
+  <div class="titleBadge" aria-hidden="true">
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <g fill="#241a02">
+        <rect x="3" y="45" width="22" height="3.4" rx="1.2"/>
+        <rect x="10" y="12" width="3.6" height="34" rx="1.2"/>
+        <rect x="15" y="26" width="28" height="17" rx="3"/>
+        <path d="M19 27V17.5A2.5 2.5 0 0 1 21.5 15H35a2.5 2.5 0 0 1 2.5 2.5V27h-3.6v-8.4H22.6V27Z"/>
+        <circle cx="22" cy="47" r="6.4"/>
+        <circle cx="41" cy="47" r="5.2"/>
+      </g>
+      <circle cx="22" cy="47" r="2.6" fill="#f2a41c"/>
+      <circle cx="41" cy="47" r="2.2" fill="#f2a41c"/>
+      <rect x="25" y="9" width="7" height="4.4" rx="1.6" fill="#c62f28"/>
+    </svg>
+  </div>
+  <h1>STAY ALERT<br>AROUND <span class="hl">MHE</span>
+    <span class="zh" style="font-size:.42em; margin-top:.25em; opacity:.95;">警惕物料搬运设备</span></h1>
+  <div class="theme">Drive the MHE. Keep everyone safe.
+    <span class="zh">驾驶物料搬运设备，确保人人安全。</span></div>
+  <div class="hazardBar" aria-hidden="true"></div>
+  <div class="chipRow" aria-hidden="true">
+    <span class="tchip">&#128666; First-person 3D&nbsp;·&nbsp;第一人称 3D</span>
+    <span class="tchip">&#128100; Driver&rsquo;s seat&nbsp;·&nbsp;驾驶视角</span>
+    <span class="tchip">&#9201; About 3 minutes&nbsp;·&nbsp;约 3 分钟</span>
+  </div>
+  <div id="startRow">
+    <button class="btn green pulse" id="startDriveBtn">&#128666; DRIVING MHE<span class="zh">驾驶物料搬运设备</span></button>
+  </div>
+  <div id="titleFoot">AnjouHealth &nbsp;&bull;&nbsp; STOP SIF Campaign FY26&ndash;27 &nbsp;&bull;&nbsp; Booth 2</div>
+</div>
+
+<div class="screen" id="howtoScreen">
+  <h2>HOW TO PLAY &mdash; just tap! &nbsp;·&nbsp; 游戏方法 &mdash; 轻触即可</h2>
+  <div class="howRow">
+    <div class="howPic">
+      <div class="demoBtn" style="background:#2c8a50;">&#9650;<small>GO<span class="zh">前进</span></small></div>
+      <div class="demoBtn" style="background:#c03531;">&#9632;<small>BRAKE<span class="zh">刹车</span></small></div>
+    </div>
+    <div class="howTxt">Hold <b>GO</b> to move.<br>Hold <b>BRAKE</b> to stop.
+      <span class="zh">按住「前进」移动，按住「刹车」停下。</span></div>
+  </div>
+  <div class="howRow">
+    <div class="howPic">
+      <div class="demoBtn" style="background:#2c5cb0;">&#9664;<small>LEFT<span class="zh">左转</span></small></div>
+      <div class="demoBtn" style="background:#2c5cb0;">&#9654;<small>RIGHT<span class="zh">右转</span></small></div>
+    </div>
+    <div class="howTxt">Hold to steer.<span class="zh">按住转向。</span></div>
+  </div>
+  <div class="howRow">
+    <div class="howPic">
+      <div class="demoBtn" style="background:#d3860a; border-radius:50%;">&#128226;<small>HORN<span class="zh">喇叭</span></small></div>
+    </div>
+    <div class="howTxt">Tap the horn near corners<br>and people.
+      <span class="zh">在转角和有人的地方按喇叭。</span></div>
+  </div>
+  <!-- always shown: the keyboard is the fallback if a controller fails -->
+  <div class="hint" id="hintKeys">
+    &#9000;&#65039; Keyboard 键盘: &#8593; / W = GO &nbsp;&middot;&nbsp; &#8595; / S = BRAKE &nbsp;&middot;&nbsp;
+    &#8592; &#8594; / A D = steer &nbsp;&middot;&nbsp; H = HORN &nbsp;&middot;&nbsp; R = REVERSE &nbsp;&middot;&nbsp;
+    ENTER = OK / report &nbsp;&middot;&nbsp; C = RESET &nbsp;&middot;&nbsp; ESC = EXIT</div>
+  <!-- filled in from the controller actually connected; hidden until there is one -->
+  <div class="hint" id="hintPad" hidden></div>
+  <!-- a picture of the controller in hand, labelled — built from the same
+       data as the on-screen badges, so the two can never disagree -->
+  <div id="padDiagram" hidden></div>
+  <div class="hint dim">
+    Stuck? Tap &#10226; RESET (top right) any time &mdash; you go back to the last safe point.<br>
+    卡住了？随时轻触 &#10226; RESET（右上角），即可回到上一个安全点。</div>
+  <button class="btn green pulse" id="goBtn">GO<span class="zh">开始</span></button>
+</div>
+
+<div id="cardWrap">
+  <div id="card" class="bad">
+    <div id="cardIcon">&#9888;&#65039;</div>
+    <div id="cardTitle">Too fast to stop.</div>
+    <div id="cardFact">At speed, a loaded pallet jack cannot stop in time. Stopping distance grows with speed.</div>
+    <button class="btn green" id="cardBtn">TRY AGAIN</button>
+  </div>
+</div>
+
+<div class="screen" id="finishScreen">
+  <h2>&#127942; You stayed alert. &nbsp;·&nbsp; 你保持了警觉。</h2>
+  <div class="sub">Five safeguards kept people safe today:</div>
+  <div id="rules">
+    <div class="rule"><span class="ric">&#128679;</span><span>Keep to the middle of the aisle &mdash; people work at the racking.<span class="zh">保持在通道中间行驶 — 有人在货架旁作业。</span></span></div>
+    <div class="rule"><span class="ric">&#128678;</span><span>Control your speed &mdash; the limiter helps, but stopping is on you.<span class="zh">控制车速 — 限速器有帮助，但刹车靠你自己。</span></span></div>
+    <div class="rule"><span class="ric">&#128226;</span><span>Sound the horn at corners. Make eye contact before you pass.<span class="zh">在转角按喇叭，通过前与对方目光确认。</span></span></div>
+    <div class="rule"><span class="ric">&#128260;</span><span>Swing wide when you turn &mdash; your tail sweeps the other way.<span class="zh">转弯时留出足够空间 — 车尾会向相反方向大幅外摆。</span></span></div>
+    <div class="rule"><span class="ric">&#128309;</span><span>Respect the beacon and the belt &mdash; buckle up, watch the amber light.<span class="zh">重视警示灯与安全带 — 系好安全带，留意黄灯。</span></span></div>
+  </div>
+  <button class="btn green pulse" id="againBtn">PLAY AGAIN<span class="zh">再玩一次</span></button>
+</div>
+
+<div id="rotate">&#128241;&#8635;<br>Please turn the screen sideways (landscape)
+  <span class="zh" style="font-size:.7em;">请将屏幕横放</span></div>
+
+<div id="errScreen">
+  <h2>&#9888;&#65039; Something went wrong &nbsp;·&nbsp; 出现问题</h2>
+  <p id="errMsg">The game hit an unexpected problem.</p>
+  <button class="btn green" onclick="location.reload()">RELOAD GAME<span class="zh">重新载入</span></button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+/* ================================================================
+   STAY ALERT AROUND MHE — first-person pallet-jack safety kiosk game
+   AnjouHealth — STOP SIF Campaign FY26-27
+   DRIVER-ONLY BUILD: the on-foot segment is not reachable in this file.
+   ================================================================ */
+
+/* ---- TONE DIAL ---- */
+const CONSEQUENCE_MODE = "GRAPHIC";   // "GRAPHIC" = knockdown + blood + impact
+                                      // "MODERATE" = knockdown + red flash, no blood
+
+/* ---- tuning ---- */
+const TUNE = {
+  maxFwd: 5.0,          // m/s — speed limiter cap (still fast enough to hurt)
+  maxRev: 2.2,
+  accel: 2.4,           // m/s^2
+  brake: 6.5,           // m/s^2 — stopping distance = v^2 / (2*brake); from the 5 m/s
+                        // limiter that is 0.8 s over 1.9 m, a firm, deliberate stop
+  drag: 0.7,            // natural rolloff
+  steerMax: 0.49,       // rad — full lock turns a ~3.2 m radius (a wide, realistic swing)
+  steerRate: 1.9,       // rad/s
+  wheelBase: 1.7,
+  walkSpeed: 2.0,
+  strikeSpeed: 1.0,     // m/s — contact above this = struck
+  hornSafeSpeed: 2.6    // slow enough at blind corner
+};
+
+/* ---- tiny helpers ---- */
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => v<a?a:(v>b?b:v);
+const lerp = (a,b,t) => a+(b-a)*t;
+const TAU = Math.PI*2;
+
+/* =========================================================
+   BILINGUAL — every runtime string, English then 简体中文.
+   Keyed on the exact English passed to banner()/toast()/showCard()/
+   setAction(); bi() appends the Chinese, and anything without an entry
+   simply shows English, so a missing key can never break a screen.
+   ========================================================= */
+const ZH = {
+  /* ---- banners ---- */
+  '&#10004;&#65039; <span class="em">SAFE</span>': '安全',
+  '&#9888;&#65039; <span class="em">STRUCK</span>': '已发生撞击',
+  '&#9888;&#65039; <span class="em">You did not stop.</span>': '你没有停车。',
+  '&#9888;&#65039; <span class="em">NEAR MISS</span>': '险些撞到',
+  '&#9940; <span class="em">STOP</span> &mdash; person crossing ahead.': '停车 — 前方有人横过。',
+  '&#9940; <span class="em">WAIT</span> &mdash; pallet jack crossing.': '等待 — 托盘车正在通过。',
+  '&#9940; <span class="em">WAIT</span> &mdash; a second pallet jack is slowing for you&hellip;': '等待 — 第二辆托盘车正在为你减速…',
+  '&#9940; <span class="em">WAIT</span> &mdash; reverse beeps! A truck is backing across.': '等待 — 倒车提示音！有车正在倒车横过。',
+  '&#9989; <span class="em">Clear</span> &mdash; drive on to the green ring.': '已安全 — 继续驶向绿色圆环。',
+  '&#128077; The driver waves &mdash; <span class="em">cross now.</span>': '司机挥手示意 — 现在可以通过。',
+  '&#128077; They are crossing. <span class="em">Wait until they are clear.</span>': '对方正在通过。等他们完全离开。',
+  'You are in the seat. <span class="em">Buckle up first.</span>': '你已就位。请先系好安全带。',
+  'Drive ahead. <span class="em">Blind corner</span> coming &mdash; slow down + tap HORN.': '向前行驶。前方是盲角 — 减速并按喇叭。',
+  'Drive to the <span class="em">green bay</span> and STOP on it.': '驶向绿色装货区，并停在上面。',
+  'Forks in. Now <span class="em">REVERSE</span> out &mdash; check behind you.': '货叉已插入。现在倒车驶出 — 注意后方。',
+  'Reversing. <span class="em">Your view behind is limited.</span> Go slow.': '正在倒车。后方视野有限，请慢行。',
+  'Follow the <span class="em">green path</span> &mdash; line up on the amber pad first.': '沿着绿色路线 — 先在琥珀色区域对正车身。',
+  'Into the <span class="em">turning bay</span> &mdash; follow the green path to pad <span class="em">1</span>.': '进入转弯区 — 沿绿色路线驶到 1 号琥珀色区域。',
+  'Hold <span class="em">LEFT + GO</span> &mdash; sweep wide round the cones to <span class="em">2</span>, then park on <span class="em">3</span>. Watch your TAIL!': '按住「左转 + 前进」— 大弧度绕过锥筒到 2，再停到 3。注意车尾！',
+  'Now hold <span class="em">LEFT + GO</span> &mdash; follow the path round and park in the green box. Watch your TAIL!': '现在按住「左转 + 前进」— 沿路线绕行并停入绿色方框。注意车尾！',
+  'Head back to the dock. <span class="em">Sound the horn</span> near people &mdash; and keep a speed you can stop from.': '返回装卸区。靠近人员时按喇叭 — 并保持能够刹停的车速。',
+  'Walk the <span class="em">yellow walkway</span>. STOP at the white line.': '走在黄色人行道上。在白线前停下。',
+  'It has stopped. <span class="em">Make eye contact</span> before you cross.': '车已停下。通过前先与司机目光确认。',
+  'Walk on. <span class="em">Listen</span> for reverse beeps.': '继续步行。注意倒车提示音。',
+  'Almost there. <span class="em">Never cut behind a turning MHE.</span> Use the crossing.': '快到了。切勿从转弯的物料搬运设备后方穿过，请走人行横道。',
+
+  /* ---- action / gear buttons ---- */
+  '&#128737;&#65039; TAP TO BUCKLE SEATBELT': '轻触系上安全带',
+  '&#128064; MAKE EYE CONTACT': '与司机目光确认',
+  '&#9888;&#65039; REPORT HAZARD': '报告隐患',
+  'REVERSE': '倒车',
+  'FORWARD': '前进档',
+  'TRY AGAIN': '重试',
+  'CONTINUE': '继续',
+
+  /* ---- toasts ---- */
+  'Good — they heard you!': '很好 — 对方听到了！',
+  'Interlock released — the truck can move now.': '联锁已解除 — 现在可以行驶了。',
+  'Not on the bay yet — stop with the green square under your forks.': '还没停在装货区 — 让绿色方块位于货叉下方。',
+  '⬅ The green bay is BEHIND you — tap REVERSE and back onto it.': '⬅ 绿色装货区在你后方 — 按「倒车」再退回去。',
+  'One more coming — it is braking for you.': '还有一辆正在驶来 — 它正在为你刹车。',
+  'Someone is behind you!': '你的后方有人！',
+  'They stopped — horn works.': '对方停下了 — 喇叭起作用了。',
+  'Watch the amber beacon — it warns of the swing.': '注意琥珀色警示灯 — 它提示车尾摆动。',
+  'Stuck? Tap ↩ RESET (top right) — or try REVERSE.': '卡住了？轻触右上角 ↩ RESET — 或试试倒车。',
+  'Press EXIT again to end and return to the title.': '再按一次 EXIT 即可结束并返回主页。',
+  '↩ Back at the last safe point.': '↩ 已回到上一个安全点。',
+  '↩ Position reset — back at the last safe point.': '↩ 位置已重置 — 回到上一个安全点。',
+  '↩ Straighten up along the path first, then swing LEFT.': '↩ 先沿路线摆正车身，再向左转弯。',
+  '⏳ Holding back is right — wait until it is clear.': '⏳ 在此等候是正确的 — 等安全后再走。',
+  '⚠ He did NOT see you! Always make eye contact.': '⚠ 他并没有看到你！务必先目光确认。',
+  '⚠ Someone has stepped out in front of you — STOP!': '⚠ 有人走到你前方 — 立即停车！',
+  '⚠ You left the walkway — see the beacon? The tail swings here!': '⚠ 你离开了人行道 — 看到警示灯了吗？车尾会摆到这里！',
+  '✅ The driver has seen you — cross now.': '✅ 司机已看到你 — 现在通过。',
+  '🎮 Controller connected — stick steers, RT = GO, LT = BRAKE, X = HORN, Y = REVERSE.': '🎮 手柄已连接 — 摇杆转向，RT = 前进，LT = 刹车，X = 喇叭，Y = 倒车。',
+  '🎮 Controller connected — stick steers, A = GO, B = BRAKE, Y = HORN, X = REVERSE.': '🎮 手柄已连接 — 摇杆转向，A = 前进，B = 刹车，Y = 喇叭，X = 倒车。',
+  '🎮 Controller connected — stick steers, A = GO, X = BRAKE, B = HORN, Y = REVERSE.': '🎮 手柄已连接 — 摇杆转向，A = 前进，X = 刹车，B = 喇叭，Y = 倒车。',
+  '🎮 Controller connected — stick steers, bottom button = GO, right button = BRAKE.': '🎮 手柄已连接 — 摇杆转向，下方按键 = 前进，右侧按键 = 刹车。',
+  '👀 Tap MAKE EYE CONTACT — then you can cross.': '👀 轻触「与司机目光确认」— 然后即可通过。',
+  '👉 Follow the green path onto the amber pad on your right.': '👉 沿绿色路线驶上右侧的琥珀色区域。',
+  'The bay is fenced — you cannot go wrong. Follow 1 → 2 → 3.': '转弯区已围起 — 不会走错。依次跟随 1 → 2 → 3。',
+  '↩ You went right round. One half-turn only — stop on green box 3.': '↩ 你转了一整圈。只需转半圈 — 停在 3 号绿色方框。',
+  '👉 Follow the white arrows onto amber pad 1.': '👉 沿白色箭头驶上 1 号琥珀色区域。',
+  '👉 Hold the green GO button to move.': '👉 按住绿色「前进」按钮即可移动。',
+  '👉 Tap MAKE EYE CONTACT, then cross.': '👉 轻触「与司机目光确认」，然后通过。',
+  '👉 Tap REVERSE, then hold GO to back out.': '👉 按「倒车」，再按住「前进」倒出。',
+  '👉 Tap the big amber button to buckle up.': '👉 轻触琥珀色大按钮系好安全带。',
+  '👋 He sees you. Safe to cross.': '👋 他看到你了，可以安全通过。',
+  '💡 Spot a floating ⚠ ? Walk up and REPORT the hazard — bonus points for sharp eyes.': '💡 看到漂浮的 ⚠ 了吗？走近并「报告隐患」— 眼尖有加分。',
+  '🔊 Those beeps mean a truck is reversing. Stand back.': '🔊 提示音代表有车正在倒车，请退后。',
+  '🚨 Truck crossing — STOP at the line and let it pass.': '🚨 有车正在通过 — 在线前停下，让它先行。',
+  '🛡 Buckle up first — tap the amber button.': '🛡 请先系好安全带 — 轻触琥珀色按钮。',
+  '👍 Horn AND a full stop — textbook.': '👍 按喇叭并完全停车 — 标准做法。',
+  '👍 Good stop. Let them clear.': '👍 停得好。等他们通过。',
+  '👍 They heard the horn — stepping back out of your way.': '👍 他们听到喇叭 — 正退开让路。',
+  '👍 Horn heard — they are holding back to let you pass.': '👍 喇叭已听到 — 他们正在等你先过。',
+
+  /* ---- teaching card titles ---- */
+  'Too fast for a blind corner.': '盲角车速过快。',
+  'You drove past without stopping.': '你没有停车就开了过去。',
+  'You passed within touching distance.': '你擦身而过，距离近在咫尺。',
+  'You hit a worker at the racking.': '你撞到了在货架旁工作的员工。',
+  'That is the whole shift, driven safely.': '整个班次都安全驾驶完成。',
+  'Belted, horn at the corners, creep speed in reverse, a wide swing with the tail clear, and a speed you could stop from. Every one of those is a decision you make again tomorrow.': '系好安全带、转角鸣笛、倒车时极慢行驶、大弧度转弯且车尾不碰人，并保持能够刹停的车速。这些都是你明天还要再做一次的选择。',
+  'Struck by a moving MHE.': '被行驶中的物料搬运设备撞到。',
+  'You stepped off the walkway into a traffic lane. Drivers expect people inside the yellow lines and look for them there — outside the lines, nobody is looking for you.': '你走出人行道，进入了车辆通道。司机预期行人只会在黄线内，也只会在那里留意行人 — 一旦走出黄线，就没有人会注意到你。',
+  '⚠ Off the walkway — MHE traffic runs here. Get back inside the yellow lines.': '⚠ 你已走出人行道 — 此处有物料搬运设备通行，请回到黄线内。',
+  'People pick, stack and walk along the rack faces all shift. Keep to the middle of the aisle, slow right down where people are working, and never cut close to the racking.': '员工整个班次都在货架旁拣货、堆放和走动。请保持在通道中间行驶，在有人作业的地方大幅减速，切勿贴近货架行驶。',
+  'They were still walking and you slid straight past at speed. Steering around a person is not a substitute for slowing down — one step the wrong way and it is a struck-by. Sound the horn early, then creep past or wait until they are clear.': '对方还在行走，你却高速擦身而过。绕开行人不能代替减速 — 他只要迈错一步就会被撞。应及早鸣笛，然后以极慢速度通过，或等他完全离开。',
+  '⚠ Someone is crossing — SLOW RIGHT DOWN or sound the horn.': '⚠ 有人正在横穿 — 请大幅减速或鸣笛。',
+  'Horn, then a full stop — textbook.': '先按喇叭，再完全停车 — 标准做法。',
+  'You stopped and let them cross.': '你停车让对方先通过。',
+  'Struck while reversing.': '倒车时发生撞击。',
+  'Backed out safely.': '安全倒出。',
+  'Clean turn — tail stayed clear.': '转弯干净 — 车尾未碰到人。',
+  'The tail swung into a person.': '车尾摆动撞到了人。',
+  'Struck the worker.': '撞到了工人。',
+  'Speed made it unstoppable.': '车速过快，无法刹停。',
+  'You could stop — because you were slow.': '你能刹停 — 因为你开得慢。',
+  'Horn used — and they stayed clear.': '使用了喇叭 — 对方保持了距离。',
+  'Back at the dock — everyone safe.': '回到装卸区 — 大家都安全。',
+  'Now see it from the ground.': '现在从地面视角体验。',
+  'Seen, acknowledged, safe.': '被看到、被确认、才安全。',
+  'You heard it, you stopped.': '你听到了，也停下了。',
+  'Struck by the pallet jack.': '被托盘车撞到。',
+  'The swinging tail hit you.': '摆动的车尾撞到了你。',
+  'You made it — alert the whole way.': '你成功了 — 全程保持警觉。',
+
+  /* ---- teaching card lessons ---- */
+  'A person stepped out — at speed, the pallet jack could not stop. Slow right down and sound your horn at every blind corner.':
+    '有人走了出来 — 车速快时托盘车根本停不下来。每个盲角都要大幅减速并按喇叭。',
+  'Someone stepped into your path and you kept moving. Steering around a person is not a substitute for stopping — you cannot know which way they will step. Come to a full stop, let them clear, then move off.':
+    '有人走进你的行进路线，你却继续前进。绕过行人不能代替停车 — 你无法预知他会往哪边走。请完全停车，等对方离开后再起步。',
+  'You warned them before the corner and stopped to let them cross. That is exactly how to take a blind corner.':
+    '你在转角前发出警告，并停车让对方通过。这正是通过盲角的正确做法。',
+  'Stopping was the right call. Next time sound the horn BEFORE the corner as well, so people know you are coming before they step out.':
+    '停车是正确的选择。下次请在转角前就按喇叭，让人在走出来之前就知道你要过来。',
+  'A loaded pallet jack’s rear view is poor. Reverse at creep speed, look over your shoulder, and use the horn.':
+    '载货的托盘车后方视野很差。倒车时应极慢速行驶、回头查看，并使用喇叭。',
+  'Slow, checked, warned. Reversing causes many struck-by injuries — creep speed saves lives.':
+    '慢速、查看、示警。倒车造成大量撞击伤害 — 极慢速能救命。',
+  'You swung wide into open floor instead of cutting it tight. A pallet jack needs that room, because the rear end sweeps out the opposite way — never stand beside a turning pallet jack.':
+    '你选择了大弧度绕行，而不是急转弯。托盘车需要这样的空间，因为车尾会向相反方向大幅外摆 — 切勿站在转弯的托盘车旁边。',
+  'When a pallet jack turns, its rear end sweeps WIDE the other way. Keep clear of the swing zone — driver and walker both.':
+    '托盘车转弯时，车尾会向相反方向大幅外摆。无论司机还是行人，都要远离摆尾区域。',
+  'Slow down around people. If someone is close, stop and let them move first.':
+    '在有人的地方减速。若有人靠近，先停车让对方通过。',
+  'Stopping distance grows massively with speed. The limiter caps the pallet jack — but a SAFE speed is the driver’s choice.':
+    '刹车距离随车速急剧增加。限速器只是上限 — 安全车速由司机自己掌握。',
+  'At low speed you stop in under a metre. At full speed you need many metres. Choose the speed that lets you stop.':
+    '低速时不到一米即可停下，全速时需要好几米。请选择让你能停下来的车速。',
+  'You warned them before you got there, so they held back and you passed safely. Sound the horn at crossings and blind spots every time — do not wait to be seen.':
+    '你在到达之前就发出警告，对方因此退让，你安全通过。每次在路口和盲区都要按喇叭 — 不要等着被看见。',
+  'You controlled your speed the whole way. That is what keeps stopping distance short. Next time sound the horn too, so people know you are coming.':
+    '你全程控制了车速，这正是缩短刹车距离的关键。下次也按一下喇叭，让人知道你要过来。',
+  'You drove the MHE. Next: walk the same warehouse on foot — and stay safe around one you do NOT control.':
+    '你已驾驶过物料搬运设备。接下来：步行穿越同一个仓库 — 在你无法控制的车辆旁保持安全。',
+  'Stop at the line. Wait for it to stop. Make eye contact so you KNOW the driver sees you. Then cross.':
+    '在线前停下，等车停稳，与司机目光确认，确定他看到你之后再通过。',
+  'You stepped into a pallet jack’s path at a crossing. Stop at the line, look, and let it pass.':
+    '你在路口走进了托盘车的行进路线。请在线前停下、观察，让它先通过。',
+  'You crossed before the driver saw you. Wait until it stops AND the driver acknowledges you.':
+    '你在司机看到你之前就穿过了。要等车停下并且司机示意后再通过。',
+  'The driver never saw you. Stop at lines, listen for beeps and horns, and stay inside the yellow walkway.':
+    '司机自始至终没有看到你。请在线前停下、留意提示音与喇叭，并走在黄色人行道内。',
+  'Struck by a reversing truck. Drivers can barely see behind — the beep IS the warning. Stop and stay clear.':
+    '被倒车中的车辆撞到。司机几乎看不到后方 — 提示音就是警告。请停下并保持距离。',
+  'Reversing trucks cause many serious injuries. The beep and the white reverse lights mean: stand back.':
+    '倒车车辆造成许多严重伤害。提示音和白色倒车灯的意思是：请退后。',
+  'The tail of a turning pallet jack swings WIDE — it hit you before the driver could know. Never walk behind or beside a turning pallet jack.':
+    '转弯托盘车的车尾会大幅外摆 — 司机还来不及察觉就撞到了你。切勿走在转弯托盘车的后方或旁边。',
+  'Yellow walkway, stop lines, eye contact, ears open, clear of the swing. That is how you stay safe around MHE.':
+    '黄色人行道、停止线、目光确认、留心声响、远离摆尾区。这就是在搬运设备旁保持安全的方法。',
+};
+function bi(en){
+  if(en == null) return en;
+  const zh = ZH[en];
+  return zh ? en + '<span class="zh">' + zh + '</span>' : en;
+}
+
+/* ---- fatal error handling: never fail silently ---- */
+function fatal(msg, detail){
+  console.error('[MHE] FATAL:', msg, detail||'');
+  $('errMsg').textContent = msg;
+  $('errScreen').classList.add('show');
+}
+if(typeof THREE === 'undefined'){
+  fatal('The 3D engine could not load. Check the internet connection, then reload.');
+  throw new Error('THREE failed to load from CDN');
+}
+let bootDone = false;   // set true after the first successful frame
+window.addEventListener('error', e => {
+  console.error('[MHE] Uncaught error:', e.message, e.filename+':'+e.lineno);
+  if(!bootDone) fatal('The game failed to start. Please reload. ('+e.message+')');
+});
+
+/* =========================================================
+   AUDIO — all sounds generated in code (Web Audio API)
+   ========================================================= */
+const AudioSys = (() => {
+  let ctx=null, master=null;
+  let engOsc=null, engOsc2=null, engGain=null, engFilter=null;
+
+  function init(){
+    if(ctx) return;
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+    // engine hum: two detuned saws through a lowpass
+    engOsc = ctx.createOscillator(); engOsc.type='sawtooth'; engOsc.frequency.value=52;
+    engOsc2 = ctx.createOscillator(); engOsc2.type='triangle'; engOsc2.frequency.value=104;
+    engFilter = ctx.createBiquadFilter(); engFilter.type='lowpass'; engFilter.frequency.value=240;
+    engGain = ctx.createGain(); engGain.gain.value=0;
+    engOsc.connect(engFilter); engOsc2.connect(engFilter);
+    engFilter.connect(engGain); engGain.connect(master);
+    engOsc.start(); engOsc2.start();
+  }
+  function resume(){ if(ctx && ctx.state==='suspended') ctx.resume(); }
+  function state(){ return ctx ? ctx.state : 'none'; }
+  /* A browser only allows sound after a REAL user gesture. A gamepad press is
+     not one — and neither are the synthetic clicks the pad code sends — so a
+     session started on the controller used to create a suspended context and
+     stay silent for good. Any genuine tap, click or key now unlocks it, the
+     loop keeps retrying, and the HUD offers a button if it is still blocked. */
+  function unlock(){ init(); resume(); }
+
+  function engine(speedRatio, on){
+    if(!ctx) return;
+    const t = ctx.currentTime;
+    const target = on ? 0.05 + speedRatio*0.06 : 0;
+    engGain.gain.setTargetAtTime(target, t, 0.12);
+    engOsc.frequency.setTargetAtTime(48 + speedRatio*70, t, 0.15);
+    engOsc2.frequency.setTargetAtTime(96 + speedRatio*140, t, 0.15);
+    engFilter.frequency.setTargetAtTime(220 + speedRatio*500, t, 0.15);
+  }
+  function blip(freq, dur, type, vol, when=0, slide=0){
+    if(!ctx) return;
+    const t = ctx.currentTime + when;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type||'square'; o.frequency.setValueAtTime(freq, t);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide), t+dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0008, t+dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.05);
+  }
+  /* reverse beep — call every frame while reversing. Keyed, because the truck
+     you are driving and the AI ones beep at the same time and a single shared
+     timer made them swallow each other's beeps. */
+  const beepT = {};
+  function reverseBeep(dt, active, vol=0.14, key='ai'){
+    if(!ctx || !active) { beepT[key] = 0; return; }
+    beepT[key] = (beepT[key] || 0) - dt;
+    if(beepT[key] <= 0){ blip(1150, 0.16, 'square', vol); beepT[key] = 0.55; }
+  }
+  function horn(){ if(!ctx) return;
+    blip(410, 0.55, 'sawtooth', 0.22); blip(322, 0.55, 'sawtooth', 0.18); }
+  function hornFar(){ if(!ctx) return;
+    blip(410, 0.5, 'sawtooth', 0.07); blip(322, 0.5, 'sawtooth', 0.05); }
+  function click(){ blip(880, 0.06, 'triangle', 0.12); }
+  function buckle(){ blip(320, 0.05, 'square', 0.2); blip(1200, 0.07, 'square', 0.14, 0.06); }
+  function thud(){ if(!ctx) return;
+    const t = ctx.currentTime;
+    // low body-hit
+    blip(70, 0.5, 'sine', 0.8, 0, -40);
+    // noise crunch
+    const len = ctx.sampleRate*0.25;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/len,2.2);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900;
+    const g = ctx.createGain(); g.gain.value=0.55;
+    src.connect(f); f.connect(g); g.connect(master); src.start(t);
+  }
+  function chime(){ blip(660,0.14,'sine',0.16); blip(880,0.16,'sine',0.16,0.13); blip(1320,0.26,'sine',0.14,0.27); }
+  function alarm(){ blip(950,0.12,'square',0.1); blip(950,0.12,'square',0.1,0.18); }
+
+  /* ---- a burst of filtered noise, the basis of most physical sounds ---- */
+  function noiseBurst(dur, cut, vol, type='lowpass', decay=2.2){
+    if(!ctx) return;
+    const t = ctx.currentTime, len = Math.max(1, Math.floor(ctx.sampleRate*dur));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/len, decay);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = cut; f.Q.value = 1.1;
+    const g = ctx.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(master); src.start(t);
+  }
+  // boots on concrete — pitch wanders a little so a walk does not tick
+  function footstep(){ noiseBurst(0.09, 520 + Math.random()*260, 0.075, 'lowpass', 3.2); }
+  // hard braking at speed
+  function skid(){ noiseBurst(0.42, 1500, 0.10, 'bandpass', 1.1); }
+  // clipping racking, a fence rail, a pallet — a knock, not a body blow
+  function bump(){ blip(120, 0.16, 'sine', 0.22, 0, -50); noiseBurst(0.16, 700, 0.14); }
+  // someone warning you off — two sharp whistle notes
+  function whistle(){ blip(1900, 0.13, 'sine', 0.13); blip(2350, 0.17, 'sine', 0.12, 0.14); }
+
+  /* ---- continuous beds: warehouse room tone, and the nearest working MHE ---- */
+  let toneGain=null, humOsc=null, humOsc2=null, humGain=null;
+  function roomTone(on){
+    if(!ctx) return;
+    if(!toneGain){
+      const len = ctx.sampleRate*2;
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      let last = 0;                                   // brown-ish noise: a room, not a hiss
+      for(let i=0;i<len;i++){ last = last*0.965 + (Math.random()*2-1)*0.035; d[i] = last*3.4; }
+      const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=430;
+      toneGain = ctx.createGain(); toneGain.gain.value = 0;
+      src.connect(f); f.connect(toneGain); toneGain.connect(master); src.start();
+    }
+    toneGain.gain.setTargetAtTime(on ? 0.05 : 0, ctx.currentTime, 0.5);
+  }
+  // level 0..1 by how close the nearest moving truck is
+  function nearHum(level){
+    if(!ctx) return;
+    if(!humGain){
+      humOsc = ctx.createOscillator(); humOsc.type='sawtooth'; humOsc.frequency.value=61;
+      humOsc2 = ctx.createOscillator(); humOsc2.type='triangle'; humOsc2.frequency.value=122;
+      const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=300;
+      humGain = ctx.createGain(); humGain.gain.value = 0;
+      humOsc.connect(f); humOsc2.connect(f); f.connect(humGain); humGain.connect(master);
+      humOsc.start(); humOsc2.start();
+    }
+    humGain.gain.setTargetAtTime(clamp(level,0,1)*0.055, ctx.currentTime, 0.2);
+  }
+  return { init, resume, state, unlock, engine, reverseBeep, horn, hornFar, click, buckle,
+           thud, chime, alarm, footstep, skid, bump, whistle, roomTone, nearHum };
+})();
+/* Any genuine gesture anywhere unlocks sound — not just the title button, so a
+   stray click on the page is enough to rescue a controller-started session. */
+for(const ev of ['pointerdown','keydown','touchstart'])
+  window.addEventListener(ev, e => { if(e.isTrusted) AudioSys.unlock(); }, {capture:true, passive:true});
+
+/* Keeps asking, and if the browser is still refusing, puts a button on screen.
+   A controller can never unlock audio by itself, so without this a booth
+   running on a gamepad alone would play the whole game in silence. */
+/* The nearest working MHE hums, louder as it gets closer — so you hear one
+   coming before you see it, which is the whole point of listening on foot. */
+function updateNearHum(){
+  if(seg.mode !== 'seg1' && seg.mode !== 'seg2'){ AudioSys.nearHum(0); return; }
+  let best = 0;
+  const consider = (x, z, moving) => {
+    if(!moving) return;
+    const d = Math.hypot(x - player.x, z - player.z);
+    best = Math.max(best, 1 - d/16);
+  };
+  for(const a of aiTrucks) consider(a.x, a.z, a.speed > 0.05 || a.turning);
+  for(const t of traffic)  consider(t.x, t.z, t.speed > 0.05);
+  if(ambient.on && ambient.fk){
+    const p = ambient.fk.group.position; consider(p.x, p.z, true);
+  }
+  AudioSys.nearHum(best);
+}
+
+/* The play-screen map: only while actually holding a controller, and rebuilt
+   when the segment changes because two of the buttons change job on foot. */
+let miniKey = '';
+function refreshPadMini(){
+  const mn = $('padBig');
+  if(!mn) return;
+  const dd = padFam && PAD_DIAGRAM[padFam];
+  const walking = seg.mode === 'seg2';
+  const want = !!dd && inputMode === 'pad' && (seg.mode === 'seg1' || seg.mode === 'seg2');
+  mn.hidden = !want;
+  // with the map up, the touch pedals it replaces come off the screen
+  $('hud').classList.toggle('padmode', want);
+  const key = want ? padFam + (walking ? ':walk' : ':drive') : '';
+  if(want && key !== miniKey){ miniKey = key; mn.innerHTML = padBigSVG(dd, walking); }
+  if(!want) miniKey = '';
+}
+
+let audioWatchT = 0;
+function updateAudioWatch(dt){
+  audioWatchT -= dt;
+  if(audioWatchT > 0) return;
+  audioWatchT = 0.5;
+  const blocked = AudioSys.state() !== 'running';
+  if(blocked) AudioSys.resume();
+  const playing = seg.mode === 'seg1' || seg.mode === 'seg2';
+  $('soundBtn').classList.toggle('show', blocked && playing);
+  refreshPadMini();        // catches the segment change, and title/finish
+}
+
+/* =========================================================
+   PROCEDURAL TEXTURES (canvas — no asset files)
+   ========================================================= */
+const Tex = (() => {
+  function canvas(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; }
+  function noise(ctx,w,h,alpha,dark){
+    for(let i=0;i<w*h/28;i++){
+      const s = Math.random()*2.2+0.4;
+      ctx.fillStyle = `rgba(${dark?0:255},${dark?0:255},${dark?0:255},${Math.random()*alpha})`;
+      ctx.fillRect(Math.random()*w, Math.random()*h, s, s);
+    }
+  }
+  function make(fn,w,h,repX,repY){
+    const c = canvas(w,h); fn(c.getContext('2d'),w,h);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    if(repX) t.repeat.set(repX,repY||repX);
+    return t;
+  }
+  // worn concrete
+  const concrete = make((g,w,h)=>{
+    g.fillStyle='#8d8f90'; g.fillRect(0,0,w,h);
+    for(let i=0;i<60;i++){ // patchy stains
+      g.fillStyle=`rgba(${60+Math.random()*30|0},${60+Math.random()*30|0},${60+Math.random()*25|0},${0.05+Math.random()*0.1})`;
+      const r=8+Math.random()*46;
+      g.beginPath(); g.arc(Math.random()*w,Math.random()*h,r,0,TAU); g.fill();
+    }
+    noise(g,w,h,0.10,true); noise(g,w,h,0.06,false);
+    // expansion joints
+    g.strokeStyle='rgba(40,42,44,0.55)'; g.lineWidth=3;
+    g.beginPath(); g.moveTo(0,h/2); g.lineTo(w,h/2); g.moveTo(w/2,0); g.lineTo(w/2,h); g.stroke();
+    // tyre scuffs
+    g.strokeStyle='rgba(30,30,32,0.14)';
+    for(let i=0;i<14;i++){ g.lineWidth=4+Math.random()*7;
+      g.beginPath(); const y=Math.random()*h;
+      g.moveTo(Math.random()*w*0.3, y); g.bezierCurveTo(w*0.4,y+30, w*0.6,y-30, w*(0.7+Math.random()*0.3), y+(Math.random()*60-30)); g.stroke(); }
+  },512,512, 18,24);
+
+  // painted yellow walkway (worn)
+  const walkway = make((g,w,h)=>{
+    g.fillStyle='#d8a712'; g.fillRect(0,0,w,h);
+    noise(g,w,h,0.13,true); noise(g,w,h,0.10,false);
+    g.fillStyle='rgba(120,90,10,0.25)';
+    for(let i=0;i<24;i++){ g.beginPath(); g.arc(Math.random()*w,Math.random()*h,4+Math.random()*20,0,TAU); g.fill(); }
+  },256,256, 1,8);
+
+  // hazard stripes (black/yellow)
+  const hazard = make((g,w,h)=>{
+    g.fillStyle='#e6b800'; g.fillRect(0,0,w,h);
+    g.fillStyle='#15161a';
+    for(let x=-h;x<w+h;x+=64){ g.beginPath();
+      g.moveTo(x,0); g.lineTo(x+32,0); g.lineTo(x+32+h,h); g.lineTo(x+h,h); g.closePath(); g.fill(); }
+    noise(g,w,h,0.08,true);
+  },256,128, 1,1);
+
+  // shrink-wrapped pallet boxes
+  const wrap = make((g,w,h)=>{
+    g.fillStyle='#9aa7ad'; g.fillRect(0,0,w,h);
+    // stacked box lines under the wrap
+    g.strokeStyle='rgba(70,78,86,0.65)'; g.lineWidth=3;
+    for(let y=0;y<h;y+=42){ g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke(); }
+    for(let x=0;x<w;x+=54){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke(); }
+    // plastic sheen
+    for(let i=0;i<10;i++){ g.fillStyle='rgba(255,255,255,0.10)';
+      g.beginPath(); g.ellipse(Math.random()*w,Math.random()*h,6+Math.random()*26,40+Math.random()*60,0.4,0,TAU); g.fill(); }
+    noise(g,w,h,0.05,false);
+  },256,256, 1,1);
+
+  // corrugated container / ULD wall
+  const corrugated = make((g,w,h)=>{
+    g.fillStyle='#7f8a94'; g.fillRect(0,0,w,h);
+    for(let x=0;x<w;x+=24){
+      g.fillStyle='rgba(255,255,255,0.13)'; g.fillRect(x,0,7,h);
+      g.fillStyle='rgba(0,0,0,0.20)'; g.fillRect(x+14,0,7,h);
+    }
+    noise(g,w,h,0.07,true);
+  },256,256, 2,1);
+
+  // warehouse wall panels
+  const wall = make((g,w,h)=>{
+    g.fillStyle='#b9c1c9'; g.fillRect(0,0,w,h);
+    g.fillStyle='#a6afb8';
+    for(let y=0;y<h;y+=64) g.fillRect(0,y,w,5);
+    noise(g,w,h,0.05,true);
+  },256,256, 8,3);
+
+  // blood pool decal (GRAPHIC mode)
+  function bloodCanvas(){
+    const c = canvas(256,256); const g = c.getContext('2d');
+    const cx=128, cy=128;
+    for(let i=0;i<36;i++){
+      const a=Math.random()*TAU, d=Math.random()*54;
+      const r=14+Math.random()*44;
+      const grd=g.createRadialGradient(cx+Math.cos(a)*d, cy+Math.sin(a)*d, 2, cx+Math.cos(a)*d, cy+Math.sin(a)*d, r);
+      grd.addColorStop(0,'rgba(96,6,8,0.95)');
+      grd.addColorStop(0.7,'rgba(120,10,12,0.8)');
+      grd.addColorStop(1,'rgba(120,10,12,0)');
+      g.fillStyle=grd; g.beginPath(); g.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d, r, 0, TAU); g.fill();
+    }
+    // spatter + streaks
+    for(let i=0;i<90;i++){
+      g.fillStyle=`rgba(${90+Math.random()*40|0},6,9,${0.5+Math.random()*0.45})`;
+      const a=Math.random()*TAU, d=55+Math.random()*70;
+      g.beginPath(); g.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d, 1.5+Math.random()*6.5, 0, TAU); g.fill();
+    }
+    for(let i=0;i<10;i++){
+      const a=Math.random()*TAU;
+      g.strokeStyle=`rgba(${85+Math.random()*35|0},5,8,${0.55+Math.random()*0.3})`;
+      g.lineWidth=2+Math.random()*4;
+      g.beginPath(); g.moveTo(cx+Math.cos(a)*30, cy+Math.sin(a)*30);
+      g.lineTo(cx+Math.cos(a)*(80+Math.random()*44), cy+Math.sin(a)*(80+Math.random()*44)); g.stroke();
+    }
+    const t = new THREE.CanvasTexture(c); return t;
+  }
+  return { concrete, walkway, hazard, wrap, corrugated, wall, bloodCanvas };
+})();
+
+/* =========================================================
+   SCENE / RENDERER
+   ========================================================= */
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas:$('c3d'), antialias:true });
+} catch(err){
+  fatal('3D graphics are not available in this browser. Try Chrome, or enable hardware acceleration.');
+  throw err;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;   // filmic response = softer highlights, richer colour
+renderer.toneMappingExposure = 1.25;
+// sharp floor/wall textures at grazing angles
+{
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  for(const t of [Tex.concrete, Tex.walkway, Tex.hazard, Tex.wrap, Tex.corrugated, Tex.wall]){
+    t.anisotropy = maxAniso; t.needsUpdate = true;
+  }
+}
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x2b3644);
+scene.fog = new THREE.Fog(0x2b3644, 26, 78);
+
+const camera = new THREE.PerspectiveCamera(72, 2, 0.1, 140);
+
+const hemi = new THREE.HemisphereLight(0xcfd8e6, 0x32383f, 0.66); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2dd, 1.2);
+sun.position.set(14, 26, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left=-40; sun.shadow.camera.right=40;
+sun.shadow.camera.top=45;  sun.shadow.camera.bottom=-45;
+sun.shadow.camera.far=90;  sun.shadow.bias=-0.0018;
+scene.add(sun);
+
+let viewW=0, viewH=0;
+function onResize(){
+  if(!window.innerWidth || !window.innerHeight) return;   // ignore transient 0-size
+  viewW=window.innerWidth; viewH=window.innerHeight;
+  renderer.setSize(viewW, viewH);
+  camera.aspect = viewW/viewH;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize); onResize();
+// watchdog: some environments miss the resize event — check each frame
+function checkResize(){
+  if(window.innerWidth!==viewW || window.innerHeight!==viewH) onResize();
+}
+
+/* =========================================================
+   WORLD — air-cargo warehouse
+   Layout: main aisle along Z (x -3..3), from dock z=+26 to z=-26.
+   Cross-aisle along X at z = 4..10. Walkway at x=-10.5 along Z.
+   ========================================================= */
+const world = new THREE.Group(); scene.add(world);
+const colliders = [];   // {minX,maxX,minZ,maxZ} boxes that block driving/walking
+
+function box(w,h,d,mat,x,y,z,ry=0,shadow=true){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
+  m.position.set(x,y,z); m.rotation.y=ry;
+  m.castShadow=shadow; m.receiveShadow=true;
+  world.add(m); return m;
+}
+function collide(x,z,w,d){
+  const c = {minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2};
+  colliders.push(c); return c;      // returned so temporary barriers can be toggled
+}
+
+const M = {
+  concrete: new THREE.MeshStandardMaterial({ map:Tex.concrete, roughness:0.94, metalness:0.02 }),
+  walkway:  new THREE.MeshStandardMaterial({ map:Tex.walkway, roughness:0.9 }),
+  line:     new THREE.MeshStandardMaterial({ color:0xd8a712, roughness:0.9 }),
+  lineWhite:new THREE.MeshStandardMaterial({ color:0xd6d9dc, roughness:0.9 }),
+  hazard:   new THREE.MeshStandardMaterial({ map:Tex.hazard, roughness:0.8 }),
+  rack:     new THREE.MeshStandardMaterial({ color:0xc96f16, roughness:0.55, metalness:0.35 }),
+  rackBeam: new THREE.MeshStandardMaterial({ color:0x2e6db4, roughness:0.5, metalness:0.35 }),
+  wrap:     new THREE.MeshStandardMaterial({ map:Tex.wrap, roughness:0.65 }),
+  palletWd: new THREE.MeshStandardMaterial({ color:0x9c7a4e, roughness:0.9 }),
+  wall:     new THREE.MeshStandardMaterial({ map:Tex.wall, roughness:0.95 }),
+  uld:      new THREE.MeshStandardMaterial({ map:Tex.corrugated, roughness:0.6, metalness:0.4 }),
+  steel:    new THREE.MeshStandardMaterial({ color:0x8a929c, roughness:0.5, metalness:0.5 }),
+  dark:     new THREE.MeshStandardMaterial({ color:0x22262c, roughness:0.7 }),
+  bollard:  new THREE.MeshStandardMaterial({ color:0xd8a712, roughness:0.6 }),
+};
+
+// floor
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(64,86), M.concrete);
+floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; world.add(floor);
+
+// painted aisle edge lines (main aisle x=±3)
+function paint(w,d,mat,x,z,ry=0){
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(w,d), mat);
+  p.rotation.x=-Math.PI/2; p.rotation.z=ry; p.position.set(x,0.012,z);
+  p.receiveShadow=true; world.add(p); return p;
+}
+paint(0.14,60,M.line,-3.1,0); paint(0.14,60,M.line,3.1,0);
+// cross-aisle lines z=4..10
+paint(40,0.14,M.line,0,3.9); paint(40,0.14,M.line,0,10.1);
+// pedestrian walkway at x=-10.5 (width 1.6) full length + crossing over main aisle at z=7
+paint(1.6,66,M.walkway,-10.5,0);
+paint(0.1,66,M.lineWhite,-11.35,0); paint(0.1,66,M.lineWhite,-9.65,0);
+// walkway crossing (zebra) across the cross-aisle leading to x=+ side at z=7
+for(let x=-9.2;x<=9.2;x+=1.3) paint(0.75,1.6,M.lineWhite,x,7);
+// stop bar on walkway before crossing
+paint(1.6,0.28,M.lineWhite,-10.5,10.9);
+
+// ================= racking rows =================
+function rackBay(x,z,ry,bays=4,levels=3){
+  const g = new THREE.Group(); g.position.set(x,0,z); g.rotation.y=ry; world.add(g);
+  const bayW=2.6, depth=1.15, lvlH=1.9;
+  for(let b=0;b<=bays;b++){
+    for(const dz of [-depth/2,depth/2]){
+      const up = new THREE.Mesh(new THREE.BoxGeometry(0.12,lvlH*levels+0.4,0.12), M.rack);
+      up.position.set(b*bayW - bays*bayW/2, (lvlH*levels+0.4)/2, dz);
+      up.castShadow=true; g.add(up);
+    }
+  }
+  for(let l=1;l<=levels;l++){
+    for(const dz of [-depth/2,depth/2]){
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(bays*bayW,0.14,0.1), M.rackBeam);
+      beam.position.set(0,l*lvlH,dz); g.add(beam);
+    }
+  }
+  // pallets with wrapped loads
+  for(let b=0;b<bays;b++) for(let l=0;l<=levels;l++){
+    if(Math.random()<0.18) continue;
+    const px = b*bayW - bays*bayW/2 + bayW/2;
+    const py = l===0 ? 0 : l*lvlH+0.07;
+    const pal = new THREE.Mesh(new THREE.BoxGeometry(2.1,0.14,1.05), M.palletWd);
+    pal.position.set(px,py+0.07,0); pal.castShadow=true; g.add(pal);
+    const ld = new THREE.Mesh(new THREE.BoxGeometry(1.9,1.1+Math.random()*0.4,0.95), M.wrap);
+    ld.position.set(px,py+0.14+ (1.1+0.2)/2,0); ld.castShadow=true; g.add(ld);
+  }
+  return g;
+}
+// racking flanking the main aisle (gaps at cross-aisle z=4..10)
+const bayLen = 4*2.6;
+const rackRows = [];
+for(const side of [-1,1]){
+  const rx = side*5.5;
+  // west side opens into a staging floor south of z≈-15 (seg-2 work area + crossing)
+  const zcs = side<0 ? [-10.2,-4.9, 13.5,18.8,24.1]
+                     : [-10.2,-4.9, 13.5,18.8,24.1];
+  for(const zc of zcs) rackRows.push([rx, zc]);
+}
+/* The two east rows that flank the turning bay used to sit at x=5.5, i.e. a
+   rack face 4.8 m out — testers clipped them constantly during the swing.
+   They are set back to x=9.0 (face 8.3) so the bay is a genuinely wide,
+   purpose-built turning area rather than a slot between two racks. */
+rackRows.push([9.0,-20.8],[9.0,-15.5]);
+for(const [rx,zc] of rackRows){
+  rackBay(rx, zc, Math.PI/2, 4, 3);
+  collide(rx, zc, 1.4, bayLen+0.3);
+}
+// far racking along cross-aisle (kept west of the walkway — walkway stays clear)
+rackBay(-16.5, 1.8, 0, 3, 3);  collide(-16.5,1.8, 3*2.6+0.3, 1.4);
+rackBay(14, 1.8, 0, 5, 3);     collide(14,1.8, 5*2.6+0.3, 1.4);
+rackBay(-16.5, 12.2, 0, 3, 3); collide(-16.5,12.2, 3*2.6+0.3, 1.4);
+rackBay(14, 12.2, 0, 5, 3);    collide(14,12.2, 5*2.6+0.3, 1.4);
+// walkway crossing stripes where the cross-aisle cuts the walkway
+for(let z=4.6; z<=9.4; z+=1.2) paint(1.7,0.6,M.lineWhite,-10.5,z);
+
+// ================= walls / dock / ULDs / columns =================
+const wallN = box(64,10,0.5, M.wall, 0,5,-32); collide(0,-32,64,3);
+const wallS = box(64,10,0.5, M.wall, 0,5, 34); collide(0, 34,64,3);
+box(0.5,10,86, M.wall, -21,5,0); collide(-21,0,3,86);
+box(0.5,10,86, M.wall,  21,5,0); collide( 21,0,3,86);
+// dock doors on south wall
+for(const x of [-8,0,8]){
+  box(5.2,4.4,0.3, M.uld, x,2.2,33.7);
+  box(5.6,0.5,0.3, M.hazard, x,4.7,33.65);
+}
+// ULD containers near dock
+for(const [ux,uz,ry] of [[-16,26,0.2],[-15.5,29.5,-0.1],[16,27,0],[15,30.5,0.15]]){
+  const u = box(3,2.4,3, M.uld, ux,1.2,uz, ry);
+  // sloped ULD corner
+  collide(ux,uz,3.4,3.4);
+}
+// hazard-striped structural columns at the intersection corners
+for(const [cx,cz] of [[-8,3.1],[8,3.1],[-8,10.9],[8,10.9]]){
+  box(0.7,5.2,0.7, M.steel, cx,3.4,cz);
+  const hz = box(0.78,1.5,0.78, M.hazard, cx,0.75,cz);
+  collide(cx,cz,0.9,0.9);
+}
+// bollards guarding rack ends at the cross-aisle
+for(const [bx,bz] of [[-4.6,3.4],[4.6,3.4],[-4.6,10.6],[4.6,10.6]]){
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.11,0.85,10), M.bollard);
+  b.position.set(bx,0.42,bz); b.castShadow=true; world.add(b);
+}
+// high-bay light fixtures
+const lightMat = new THREE.MeshStandardMaterial({ color:0xf5f5e8, emissive:0xfff8dd, emissiveIntensity:2.2 });
+for(let z=-24; z<=28; z+=13){
+  for(const x of [-10,0,10]){
+    const f = box(1.6,0.15,0.5, lightMat, x,8.6,z,0,false);
+  }
+}
+// ceiling hint (dark plane high up)
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(64,86),
+  new THREE.MeshStandardMaterial({ color:0x1c2229, roughness:1 }));
+ceil.rotation.x = Math.PI/2; ceil.position.y=9.2; world.add(ceil);
+// roof structure: cross trusses + long purlins for real overhead depth
+const trussMat = new THREE.MeshStandardMaterial({ color:0x39424e, roughness:0.6, metalness:0.4 });
+for(let z=-28; z<=32; z+=6.5){
+  box(42,0.3,0.16, trussMat, 0,8.95,z,0,false);
+  box(42,0.16,0.3, trussMat, 0,8.6,z,0,false);
+}
+for(const px of [-15,-5,5,15]) box(0.14,0.24,84, trussMat, px,8.78,0,0,false);
+// soft light shafts under each high-bay fixture (additive, fake volumetrics)
+const shaftTex = (()=>{
+  const c=document.createElement('canvas'); c.width=64; c.height=256;
+  const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'rgba(255,244,200,0.55)'); gr.addColorStop(1,'rgba(255,244,200,0)');
+  g.fillStyle=gr; g.fillRect(0,0,64,256);
+  return new THREE.CanvasTexture(c);
+})();
+const shaftMat = new THREE.MeshBasicMaterial({ map:shaftTex, transparent:true, opacity:0.10,
+  blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide });
+for(let z=-24; z<=28; z+=13){
+  for(const x of [-10,0,10]){
+    for(const ry of [0, Math.PI/2]){
+      const s = new THREE.Mesh(new THREE.PlaneGeometry(2.4,6.4), shaftMat);
+      s.position.set(x, 5.3, z); s.rotation.y = ry; world.add(s);
+    }
+  }
+}
+// slow-drifting dust motes — makes the air feel real
+const dust = (()=>{
+  const N=260, pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()*2-1)*20;
+    pos[i*3+1]=Math.random()*7.5+0.3;
+    pos[i*3+2]=(Math.random()*2-1)*30;
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const m=new THREE.PointsMaterial({ color:0xcfd8ea, size:0.055, transparent:true,
+    opacity:0.45, sizeAttenuation:true, depthWrite:false });
+  const p=new THREE.Points(g,m); scene.add(p);
+  return { pos, geo:g };
+})();
+function updateDust(dt){
+  const a=dust.pos;
+  for(let i=1;i<a.length;i+=3){ a[i]-=dt*0.12; if(a[i]<0.2) a[i]=7.8; }
+  dust.geo.attributes.position.needsUpdate=true;
+}
+/* =========================================================
+   PALLET JACK — rider (stand-on) powered pallet truck, procedural.
+   Origin at the drive-wheel centre, faces -Z (forks at -Z).
+   Returns the same shape as before, so the beacon / reverse-light
+   helpers and every caller stay unchanged.
+   ========================================================= */
+const pjMat = {
+  body:  new THREE.MeshStandardMaterial({ color:0xd8a712, roughness:0.42, metalness:0.25 }),
+  black: new THREE.MeshStandardMaterial({ color:0x1d2126, roughness:0.7 }),
+  steel: new THREE.MeshStandardMaterial({ color:0x777f88, roughness:0.35, metalness:0.7 }),
+  fork:  new THREE.MeshStandardMaterial({ color:0x30343a, roughness:0.45, metalness:0.6 }),
+  seat:  new THREE.MeshStandardMaterial({ color:0x24282e, roughness:0.9 }),
+  beaconOn:  new THREE.MeshStandardMaterial({ color:0xffb300, emissive:0xff9900, emissiveIntensity:2.2 }),
+  beaconOff: new THREE.MeshStandardMaterial({ color:0x8a6200, emissive:0x000000 }),
+  revOn:  new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xffffff, emissiveIntensity:1.6 }),
+  revOff: new THREE.MeshStandardMaterial({ color:0xcccccc }),
+  // operator
+  skin:    new THREE.MeshStandardMaterial({ color:0xc98e6b, roughness:0.8 }),
+  vest:    new THREE.MeshStandardMaterial({ color:0xd6e021, emissive:0x6a7207, emissiveIntensity:0.55, roughness:0.6 }),
+  vestBand:new THREE.MeshStandardMaterial({ color:0xd9d9d9, emissive:0x888888, emissiveIntensity:0.4 }),
+  sleeve:  new THREE.MeshStandardMaterial({ color:0x38607a, roughness:0.85 }),
+  trouser: new THREE.MeshStandardMaterial({ color:0x2c3138, roughness:0.9 }),
+  hat:     new THREE.MeshStandardMaterial({ color:0xf5f5f5, roughness:0.5 }),
+};
+/* An operator standing on the deck with both hands on the tiller. Only added to
+   vehicles you SEE from outside — your own machine is driven first-person. */
+function addOperator(g, add, B){
+  const F = 0.29, Z = 0.74;                         // deck top, and where they stand
+  add(B(0.16,0.70,0.17,pjMat.trouser), -0.12, F+0.35, Z);      // legs
+  add(B(0.16,0.70,0.17,pjMat.trouser),  0.12, F+0.35, Z);
+  add(B(0.18,0.09,0.26,pjMat.black),   -0.12, F+0.045, Z-0.03); // boots
+  add(B(0.18,0.09,0.26,pjMat.black),    0.12, F+0.045, Z-0.03);
+  add(B(0.44,0.54,0.25,pjMat.vest),     0,    F+0.99, Z);       // torso + hi-vis
+  add(B(0.46,0.09,0.27,pjMat.vestBand), 0,    F+0.94, Z);       // reflective band
+  for(const sx of [-0.26,0.26])                                  // arms out to the tiller
+    add(B(0.11,0.11,0.40,pjMat.sleeve), sx,   F+1.20, Z-0.20);
+  add(B(0.22,0.24,0.22,pjMat.skin),     0,    F+1.40, Z);       // head
+  add(B(0.28,0.11,0.28,pjMat.hat),      0,    F+1.57, Z);       // hard hat
+  add(B(0.31,0.04,0.31,pjMat.hat),      0,    F+1.50, Z);       // brim
+}
+function buildPalletJack(withOperator){
+  const g = new THREE.Group();
+  const add=(mesh,x,y,z)=>{ mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; g.add(mesh); return mesh; };
+  const B=(w,h,d,m)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+
+  /* ---- forks: two low blades running forward along -Z ---- */
+  for(const fx of [-0.29,0.29]){
+    add(B(0.18,0.10,2.25,pjMat.fork), fx,0.09,-1.62);          // blade
+    const tip = add(B(0.18,0.09,0.36,pjMat.fork), fx,0.07,-2.90);
+    tip.rotation.x = 0.07;                                     // tapered nose
+    add(B(0.20,0.22,0.16,pjMat.steel), fx,0.17,-0.52);         // blade root
+  }
+  add(B(0.94,0.34,0.14,pjMat.steel), 0,0.30,-0.48);            // fork carriage plate
+
+  /* ---- power unit / battery housing ---- */
+  add(B(0.78,0.82,0.86,pjMat.body),  0,0.56,-0.02);            // main housing
+  add(B(0.84,0.12,0.92,pjMat.black), 0,1.00,-0.02);            // top cap
+  add(B(0.60,0.26,0.06,pjMat.black), 0,0.62,-0.47);            // front panel
+  add(B(0.30,0.18,0.24,pjMat.black), 0,1.14,-0.10);            // control pod
+
+  /* ---- tiller arm angled back to the operator, with a T grip ---- */
+  const tiller = add(B(0.12,0.78,0.12,pjMat.steel), 0,1.32,0.16);
+  tiller.rotation.x = 0.42;
+  add(B(0.66,0.11,0.11,pjMat.black), 0,1.62,0.42);             // cross grip
+  for(const hx of [-0.26,0.26])
+    add(B(0.13,0.15,0.15,pjMat.black), hx,1.62,0.42);          // butterfly controls
+
+  /* ---- stand-on platform + side restraint arms ---- */
+  add(B(0.72,0.09,0.50,pjMat.steel), 0,0.24,0.72);             // deck
+  for(const sx of [-0.41,0.41])
+    add(B(0.08,0.78,0.46,pjMat.steel), sx,0.66,0.72);          // side arms
+  add(B(0.72,0.09,0.06,pjMat.black), 0,0.24,0.98);             // deck lip
+
+  /* ---- wheels ---- */
+  const wheel=(x,z,r,w)=>{ const k=new THREE.Mesh(new THREE.CylinderGeometry(r,r,w,14), pjMat.black);
+    k.rotation.z=Math.PI/2; add(k,x,r,z); };
+  wheel(0,0.16,0.26,0.24);            // single drive wheel under the power unit
+  wheel(-0.40,0.74,0.11,0.09);        // castors under the deck
+  wheel( 0.40,0.74,0.11,0.09);
+  wheel(-0.29,-2.62,0.09,0.13);       // load wheels at the fork tips
+  wheel( 0.29,-2.62,0.09,0.13);
+
+  /* ---- amber beacon on a short mast, clear of the operator's eyeline ---- */
+  add(B(0.05,0.50,0.05,pjMat.steel), 0,1.28,0.60);
+  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.16,10), pjMat.beaconOff);
+  add(beacon, 0,1.60,0.60);
+  const beaconLight = new THREE.PointLight(0xffa000, 0, 9);
+  beaconLight.position.set(0,1.72,0.60); g.add(beaconLight);
+
+  /* ---- reverse lights on the rear face of the power unit ---- */
+  const rev1 = new THREE.Mesh(new THREE.BoxGeometry(0.13,0.09,0.05), pjMat.revOff);
+  const rev2 = rev1.clone();
+  add(rev1,-0.26,0.86,0.43); add(rev2,0.26,0.86,0.43);
+
+  if(withOperator) addOperator(g, add, B);
+
+  return { group:g, beacon, beaconLight, rev1, rev2, beaconPhase:Math.random()*TAU };
+}
+function setBeacon(fk,on,t){
+  const flash = on && (Math.sin(t*9+fk.beaconPhase)>0);
+  fk.beacon.material = flash ? pjMat.beaconOn : pjMat.beaconOff;
+  fk.beaconLight.intensity = flash ? 1.6 : 0;
+}
+function setRevLights(fk,on){
+  fk.rev1.material = on?pjMat.revOn:pjMat.revOff;
+  fk.rev2.material = on?pjMat.revOn:pjMat.revOff;
+}
+
+/* =========================================================
+   PEDESTRIAN — hi-vis worker with walk + knockdown
+   Origin at feet, faces -Z by default.
+   ========================================================= */
+const pdMat = {
+  vest: new THREE.MeshStandardMaterial({ color:0xd6e021, emissive:0x6a7207, emissiveIntensity:0.55, roughness:0.6 }),
+  stripe: new THREE.MeshStandardMaterial({ color:0xd9d9d9, emissive:0x888888, emissiveIntensity:0.4 }),
+  shirt: new THREE.MeshStandardMaterial({ color:0x38607a, roughness:0.85 }),
+  pants: new THREE.MeshStandardMaterial({ color:0x2c3138, roughness:0.9 }),
+  skin:  new THREE.MeshStandardMaterial({ color:0xc98e6b, roughness:0.8 }),
+  hat:   new THREE.MeshStandardMaterial({ color:0xf5f5f5, roughness:0.5 }),
+};
+function buildPed(){
+  const g = new THREE.Group();
+  const body = new THREE.Group(); g.add(body);
+  const B=(w,h,d,m)=>{ const x=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); x.castShadow=true; return x; };
+  // torso + vest + stripe
+  const torso=B(0.42,0.55,0.24,pdMat.vest); torso.position.y=1.18; body.add(torso);
+  const stripe=B(0.44,0.09,0.26,pdMat.stripe); stripe.position.y=1.18; body.add(stripe);
+  const hips=B(0.38,0.18,0.22,pdMat.pants); hips.position.y=0.86; body.add(hips);
+  // head + hard hat
+  const head=B(0.24,0.26,0.24,pdMat.skin); head.position.y=1.63; body.add(head);
+  const hat=B(0.28,0.1,0.28,pdMat.hat); hat.position.y=1.79; body.add(hat);
+  // limbs (pivot at top)
+  function limb(w,len,m,x,y,z){
+    const pivot=new THREE.Group(); pivot.position.set(x,y,z);
+    const seg=B(w,len,w,m); seg.position.y=-len/2; pivot.add(seg); body.add(pivot); return pivot;
+  }
+  const armL=limb(0.11,0.52,pdMat.shirt,-0.28,1.42,0);
+  const armR=limb(0.11,0.52,pdMat.shirt, 0.28,1.42,0);
+  const legL=limb(0.14,0.78,pdMat.pants,-0.11,0.78,0);
+  const legR=limb(0.14,0.78,pdMat.pants, 0.11,0.78,0);
+  return { group:g, body, armL, armR, legL, legR,
+           walkPh:Math.random()*TAU, state:'idle', downT:0 };
+}
+function pedWalkAnim(p,t,speed){
+  const s = Math.sin(t*7*speed + p.walkPh)*0.55;
+  p.legL.rotation.x =  s; p.legR.rotation.x = -s;
+  p.armL.rotation.x = -s*0.7; p.armR.rotation.x = s*0.7;
+}
+function pedIdleAnim(p,t){
+  p.legL.rotation.x = p.legR.rotation.x = 0;
+  p.armL.rotation.x = Math.sin(t*1.4+p.walkPh)*0.06;
+  p.armR.rotation.x = -Math.sin(t*1.4+p.walkPh)*0.06;
+}
+// knockdown: body pitches to floor over ~0.5s, limbs splay
+function pedKnockdown(p,dt,dirX,dirZ){
+  p.downT = Math.min(1, p.downT + dt*2.4);
+  const k = p.downT, e = 1-Math.pow(1-k,3);
+  p.body.rotation.x = -Math.PI/2 * e;             // fall onto back
+  p.body.position.y = 0.18*e;
+  p.group.position.x += dirX * dt * (1-e) * 3.2;  // shoved along strike dir
+  p.group.position.z += dirZ * dt * (1-e) * 3.2;
+  p.armL.rotation.z = 1.1*e; p.armR.rotation.z = -1.2*e;
+  p.legL.rotation.x = 0.35*e; p.legR.rotation.x = -0.25*e;
+}
+
+/* ---- blood decal (GRAPHIC mode only) ---- */
+const bloodDecals = [];
+function spawnBlood(x,z,dx=0,dz=0){
+  if(CONSEQUENCE_MODE!=='GRAPHIC') return;
+  const drop=(px,pz,size,delay)=>{
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(size,size),
+      new THREE.MeshBasicMaterial({ map:Tex.bloodCanvas(), transparent:true, opacity:0, depthWrite:false }));
+    m.rotation.x=-Math.PI/2; m.rotation.z=Math.random()*TAU;
+    m.position.set(px, 0.02+bloodDecals.length*0.0015, pz);
+    scene.add(m); bloodDecals.push({mesh:m, age:-delay});
+  };
+  drop(x,z,2.7,0);                                     // main pool
+  drop(x+dx*1.5+(Math.random()-0.5)*0.6, z+dz*1.5+(Math.random()-0.5)*0.6, 1.4, 0.22);
+  drop(x+dx*2.5+(Math.random()-0.5)*0.9, z+dz*2.5+(Math.random()-0.5)*0.9, 0.95, 0.42);
+}
+function updateBlood(dt){
+  for(const b of bloodDecals){
+    b.age += dt;
+    if(b.age<0){ b.mesh.material.opacity=0; continue; }
+    b.mesh.material.opacity = Math.min(0.96, b.age*1.6);
+    const s = Math.min(1.25, 0.4 + b.age*0.9); b.mesh.scale.set(s,s,1);
+  }
+}
+function clearBlood(){
+  for(const b of bloodDecals){ scene.remove(b.mesh); b.mesh.material.dispose(); }
+  bloodDecals.length = 0;
+}
+/* =========================================================
+   INPUT — tap/hold buttons (multi-touch, pointer events)
+   ========================================================= */
+const held = { go:false, brake:false, left:false, right:false };
+function clearHeld(){ held.go=held.brake=held.left=held.right=false; }
+// stuck keys / touches: if the page loses focus mid-hold, release everything
+window.addEventListener('blur', clearHeld);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) clearHeld(); });
+function bindHold(el, key){
+  let pd=0;
+  const on = e=>{ e.preventDefault(); pd=performance.now(); held[key]=true; noteInput(); el.setPointerCapture&&e.pointerId!=null&&el.setPointerCapture(e.pointerId); };
+  const off= e=>{ e.preventDefault(); held[key]=false; };
+  el.addEventListener('pointerdown',on);
+  el.addEventListener('pointerup',off);
+  el.addEventListener('pointercancel',off);
+  el.addEventListener('lostpointercapture',()=>held[key]=false);
+  // fallback for environments without pointer events: click = short pulse
+  el.addEventListener('click', ()=>{ if(performance.now()-pd>500){
+    noteInput(); held[key]=true; setTimeout(()=>held[key]=false,350); } });
+}
+bindHold($('goPedal'),'go'); bindHold($('brakePedal'),'brake');
+bindHold($('steerL'),'left'); bindHold($('steerR'),'right');
+
+function bindTap(el, fn){
+  let pd=0;
+  el.addEventListener('pointerdown', e=>{ e.preventDefault(); pd=performance.now(); noteInput(); fn(); });
+  el.addEventListener('click', ()=>{ if(performance.now()-pd>500){ noteInput(); fn(); } });
+}
+
+/* idle nudge */
+let lastInput = 0, nudgeShown = false;
+function noteInput(){ lastInput = clockNow; nudgeShown=false; }
+
+/* =========================================================
+   HUD helpers
+   ========================================================= */
+function banner(html, urgent){
+  const b=$('banner'); b.innerHTML=bi(html);
+  b.classList.toggle('urgent', !!urgent);
+}
+let toastTimer=null;
+function toast(msg, ms=2600){
+  const t=$('toast'); t.innerHTML=bi(msg); t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), ms);
+}
+function setDots(total, current){
+  const d=$('dots'); d.innerHTML='';
+  for(let i=0;i<total;i++){
+    const s=document.createElement('div'); s.className='dot'+(i<current?' done':i===current?' now':'');
+    d.appendChild(s);
+  }
+}
+function showBtns(map){   // {goPedal:1, revBtn:0, ...}
+  for(const id of ['steerL','steerR','goPedal','brakePedal','hornBtn','revBtn','actionBtn'])
+    $(id).style.display = map[id] ? 'flex' : 'none';
+}
+function setAction(label, visible){
+  const a=$('actionBtn');
+  a.style.display = visible?'flex':'none';
+  if(label) a.innerHTML=bi(label);
+  a.classList.toggle('pulse', !!visible);
+}
+
+/* screen shake + flash */
+let shakeT=0, shakeAmp=0;
+function shake(amp){ shakeAmp=amp; shakeT=0.55; }
+function flash(color,peak,fade){
+  const f=$('flash'); f.style.background=color; f.style.transition='none';
+  f.style.opacity=peak;
+  requestAnimationFrame(()=>{ f.style.transition=`opacity ${fade}s`; f.style.opacity=0; });
+}
+function bloodVignette(on){
+  $('vignette').style.transition='opacity .3s';
+  $('vignette').style.opacity = on ? (CONSEQUENCE_MODE==='GRAPHIC'?1:0.55) : 0;
+  $('bloodCam').style.opacity = (on && CONSEQUENCE_MODE==='GRAPHIC') ? 0.95 : 0;
+}
+
+/* teaching card */
+let cardCb=null;
+function showCard(kind, icon, title, fact, btnLabel, cb){
+  const c=$('card'); c.className=kind;                  // 'bad' | 'good'
+  $('cardIcon').textContent=icon;
+  $('cardTitle').innerHTML=bi(title);
+  $('cardFact').innerHTML=bi(fact);
+  const b=$('cardBtn'); b.innerHTML=bi(btnLabel);
+  b.className='btn '+(kind==='bad'?'green':'green');
+  cardCb=cb; $('cardWrap').classList.add('show');
+  cardShownAt = performance.now();
+  player.frozen=true; held.go=held.brake=held.left=held.right=false;
+}
+let cardShownAt = 0;
+bindTap($('cardBtn'), ()=>{
+  $('cardWrap').classList.remove('show');
+  AudioSys.click();
+  player.frozen=false;
+  const cb=cardCb; cardCb=null; if(cb) cb();
+});
+
+/* =========================================================
+   PLAYER — one controller for driving & walking
+   ========================================================= */
+const player = {
+  mode:'drive',            // 'drive' | 'walk'
+  x:0, z:24, heading:Math.PI,   // heading: 0 = facing -Z? (see fwd())
+  speed:0, steer:0, gear:1,     // gear 1 fwd, -1 rev
+  belted:false, frozen:true,
+  bobT:0
+};
+// heading convention: forward vector = (sin(h), 0, -cos(h)); h=0 faces -Z (north)
+function fwdX(){ return Math.sin(player.heading); }
+function fwdZ(){ return -Math.cos(player.heading); }
+
+// no operator model: this one is driven first-person, so YOU are the operator
+const playerTruck = buildPalletJack();
+scene.add(playerTruck.group);
+
+function collideCircle(x,z,r){
+  for(const c of colliders){
+    if(c.off) continue;                      // barriers that are only up in some moments
+    const nx = clamp(x, c.minX, c.maxX), nz = clamp(z, c.minZ, c.maxZ);
+    const dx=x-nx, dz=z-nz;
+    if(dx*dx+dz*dz < r*r) return true;
+  }
+  return false;
+}
+
+function updateDrive(dt){
+  const t = TUNE;
+  // steering — self-centering
+  const target = held.left ? -t.steerMax : held.right ? t.steerMax : 0;
+  const rate = (held.left||held.right) ? t.steerRate : t.steerRate*1.6;
+  player.steer += clamp(target-player.steer, -rate*dt, rate*dt);
+  // speed
+  if(!player.frozen){
+    // brake wins over throttle, as it does on a real truck. With a controller
+    // a finger often rests on both triggers, and GO used to silently cancel
+    // the brake — exactly the moment you most need it to work.
+    if(held.brake){
+      // one skid per stab of the brake, only when there is real speed to lose
+      if(player.speed > 2.6 && !player.skidding){ AudioSys.skid(); player.skidding = true; }
+      player.speed = Math.max(0, player.speed - t.brake*dt);
+    } else if(held.go && player.belted){
+      const cap = player.gear>0 ? t.maxFwd : t.maxRev;
+      player.speed = Math.min(cap, player.speed + t.accel*dt);
+    } else {
+      player.speed = Math.max(0, player.speed - t.drag*dt);
+    }
+    if(held.go && !player.belted){ nudgeBelt(); }
+  } else {
+    player.speed = Math.max(0, player.speed - t.brake*dt);
+  }
+  // kinematics (rear-axle bicycle model → tail swings on turns)
+  const v = player.speed * player.gear;
+  const prevHeading = player.heading;
+  player.heading += (v / t.wheelBase) * Math.tan(player.steer) * dt;
+  const nx = player.x + fwdX()*v*dt;
+  const nz = player.z + fwdZ()*v*dt;
+  // truck body = three circles along the chassis (rear overhang, rear axle, front/forks)
+  const blocked = (x,z) =>
+    collideCircle(x - fwdX()*0.75, z - fwdZ()*0.75, 0.7) ||
+    collideCircle(x, z, 0.95) ||
+    collideCircle(x + fwdX()*1.9, z + fwdZ()*1.9, 0.85);
+  /* A knock is worth hearing however it lands. Against a flat wall the slide
+     branches below usually take over, so listening only for head-on contact
+     missed almost every real collision — test it by driving into the racking. */
+  const impactSpeed = player.speed;
+  const hitSomething = blocked(nx,nz);
+  if(hitSomething && impactSpeed > 1.0 && !player.bumping){
+    AudioSys.bump(); player.bumping = true;
+  } else if(!hitSomething) player.bumping = false;
+
+  if(!hitSomething){
+    player.x=nx; player.z=nz;
+  } else if(!blocked(nx,player.z)){
+    player.x=nx;                                    // slide along Z-facing surface
+    player.speed = Math.max(0, player.speed - 5*dt); // scrape friction
+  } else if(!blocked(player.x,nz)){
+    player.z=nz;                                    // slide along X-facing surface
+    player.speed = Math.max(0, player.speed - 5*dt);
+  } else {
+    player.speed = 0;                               // solid head-on contact
+    player.heading = prevHeading;                   // don't rotate into the obstacle
+  }
+  // place truck (origin at rear axle, faces -Z locally; our fwd = -Z rotated by heading)
+  playerTruck.group.position.set(player.x, 0, player.z);
+  playerTruck.group.rotation.y = -player.heading;
+  // beacon: flashes whenever turning or moving (swing-radius warning)
+  const turning = Math.abs(player.steer)>0.14 && player.speed>0.25;
+  setBeacon(playerTruck, turning || player.speed>0.1, clockNow);
+  setRevLights(playerTruck, player.gear<0 && player.speed>0.05);
+  // audio
+  if(!held.brake) player.skidding = false;
+  AudioSys.engine(player.speed/t.maxFwd, player.belted && !player.frozen);
+  // your own truck beeps when you reverse, just like the ones around you
+  AudioSys.reverseBeep(dt, player.gear < 0 && player.speed > 0.08 && !player.frozen, 0.11, 'me');
+  AudioSys.reverseBeep(dt, player.gear<0 && player.speed>0.1);
+  // camera — driver eye height inside the cab
+  const backOff = 0.35;   // sit slightly behind origin
+  const camX = player.x + fwdX()*-backOff, camZ = player.z + fwdZ()*-backOff;
+  let lookH = player.heading;
+  if(player.gear<0){      // look over shoulder in reverse (limited view)
+    lookH = player.heading + Math.PI*0.82;
+  }
+  camera.position.set(camX, 1.95, camZ);
+  const lx = camX + Math.sin(lookH)*6, lz = camZ - Math.cos(lookH)*6;
+  camera.lookAt(lx, 1.55, lz);
+  camera.rotateZ(player.steer*0.03);
+}
+
+function updateWalk(dt){
+  const t=TUNE;
+  const turnRate = 1.7;
+  if(held.left)  player.heading -= turnRate*dt;
+  if(held.right) player.heading += turnRate*dt;
+  if(!player.frozen){
+    if(held.go) player.speed = Math.min(t.walkSpeed, player.speed + 5*dt);
+    else player.speed = Math.max(0, player.speed - 8*dt);
+    if(held.brake) player.speed = 0;
+  } else player.speed=0;
+  const nx = player.x + fwdX()*player.speed*dt;
+  const nz = player.z + fwdZ()*player.speed*dt;
+  if(!collideCircle(nx,nz,0.35)){ player.x=nx; player.z=nz; }
+  else if(!collideCircle(nx,player.z,0.35)){ player.x=nx; }   // slide
+  else if(!collideCircle(player.x,nz,0.35)){ player.z=nz; }
+  else player.speed=0;
+  // camera bob — and a footstep at the bottom of each stride
+  const bobPrev = player.bobT;
+  player.bobT += dt * (2 + player.speed*4.2);
+  if(player.speed > 0.35 && Math.floor(bobPrev/Math.PI) !== Math.floor(player.bobT/Math.PI))
+    AudioSys.footstep();
+  const bob = Math.sin(player.bobT)*0.045*Math.min(1,player.speed/1.2);
+  camera.position.set(player.x, 1.62+bob, player.z);
+  const lx = player.x + fwdX()*6, lz = player.z + fwdZ()*6;
+  camera.lookAt(lx, 1.5 + bob*0.4, lz);
+  AudioSys.engine(0,false);
+}
+
+/* speed HUD */
+function updateSpeedHUD(){
+  const kmh = Math.round(player.speed*3.6);
+  $('speedNum').innerHTML = kmh+'<small> km/h</small>';
+  const r = player.speed / (player.mode==='drive' ? TUNE.maxFwd : TUNE.walkSpeed);
+  $('speedBar').style.width = (r*100)+'%';
+  $('limiterTag').innerHTML =
+    player.mode==='drive' && player.speed>=TUNE.maxFwd-0.05 ? '⚠ LIMITER 限速已达上限' : '';
+}
+/* =========================================================
+   MOMENT / CONSEQUENCE ENGINE
+   ========================================================= */
+const seg = { mode:'title', moment:0, state:'', t:0, d:{} };
+const activePeds = [];          // {ped, update(dt)}
+let lastHorn = -99;
+
+function addPed(x,z,face){ const p = buildPed();
+  p.group.position.set(x,0,z); p.group.rotation.y = face||0;
+  scene.add(p.group); activePeds.push(p); return p; }
+function removePeds(){ for(const p of activePeds) scene.remove(p.group); activePeds.length=0; }
+
+// truck-frame test of a point (drive mode). Returns {lf, lr}
+function truckLocal(px,pz){
+  const dx=px-player.x, dz=pz-player.z;
+  const rx=Math.cos(player.heading), rz=Math.sin(player.heading);
+  return { lf: dx*fwdX() + dz*fwdZ(), lr: dx*rx + dz*rz };
+}
+function truckHitsPed(p, padFront=0.2){
+  const {lf,lr} = truckLocal(p.group.position.x, p.group.position.z);
+  return lf > -1.5 && lf < 2.45+padFront && Math.abs(lr) < 0.9;
+}
+function tailCorners(){
+  const rx=Math.cos(player.heading), rz=Math.sin(player.heading);
+  const bx = player.x - fwdX()*1.35, bz = player.z - fwdZ()*1.35;
+  return [[bx+rx*0.72, bz+rz*0.72],[bx-rx*0.72, bz-rz*0.72]];
+}
+
+/* strike sequence — the consequence. mode 'drive' (you hit someone)
+   or 'walk' (you are hit). */
+let strikeAnim = null;
+function strike(ped, cardTitle, cardFact){
+  if(seg.state==='struck'||seg.state==='failed') return;
+  seg.state='struck';
+  player.frozen = true; player.speed = Math.min(player.speed, 0.4);
+  AudioSys.thud(); AudioSys.engine(0,false);
+  shake(player.mode==='drive'?0.10:0.16);
+  flash(CONSEQUENCE_MODE==='GRAPHIC'?'#a00000':'#d33', 0.75, 0.9);
+  if(ped){
+    ped.state='down';
+    const dx = fwdX()*(player.mode==='drive'?1:0), dz = fwdZ()*(player.mode==='drive'?1:0);
+    strikeAnim = { ped, dx, dz };
+    spawnBlood(ped.group.position.x + dx*0.9, ped.group.position.z + dz*0.9, dx, dz);
+  }
+  if(player.mode==='walk'){
+    bloodVignette(true);
+    strikeAnim = strikeAnim || {};
+    strikeAnim.camFall = 0;
+    spawnBlood(player.x, player.z, Math.sin(player.heading), -Math.cos(player.heading));
+  }
+  banner('&#9888;&#65039; <span class="em">STRUCK</span>', true);
+  setTimeout(()=>{
+    if(seg.mode!=='seg1' && seg.mode!=='seg2') return;   // player exited meanwhile
+    showCard('bad','⚠️',cardTitle,cardFact,'TRY AGAIN', ()=>{ bloodVignette(false); resetMoment(); });
+  }, 1700);
+}
+function safeMoment(title, fact, cb){
+  // 'failed' matters as much as the other two: a moment that has already gone
+  // wrong must never be able to finish with a card that praises the player
+  if(seg.state==='struck'||seg.state==='cleared'||seg.state==='failed') return;
+  seg.state='cleared';
+  AudioSys.chime();
+  banner('&#10004;&#65039; <span class="em">SAFE</span>');
+  setTimeout(()=>{
+    if(seg.mode!=='seg1' && seg.mode!=='seg2') return;
+    showCard('good','✅',title,fact,'CONTINUE', cb);
+  }, 900);
+}
+
+/* gear changes always go through here so the button label stays in sync */
+function setGear(g){
+  player.gear = g;
+  $('revBtn').innerHTML = bi(g<0 ? 'FORWARD' : 'REVERSE');
+}
+
+/* checkpoints — where TRY AGAIN / RESET puts you */
+let checkpoint = null;
+function setCheckpoint(x,z,heading,moment){
+  checkpoint = {x,z,heading,moment,belted:player.belted,gear:player.gear};
+}
+function resetMoment(){
+  if(!checkpoint){ console.error('[MHE] resetMoment with no checkpoint'); return; }
+  console.info('[MHE] reset to checkpoint — moment', checkpoint.moment);
+  clearBlood(); removePeds(); clearAI(); strikeAnim=null;
+  bloodVignette(false); setAction(null,false);
+  player.x=checkpoint.x; player.z=checkpoint.z; player.heading=checkpoint.heading;
+  player.speed=0; player.steer=0; player.frozen=false;
+  setGear(checkpoint.gear);
+  player.belted=checkpoint.belted;
+  $('beltStrap').classList.toggle('show', player.belted && player.mode==='drive');
+  seg.moment=checkpoint.moment; seg.state='enter'; seg.t=0; seg.d={};
+  clearHeld();
+  stuckT=0;
+  // a struck worker is lying on the floor — put everyone back on their feet
+  if(seg.mode === 'seg1') spawnWorkers();
+}
+
+/* ---- manual recovery: RESET button (and C key) ---- */
+bindTap($('resetBtn'), ()=>{
+  if(seg.mode!=='seg1' && seg.mode!=='seg2') return;
+  if(seg.mode==='seg1' && seg.moment===0) return;        // nothing to reset before moving off
+  if($('cardWrap').classList.contains('show')) return;   // a card already offers the way out
+  if(seg.state==='struck' || seg.state==='cleared') return;
+  AudioSys.click();
+  resetMoment();
+  toast('↩ Back at the last safe point.', 2200);
+});
+
+/* ---- exit to title: double-tap to confirm ---- */
+let exitArmed = 0;
+bindTap($('exitBtn'), ()=>{
+  if(clockNow - exitArmed < 3){
+    exitArmed = 0; AudioSys.click(); resetAll();
+  } else {
+    exitArmed = clockNow;
+    toast('Press EXIT again to end and return to the title.', 2600);
+  }
+});
+
+/* ---- automatic stuck detection + position sanity guard ---- */
+let stuckT = 0, stuckPrev = {x:0,z:0};
+function updateStuckGuard(dt){
+  // invalid / out-of-bounds position → recover immediately
+  if(!isFinite(player.x) || !isFinite(player.z) ||
+     player.x<-22 || player.x>22 || player.z<-33 || player.z>35){
+    console.error('[MHE] invalid player position', player.x, player.z, '— auto reset');
+    resetMoment();
+    toast('↩ Position reset — back at the last safe point.', 2600);
+    return;
+  }
+  // pushing GO but not actually moving → offer the reset button
+  const moved = Math.hypot(player.x-stuckPrev.x, player.z-stuckPrev.z);
+  stuckPrev.x=player.x; stuckPrev.z=player.z;
+  const trying = held.go && !player.frozen && (player.mode==='walk' || player.belted);
+  if(trying && moved < 0.004){
+    stuckT += dt;
+    if(stuckT > 3){
+      stuckT = -5;   // cooldown before re-prompting
+      toast('Stuck? Tap ↩ RESET (top right) — or try REVERSE.', 3200);
+      $('resetBtn').classList.add('pulse');
+      setTimeout(()=>$('resetBtn').classList.remove('pulse'), 3200);
+    }
+  } else if(moved > 0.02) stuckT = 0;
+}
+
+/* horn */
+bindTap($('hornBtn'), ()=>{ AudioSys.horn(); lastHorn = clockNow; });
+function hornedRecently(win=3){ return clockNow-lastHorn < win; }
+
+/* =========================================================
+   SEGMENT 1 — IN THE SEAT (driver)
+   Moments: 0 belt · 1 blind corner · 2 pallet+reverse ·
+            3 swing radius · 4 speed run · 5 done
+   ========================================================= */
+/* Swing-radius moment. Testers kept wedging on the racking, so the manoeuvre
+   now happens inside a purpose-built TURNING BAY: the two east racking rows
+   that flanked it are set back to x=9.0, and while the moment is running the
+   bay is fenced on all four sides with only the aisle mouth open. You cannot
+   drive off behind the racking, and the nearest hard surface is metres away. */
+const SWING_R = 3.6;                  // a touch wider than full lock, so there is slack
+/* The pad sits east of the aisle centreline on purpose: the 180° then finishes
+   at x = PAD.x - 2R = -3.4, which is INSIDE the bay's gate. That matters — it
+   means the exit leg and any overshoot on it run out through the open mouth of
+   the bay rather than into the fence on the far side of it. */
+const PAD  = { x: 3.8, z:-20.4 };     // line-up pad, mid-bay
+const ARC_C = { x: PAD.x - SWING_R, z: PAD.z };   // arc centre
+const ARC_END = { x: PAD.x - 2*SWING_R, z: PAD.z };  // where the 180° finishes (-3.4)
+// landing box, back in the aisle mouth — driving on to the dock afterwards is
+// then a straight run out through the gate
+const BOXP = { x:-1.8, z:-17.4 };
+// bay walls. `gate` is the half-width of the open aisle mouth on the north side.
+// `gate` is the half-width of the open mouth on the north side. It is set to
+// 4.8 so the gate posts line up exactly with the rack faces of the aisle above,
+// making the aisle wall continuous — you drive in and out, never past.
+const BAY = { w:-8.6, e:8.4, s:-27.6, n:-15.9, gate:4.8 };
+
+// flat ribbon following a list of {x,z} centre points
+function makePathRibbon(points, width, mat){
+  const half = width/2, verts = [], idx = [];
+  for(let i=0;i<points.length;i++){
+    const p = points[i];
+    const a = points[Math.max(0,i-1)], b = points[Math.min(points.length-1,i+1)];
+    let tx = b.x-a.x, tz = b.z-a.z;
+    const len = Math.hypot(tx,tz) || 1; tx/=len; tz/=len;
+    const nx = -tz, nz = tx;                       // left normal in the floor plane
+    verts.push(p.x+nx*half, 0.02, p.z+nz*half, p.x-nx*half, 0.02, p.z-nz*half);
+  }
+  for(let i=0;i<points.length-1;i++){
+    const a=i*2, b=a+1, c=a+2, d=a+3;
+    idx.push(a,c,b, b,c,d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, mat); world.add(m);
+  return m;
+}
+const pathMat = new THREE.MeshBasicMaterial({ color:0x2bd07a, transparent:true,
+  opacity:0.55, depthWrite:false, side:THREE.DoubleSide });
+/* the route, kept as points so the ribbon, the chevrons and the moving
+   waypoint arrow are all driven off exactly the same line */
+const swingPts = (()=>{
+  const pts = [], ease = t => t*t*(3-2*t);
+  // 1. lead-in: run south down the aisle onto the line-up pad, nose still south
+  for(let i=0;i<=18;i++){
+    const t=i/18;
+    pts.push({ x: 0.3 + (PAD.x-0.3)*ease(t), z: -13.6 + (PAD.z+13.6)*t });
+  }
+  // 2. the swing: a wide 180° left arc across the middle of the bay
+  for(let i=1;i<=40;i++){
+    const phi = -Math.PI*(i/40);
+    pts.push({ x: ARC_C.x + Math.cos(phi)*SWING_R, z: ARC_C.z + Math.sin(phi)*SWING_R });
+  }
+  // 3. curve back east into the aisle and park in the green box, facing north
+  for(let i=1;i<=14;i++){
+    const t=i/14;
+    pts.push({ x: ARC_END.x + (BOXP.x-ARC_END.x)*ease(t), z: ARC_END.z + (BOXP.z-ARC_END.z)*t });
+  }
+  return pts;
+})();
+const swingPath = (()=>{
+  const m = makePathRibbon(swingPts, 2.8, pathMat);
+  m.visible = false; return m;
+})();
+
+/* ---------- guidance dressing for the swing ----------
+   All of this is decoration: none of it collides, so none of it can trap
+   anyone. It exists purely so the turn reads at a glance from the seat. */
+const swingGuides = new THREE.Group(); swingGuides.visible=false; world.add(swingGuides);
+
+// flowing chevrons down the middle of the route — these carry the direction
+const chevrons = [];
+(()=>{
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.55,-0.40); shape.lineTo(0,0.22); shape.lineTo(0.55,-0.40);
+  shape.lineTo(0.55,-0.06); shape.lineTo(0,0.56); shape.lineTo(-0.55,-0.06);
+  const geo = new THREE.ShapeGeometry(shape);
+  for(let i=4;i<swingPts.length-3;i+=3){
+    const a = swingPts[i-1], b = swingPts[i+1];
+    // dark green reads clearly against both the mint ribbon and bare concrete;
+    // plain white washed out completely under the warehouse lighting
+    const mat = new THREE.MeshBasicMaterial({ color:0x0a6b39, transparent:true,
+      opacity:0.35, depthWrite:false, side:THREE.DoubleSide });
+    const m = new THREE.Mesh(geo, mat);
+    m.rotation.x = -Math.PI/2;
+    m.rotation.z = -Math.atan2(b.x-a.x, b.z-a.z) + Math.PI;   // point along travel
+    m.position.set(swingPts[i].x, 0.032, swingPts[i].z);
+    m.scale.setScalar(1.25);
+    swingGuides.add(m); chevrons.push(mat);
+  }
+})();
+
+/* traffic cones ringing the inside of the turn — the pylon you swing around.
+   Purely visual: clipping one costs nothing but looks like a scuffed cone. */
+(()=>{
+  const coneMat = new THREE.MeshStandardMaterial({ color:0xe4551d, roughness:0.7 });
+  const bandMat = new THREE.MeshStandardMaterial({ color:0xf2f4f6, roughness:0.7 });
+  for(let i=0;i<6;i++){
+    const phi = -Math.PI*(0.08 + 0.84*(i/5)), r = SWING_R - 1.9;
+    const g = new THREE.Group();
+    g.position.set(ARC_C.x + Math.cos(phi)*r, 0, ARC_C.z + Math.sin(phi)*r);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.05,0.5), coneMat);
+    base.position.y=0.025; base.castShadow=true; g.add(base);
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.22,0.72,14), coneMat);
+    body.position.y=0.41; body.castShadow=true; g.add(body);
+    const band = new THREE.Mesh(new THREE.ConeGeometry(0.155,0.16,14), bandMat);
+    band.position.y=0.5; g.add(band);
+    swingGuides.add(g);
+  }
+})();
+
+/* big numbered floor decals: 1 line up · 2 swing wide · 3 park */
+function numDecal(txt, colour, x, z, size){
+  const c = document.createElement('canvas'); c.width=c.height=256;
+  const g = c.getContext('2d');
+  g.font='bold 200px system-ui,sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+  g.lineWidth=16; g.strokeStyle='rgba(12,18,14,0.55)'; g.strokeText(txt,128,134);
+  g.fillStyle=colour; g.fillText(txt,128,134);
+  const t = new THREE.CanvasTexture(c);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(size,size),
+    new THREE.MeshBasicMaterial({ map:t, transparent:true, opacity:0.9, depthWrite:false }));
+  m.rotation.x=-Math.PI/2; m.position.set(x,0.034,z);
+  swingGuides.add(m); return m;
+}
+numDecal('1','#ffd479', PAD.x, PAD.z+1.4, 1.9);
+numDecal('2','#eafff2', ARC_C.x, ARC_C.z-SWING_R+0.1, 1.9);
+numDecal('3','#8dffbe', BOXP.x, BOXP.z-1.7, 1.9);
+
+/* ---------- the bay fence ----------
+   Up only while the swing moment is running: segment 2 walks across this same
+   floor later, so every barrier keeps a handle on its collider and switches it
+   off again the moment the challenge ends. */
+const bayFence = new THREE.Group(); bayFence.visible=false; world.add(bayFence);
+const bayColliders = [];
+function bayRail(x1,z1,x2,z2){
+  const dx=x2-x1, dz=z2-z1, len=Math.hypot(dx,dz);
+  const ry = Math.atan2(dx,dz);
+  for(const y of [0.46,0.92]){
+    const r = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.17,len), M.hazard);
+    r.position.set((x1+x2)/2, y, (z1+z2)/2); r.rotation.y=ry;
+    r.castShadow=true; r.receiveShadow=true; bayFence.add(r);
+  }
+  const n = Math.max(2, Math.round(len/2.4));
+  for(let i=0;i<=n;i++){
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.17,1.06,0.17), M.bollard);
+    p.position.set(x1+dx*i/n, 0.53, z1+dz*i/n);
+    p.castShadow=true; bayFence.add(p);
+  }
+  const c = collide((x1+x2)/2, (z1+z2)/2, Math.abs(dx)+0.36, Math.abs(dz)+0.36);
+  c.off = true; bayColliders.push(c);
+}
+bayRail(BAY.w, BAY.n, BAY.w, BAY.s);          // west
+bayRail(BAY.w, BAY.s, BAY.e, BAY.s);          // south
+bayRail(BAY.e, BAY.s, BAY.e, BAY.n);          // east, guarding the set-back racking
+bayRail(BAY.w, BAY.n, -BAY.gate, BAY.n);      // north-west closure
+bayRail(BAY.gate, BAY.n, BAY.e, BAY.n);       // north-east closure
+// striped gate posts so the way in (and back out) is unmistakable
+for(const gx of [-BAY.gate, BAY.gate]){
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,1.5,12), M.hazard);
+  p.position.set(gx, 0.75, BAY.n); p.castShadow=true; bayFence.add(p);
+}
+function setSwingBay(on){
+  bayFence.visible = on; swingGuides.visible = on;
+  for(const c of bayColliders) c.off = !on;
+}
+
+const stagePad = paint(3.2,3.6, new THREE.MeshStandardMaterial({
+  color:0xf2a41c, transparent:true, opacity:0.62 }), PAD.x,PAD.z);
+stagePad.visible=false;
+// elongated along the exit so parking anywhere at the end of the swing counts
+const turnBox = paint(2.8,5.2, new THREE.MeshStandardMaterial({
+  color:0x2fae6a, transparent:true, opacity:0.62 }), BOXP.x,BOXP.z);
+turnBox.visible=false;
+const bayMark = paint(3.6,4.2, new THREE.MeshStandardMaterial({
+  color:0x2fae6a, transparent:true, opacity:0.4 }), 0,-19.5);
+bayMark.visible=false;
+
+/* floating guide arrow — always shows where to go next */
+const guide = (()=>{
+  const g = new THREE.Group();
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5,1.0,12),
+    new THREE.MeshStandardMaterial({ color:0x35d97f, emissive:0x1d7a45, emissiveIntensity:1.3 }));
+  cone.rotation.x = Math.PI; cone.position.y = 2.7; g.add(cone);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.55,0.85,26),
+    new THREE.MeshBasicMaterial({ color:0x35d97f, transparent:true, opacity:0.55, side:THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI/2; ring.position.y = 0.03; g.add(ring);
+  g.visible = false; scene.add(g); return g;
+})();
+function setGuide(x,z){ guide.visible=true; guide.position.set(x,0,z); }
+function hideGuide(){ guide.visible=false; }
+
+/* The swing guide arrow travels along the route instead of sitting on the far
+   end of it — a fixed target 20 m away tells you nothing about which way to
+   steer. Progress only ever moves forwards, so the arrow cannot jump back to
+   the lead-in when you come round to the box (the two run side by side). */
+let pathI = 0;
+const PAD_I = 18;                       // index of the line-up pad in swingPts
+function resetPathProgress(i){ pathI = i||0; }
+function guideAlongPath(){
+  let best = pathI, bd = 1e9;
+  for(let i=pathI; i<Math.min(swingPts.length, pathI+14); i++){
+    const dx = swingPts[i].x-player.x, dz = swingPts[i].z-player.z;
+    const d = dx*dx+dz*dz;
+    if(d<bd){ bd=d; best=i; }
+  }
+  pathI = best;
+  const t = swingPts[Math.min(swingPts.length-1, best+7)];
+  setGuide(t.x, t.z);
+}
+// chevrons pulse forwards down the route so the direction of travel is obvious
+function animateChevrons(now){
+  for(let i=0;i<chevrons.length;i++){
+    const w = Math.sin(now*2.6 - i*0.55);
+    chevrons[i].opacity = 0.34 + 0.55*Math.max(0, w);
+  }
+}
+
+/* =========================================================
+   WAREHOUSE WORKERS — people going about their shift along the driving
+   route, who can be struck like anyone else. Kept apart from the scripted
+   scenario pedestrians: every moment change and every TRY AGAIN calls
+   removePeds(), and these must survive the first and be restored by the
+   second.
+   Placement: along the rack faces (|x| 3.5–3.8) where pickers really
+   stand, never on the driving line — hitting one means you cut close to
+   the racking. Kept clear of every scripted zone: the blind-corner
+   crossing (z 4–10), the reversing pedestrian (z < -12), the fenced
+   turning bay, and the run-home crossing at z = 18.
+   ========================================================= */
+const WORKER_SPOTS = [
+  { kind:'pick', x: 3.8, z: 21.5, face: Math.PI/2 },        // dock end, picking from the east racking
+  { kind:'walk', x:-3.5, z0: 11.2, z1: 15.6, box:true },   // carrying a carton along the west racking
+  { kind:'walk', x: 3.5, z0: -9.0, z1: -2.0 },              // walking the east edge of the long aisle
+  { kind:'pick', x:-3.8, z: -6.5, face:-Math.PI/2 }         // picking from the west racking
+];
+const workers = [];
+const cartonMat = new THREE.MeshStandardMaterial({ color:0xb08a5a, roughness:0.9 });
+function clearWorkers(){
+  for(const w of workers) scene.remove(w.p.group);
+  workers.length = 0;
+}
+function spawnWorkers(){
+  clearWorkers();
+  for(const s of WORKER_SPOTS){
+    const p = buildPed();
+    const w = { p, s, dir:1, paused:false };
+    if(s.kind === 'pick'){
+      p.group.position.set(s.x, 0, s.z); p.group.rotation.y = s.face;
+    } else {
+      p.group.position.set(s.x, 0, s.z0); p.group.rotation.y = 0;
+      if(s.box){
+        const c = new THREE.Mesh(new THREE.BoxGeometry(0.46,0.34,0.36), cartonMat);
+        c.position.set(0, 1.02, 0.34); c.castShadow = true; p.body.add(c);
+      }
+    }
+    p.state = 'working';
+    scene.add(p.group); workers.push(w);
+  }
+}
+function updateWorkers(dt){
+  const t = clockNow;
+  // hits only count while the truck is actually being driven through a live moment
+  const live = seg.mode === 'seg1' && seg.moment >= 1 && seg.moment <= 4 && !player.frozen &&
+               seg.state !== 'struck' && seg.state !== 'cleared' && seg.state !== 'failed';
+  for(const w of workers){
+    const p = w.p;
+    if(p.state === 'down') continue;                   // the strike animation owns them now
+    const d = Math.hypot(p.group.position.x - player.x, p.group.position.z - player.z);
+    if(w.s.kind === 'walk'){
+      // a walker stops and waits when a truck is close, as a person would —
+      // they never walk themselves into it
+      if(d < 3.6) w.paused = true; else if(d > 4.6) w.paused = false;
+      if(w.paused){
+        pedIdleAnim(p, t);
+        p.group.rotation.y = Math.atan2(player.x - p.group.position.x, player.z - p.group.position.z);
+      } else {
+        const zNow = p.group.position.z + w.dir * 1.1 * dt;
+        if(zNow > w.s.z1){ w.dir = -1; } else if(zNow < w.s.z0){ w.dir = 1; }
+        p.group.position.z = clamp(zNow, w.s.z0, w.s.z1);
+        p.group.position.x = w.s.x;
+        p.group.rotation.y = w.dir > 0 ? 0 : Math.PI;
+        pedWalkAnim(p, t, 0.8);
+      }
+      if(w.s.box){ p.armL.rotation.x = p.armR.rotation.x = -1.15; }   // both hands on the carton
+    } else {
+      // picking: reach up into the rack and back, over and over
+      pedIdleAnim(p, t);
+      const r = 0.5 + 0.5*Math.sin(t*1.3 + p.walkPh);
+      p.armR.rotation.x = -1.1 - 1.0*r;
+      p.armL.rotation.x = -0.5 - 0.4*r;
+    }
+    if(!live) continue;
+    // contact only matters when the truck is moving TOWARDS them: fast = struck,
+    // slow = the truck stops. Moving away is always allowed — otherwise backing
+    // off a worker you had crept up to would itself count as hitting them, and
+    // a gentle bump could pin the truck in place.
+    if(truckHitsPed(p)){
+      const { lf } = truckLocal(p.group.position.x, p.group.position.z);
+      const towards = (lf >= 0 && player.gear > 0) || (lf < 0 && player.gear < 0);
+      if(towards && player.speed > TUNE.strikeSpeed){
+        strike(p, 'You hit a worker at the racking.',
+          'People pick, stack and walk along the rack faces all shift. Keep to the middle of the aisle, slow right down where people are working, and never cut close to the racking.');
+        return;
+      }
+      if(towards) player.speed = 0;
+    }
+  }
+}
+
+function startSeg1(){
+  seg.mode='seg1'; seg.moment=0; seg.state='enter'; seg.t=0; seg.d={};
+  spawnWorkers();
+  player.mode='drive'; player.x=0; player.z=24; player.heading=0;
+  player.speed=0; player.steer=0; player.belted=false; player.frozen=true;
+  setGear(1);
+  playerTruck.group.visible=true;
+  setAmbient(false); setTagsVisible(false); clearTraffic();
+  AudioSys.roomTone(true);          // the warehouse is never silent
+  setSwingBay(false);
+  $('beltStrap').classList.remove('show');
+  $('hud').classList.add('show');
+  hideGuide();
+  setDots(5,0);
+  setCheckpoint(0,24,0,1);
+  checkpoint.belted = true;   // moment 1 always begins buckled
+}
+let beltNudgeT = -99;
+function nudgeBelt(){
+  if(clockNow - beltNudgeT < 4) return;
+  beltNudgeT = clockNow;
+  toast('🛡 Buckle up first — tap the amber button.', 2400);
+}
+
+function updateSeg1(dt){
+  seg.t += dt;
+  const m = seg.moment;
+  updateWorkers(dt);
+
+  /* ---- moment 0: seatbelt interlock ---- */
+  if(m===0){
+    if(seg.state==='enter'){
+      seg.state='wait';
+      banner('You are in the seat. <span class="em">Buckle up first.</span>');
+      showBtns({});
+      setAction('&#128737;&#65039; TAP TO BUCKLE SEATBELT', true);
+    }
+    return;
+  }
+
+  /* ---- moment 1: blind corner ---- */
+  if(m===1){
+    if(seg.state==='enter'){
+      seg.state='drive'; setDots(5,1); player.frozen=false;
+      banner('Drive ahead. <span class="em">Blind corner</span> coming &mdash; slow down + tap HORN.');
+      showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1,hornBtn:1,revBtn:1});
+      seg.d.ped = addPed(-4.5,7, Math.PI/2); seg.d.ped.state='idle';
+      seg.d.horned=false;
+      setGuide(0,2.5);   // target sits PAST the crossing, so reaching it completes the moment
+    }
+    // horn acknowledged anywhere on the approach, right up to the crossing itself
+    if(!seg.d.horned && hornedRecently(0.4) && player.z<20 && player.z>4){
+      seg.d.horned=true; toast('Good — they heard you!',1800);
+    }
+    /* They step out of the blind corner, walk into the middle of YOUR lane and
+       stand there. The only way through is a full stop — steering around them
+       is caught too, because the test is on the crossing line, not on x. */
+    const p = seg.d.ped;
+    if(p && p.state==='idle'){
+      pedIdleAnim(p, clockNow);
+      if(player.z < 16){
+        p.state='stepOut';
+        AudioSys.alarm();
+        toast('⚠ Someone has stepped out in front of you — STOP!', 2800);
+        banner('&#9940; <span class="em">STOP</span> &mdash; person crossing ahead.', true);
+      }
+    }
+    if(p && p.state==='stepOut'){
+      pedWalkAnim(p, clockNow, 1);
+      p.group.position.x += 1.35*dt;
+      if(p.group.position.x >= -0.2){ p.state='blocking'; p.group.rotation.y = Math.PI; }
+    }
+    if(p && p.state==='blocking'){
+      pedIdleAnim(p, clockNow);
+      if(player.speed < 0.3){                       // an actual, full stop
+        seg.d.stopped = true;
+        p.state='crossing'; p.group.rotation.y = Math.PI/2;
+        AudioSys.chime();
+        banner('&#128077; They are crossing. <span class="em">Wait until they are clear.</span>');
+        toast(seg.d.horned ? '👍 Horn AND a full stop — textbook.' : '👍 Good stop. Let them clear.', 2600);
+      }
+    }
+    if(p && p.state==='crossing'){
+      pedWalkAnim(p, clockNow, 1);
+      p.group.position.x += 1.5*dt;
+      if(p.group.position.x > 4.6){
+        p.state='done'; AudioSys.chime();
+        banner('&#9989; <span class="em">Clear</span> &mdash; drive on to the green ring.');
+      }
+    }
+    /* drove past without ever stopping — swerving wide counts, it is a line test */
+    if(p && (p.state==='stepOut' || p.state==='blocking') && !seg.d.stopped && player.z < 6.4){
+      seg.state='failed'; player.frozen = true;
+      AudioSys.alarm(); flash('#d33',0.55,0.8); shake(0.07);
+      banner('&#9888;&#65039; <span class="em">You did not stop.</span>', true);
+      setTimeout(()=>{
+        if(seg.mode!=='seg1') return;
+        showCard('bad','⚠️','You drove past without stopping.',
+          'Someone stepped into your path and you kept moving. Steering around a person is not a substitute for stopping — you cannot know which way they will step. Come to a full stop, let them clear, then move off.',
+          'TRY AGAIN', ()=>resetMoment());
+      }, 900);
+      return;
+    }
+    // hitting them is still possible at any point
+    if(p && (p.state==='stepOut'||p.state==='blocking'||p.state==='crossing')
+       && truckHitsPed(p) && player.speed>TUNE.strikeSpeed){
+      strike(p,'Too fast for a blind corner.',
+        'A person stepped out — at speed, the pallet jack could not stop. Slow right down and sound your horn at every blind corner.');
+      return;
+    }
+    // passed the corner having stopped for them (straight on, or off into the cross-aisle)
+    const pastCorner = player.z<4.5 || (player.z<10.5 && Math.abs(player.x)>5.5);
+    if(seg.state==='drive' && pastCorner && seg.d.stopped){
+      if(seg.d.horned) safeMoment('Horn, then a full stop — textbook.',
+        'You warned them before the corner and stopped to let them cross. That is exactly how to take a blind corner.',
+        ()=>advanceSeg1(2));
+      else safeMoment('You stopped and let them cross.',
+        'Stopping was the right call. Next time sound the horn BEFORE the corner as well, so people know you are coming before they step out.',
+        ()=>advanceSeg1(2));
+    }
+    return;
+  }
+
+  /* ---- moment 2: reach pallet bay, then reverse ---- */
+  if(m===2){
+    if(seg.state==='enter'){
+      seg.state='drive'; setDots(5,2); player.frozen=false;
+      banner('Drive to the <span class="em">green bay</span> and STOP on it.');
+      bayMark.visible=true;
+      showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1,hornBtn:1,revBtn:1});
+      setGuide(0,-19.5);
+    }
+    if(seg.state==='drive'){
+      // forgiving: the bay counts if the truck body OR the forks are on it
+      const fx = player.x + fwdX()*2.1, fz = player.z + fwdZ()*2.1;
+      const onBay = (x,z)=> Math.abs(x)<2.6 && Math.abs(z+19.5)<3.0;
+      if((onBay(player.x,player.z) || onBay(fx,fz)) && player.speed<0.35){
+        seg.state='loaded'; AudioSys.click(); hideGuide();
+        banner('Forks in. Now <span class="em">REVERSE</span> out &mdash; check behind you.');
+        $('revBtn').style.display='flex'; $('revBtn').classList.add('pulse');
+      } else if(player.speed<0.35 && Math.abs(player.x)<4.5 && Math.abs(player.z+19.5)<10){
+        // stopped near the bay but not on it — coach instead of staying silent
+        seg.d.hintT = (seg.d.hintT||0) + dt;
+        if(seg.d.hintT > 2){
+          seg.d.hintT = -7;   // cooldown before the next hint
+          if(player.z < -21.5) toast('⬅ The green bay is BEHIND you — tap REVERSE and back onto it.', 3200);
+          else toast('Not on the bay yet — stop with the green square under your forks.', 3200);
+        }
+      } else if(player.speed>1) seg.d.hintT = 0;
+    }
+    if(seg.state==='loaded' && player.gear<0){
+      seg.state='reversing'; $('revBtn').classList.remove('pulse');
+      banner('Reversing. <span class="em">Your view behind is limited.</span> Go slow.');
+      setCheckpoint(0,-19.5,0,2); checkpoint.gear=-1; seg.d.revStart=true;
+      setGuide(0,-11.5);
+      // ped will cross behind, from the right of the aisle
+    }
+    if(seg.state==='reversing'){
+      if(!seg.d.ped && player.z>-18){
+        const crossZ = player.z + 4.5;   // behind the reversing truck
+        seg.d.ped = addPed(2.8, crossZ, -Math.PI/2); seg.d.ped.state='cross';
+        seg.d.crossZ = crossZ;
+        toast('Someone is behind you!',1500);
+      }
+      const p = seg.d.ped;
+      /* Same rule as the run home: warned, they get out of your way. They used
+         to just freeze on the spot — right in the path — and the collision
+         check only ran while they were walking, so the truck ghosted through
+         them. Now a horn sends them back out of the lane to whichever side is
+         nearer (never re-crossing in front of you), where they wave you past.
+         No horn and they keep walking — straight into the path. */
+      if(p && p.state==='cross' && hornedRecently(0.4)){
+        p.state = 'retreat';
+        p.clearX = p.group.position.x > 0 ? 3.6 : -3.6;
+        toast('👍 They heard the horn — stepping back out of your way.', 2400);
+      }
+      if(p && p.state==='cross'){
+        p.group.position.x -= 1.3*dt;
+        pedWalkAnim(p, clockNow, 0.9);
+        if(p.group.position.x<-4) p.state='done';
+      }
+      if(p && p.state==='retreat'){
+        const dir = Math.sign(p.clearX - p.group.position.x);
+        p.group.position.x += dir * 1.8*dt;
+        pedWalkAnim(p, clockNow, 0.9);
+        if((p.group.position.x - p.clearX) * dir >= 0){
+          p.group.position.x = p.clearX;
+          // face back across the aisle, towards the driver
+          p.group.rotation.y = p.clearX > 0 ? -Math.PI/2 : Math.PI/2;
+          p.state = 'waiting';
+        }
+      }
+      if(p && p.state==='waiting'){                 // stands clear and waves you through
+        pedIdleAnim(p, clockNow);
+        p.armR.rotation.z = -2.4 + Math.sin(clockNow*6)*0.3;
+      }
+      // a horn does not excuse reversing into someone still in the lane
+      if(p && (p.state==='cross' || p.state==='retreat')){
+        if(truckHitsPed(p) && player.speed>TUNE.strikeSpeed){
+          strike(p,'Struck while reversing.',
+            'A loaded pallet jack’s rear view is poor. Reverse at creep speed, look over your shoulder, and use the horn.');
+        } else if(truckHitsPed(p,0.4)){ player.speed=0; }
+      }
+      if(player.z>-13.6 && seg.state==='reversing'){
+        safeMoment('Backed out safely.',
+          'Slow, checked, warned. Reversing causes many struck-by injuries — creep speed saves lives.',
+          ()=>advanceSeg1(3));
+      }
+    }
+    return;
+  }
+
+  /* ---- moment 3: swing radius U-turn ----
+     Follow the painted green route: ease onto the amber pad, then swing wide
+     LEFT through the open staging floor and park in the green box. */
+  if(m===3){
+    if(seg.state==='enter'){
+      seg.state='lineup'; setDots(5,3); player.frozen=false; setGear(1);
+      bayMark.visible=false;
+      banner('Into the <span class="em">turning bay</span> &mdash; follow the green path to pad <span class="em">1</span>.');
+      swingPath.visible=true; stagePad.visible=true; turnBox.visible=false;
+      setSwingBay(true); resetPathProgress(); guideAlongPath();
+      // stands well to the east of the route, facing the manoeuvre: visible the
+      // whole way round, off the straight-ahead line, and far enough out that a
+      // reasonable swing — even a sloppy wide one — never reaches them. Only
+      // someone who abandons the path entirely can catch them with the tail.
+      seg.d.worker = addPed(7.6,-19.0, -Math.PI/2);
+      seg.d.entryHeading = player.heading;
+      seg.d.startHeading = player.heading;
+      seg.d.lineT = 0; seg.d.jamT = 0;
+      setCheckpoint(player.x, player.z, player.heading, 3);
+      toast('The bay is fenced — you cannot go wrong. Follow 1 → 2 → 3.',3000);
+    }
+    animateChevrons(clockNow);
+    /* belt-and-braces: this moment must never be able to trap anyone, so if the
+       truck is pinned against something for a few seconds, put it back on the
+       pad automatically rather than waiting for the player to find RESET */
+    if(seg.state!=='cleared'){
+      const jammed = held.go && player.belted && !player.frozen && player.speed < 0.05;
+      seg.d.jamT = jammed ? (seg.d.jamT||0) + dt : 0;
+      if(seg.d.jamT > 2.5){
+        seg.d.jamT = 0;
+        player.x = PAD.x; player.z = PAD.z; player.heading = 0;
+        player.speed = 0; player.steer = 0; clearHeld();
+        seg.state = 'lineup'; seg.d.lineT = 0;
+        stagePad.visible = true; turnBox.visible = false;
+        resetPathProgress(PAD_I); guideAlongPath();
+        banner('Into the <span class="em">turning bay</span> &mdash; follow the green path to pad <span class="em">1</span>.');
+        toast('↩ Back on the pad — follow the green path round.', 3000);
+        console.info('[MHE] swing moment: auto-recovered from a jam');
+        return;
+      }
+    }
+    const w = seg.d.worker;
+    pedIdleAnim(w, clockNow);
+    // tail sweep check
+    for(const [cx,cz] of tailCorners()){
+      const dx=cx-w.group.position.x, dz=cz-w.group.position.z;
+      if(dx*dx+dz*dz < 0.42 && player.speed>0.45 && Math.abs(player.steer)>0.12){
+        strike(w,'The tail swung into a person.',
+          'When a pallet jack turns, its rear end sweeps WIDE the other way. Keep clear of the swing zone — driver and walker both.');
+        return;
+      }
+    }
+    // front hit also possible
+    if(truckHitsPed(w) && player.speed>TUNE.strikeSpeed){
+      strike(w,'Struck the worker.', 'Slow down around people. If someone is close, stop and let them move first.');
+      return;
+    }
+    let dh = Math.abs(((player.heading - seg.d.startHeading) % TAU + TAU) % TAU);
+    if(dh>Math.PI) dh = TAU-dh;
+
+    /* beat 1 — line up on the amber pad, pointing down the aisle */
+    if(seg.state==='lineup'){
+      const onArea  = Math.abs(player.x-PAD.x)<1.6 && Math.abs(player.z-PAD.z)<1.9;
+      const aligned = fwdZ() < -0.85;          // nose genuinely pointing down the aisle
+      const onPad   = onArea && aligned;
+      // signed turn since entry — only a LEFT swing counts (steering right to
+      // reach the pad must not trip the swing early)
+      let dSign = ((player.heading - seg.d.entryHeading) % TAU + TAU) % TAU;
+      if(dSign > Math.PI) dSign -= TAU;
+      seg.d.lineT += dt;
+      guideAlongPath();
+      // never dead-end: lined up, already swinging left, or waited too long
+      if(onPad || dSign < -1.2 || seg.d.lineT>22){
+        seg.state='turn';
+        seg.d.startHeading = onPad ? player.heading : seg.d.entryHeading;
+        stagePad.visible=false; turnBox.visible=true;
+        guideAlongPath();
+        banner('Hold <span class="em">LEFT + GO</span> &mdash; sweep wide round the cones to <span class="em">2</span>, then park on <span class="em">3</span>. Watch your TAIL!');
+        AudioSys.click();
+        if(onPad) setCheckpoint(player.x, player.z, player.heading, 3);
+      } else if(onArea && !aligned && !seg.d.alignHint){
+        seg.d.alignHint = true;
+        toast('↩ Straighten up along the path first, then swing LEFT.',3000);
+      } else if(seg.d.lineT>8 && !seg.d.padHint){
+        seg.d.padHint = true;
+        toast('👉 Follow the white arrows onto amber pad 1.',3000);
+      }
+      return;
+    }
+
+    /* beat 2 — swing left into the green box */
+    seg.d.turnT = (seg.d.turnT||0) + dt;
+    const inBox = Math.abs(player.x-BOXP.x)<1.4 && Math.abs(player.z-BOXP.z)<2.6;
+    if(inBox) hideGuide(); else guideAlongPath();
+
+    /* Circling. Someone who starts the swing off-line just orbits the bay for
+       ever: nothing collides, so the jam timer never fires and they are stuck
+       in a way no reset prompt catches. Once they have turned most of a full
+       circle without reaching the box, put them back on the pad and say why. */
+    let dRot = player.heading - (seg.d.prevH===undefined ? player.heading : seg.d.prevH);
+    seg.d.prevH = player.heading;
+    dRot = ((dRot + Math.PI) % TAU + TAU) % TAU - Math.PI;     // shortest signed step
+    seg.d.rot = (seg.d.rot||0) + dRot;
+    if(seg.state==='turn' && !inBox && seg.d.rot < -5.6){       // ≈320° of left turn
+      player.x = PAD.x; player.z = PAD.z; player.heading = 0;
+      player.speed = 0; player.steer = 0; clearHeld();
+      seg.d.rot = 0; seg.d.turnT = 0; seg.d.startHeading = 0; seg.d.prevH = 0;
+      resetPathProgress(PAD_I); guideAlongPath();
+      toast('↩ You went right round. One half-turn only — stop on green box 3.', 3400);
+      console.info('[MHE] swing moment: recovered from an over-rotation');
+      return;
+    }
+    // parking in the box is the goal; the rest are anti-dead-end fallbacks
+    if(seg.state==='turn' && ((inBox && dh>1.6) || (seg.d.turnT>35 && fwdZ()>0.5))){
+      turnBox.visible=false; stagePad.visible=false; swingPath.visible=false; hideGuide();
+      setSwingBay(false);
+      safeMoment('Clean turn — tail stayed clear.',
+        'You swung wide into open floor instead of cutting it tight. A pallet jack needs that room, because the rear end sweeps out the opposite way — never stand beside a turning pallet jack.',
+        ()=>advanceSeg1(4));
+    }
+    return;
+  }
+
+  /* ---- moment 4: the speed run home ---- */
+  if(m===4){
+    if(seg.state==='enter'){
+      seg.state='run'; setDots(5,4); player.frozen=false;
+      removePeds(); swingPath.visible=false; stagePad.visible=false; turnBox.visible=false;
+      setSwingBay(false);      // fence comes down — the run home needs the aisle open
+      banner('Head back to the dock. <span class="em">Sound the horn</span> near people &mdash; and keep a speed you can stop from.');
+      setCheckpoint(player.x, player.z, player.heading, 4);
+      showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1,hornBtn:1,revBtn:1});
+      seg.d.ped = addPed(4.2,18, -Math.PI/2); seg.d.ped.state='idle';
+      setGuide(0,23);
+    }
+    const p = seg.d.ped;
+    /* the horn is the point of this run: warn them and they keep clear.
+       Sounded early they never step out; sounded mid-crossing they step back. */
+    if(p && (p.state==='idle' || p.state==='cross') && hornedRecently(0.4) && player.z>0 && player.z<20){
+      const wasCrossing = p.state==='cross';
+      p.state = wasCrossing ? 'retreat' : 'waiting';
+      seg.d.hornSafe = true;
+      toast(wasCrossing ? '👍 They heard the horn — stepping back out of your way.'
+                        : '👍 Horn heard — they are holding back to let you pass.', 2400);
+    }
+    if(p && p.state==='retreat'){                 // back out of the lane, then wait at the edge
+      p.group.position.x += 1.8*dt;
+      pedWalkAnim(p, clockNow, 0.9);
+      if(p.group.position.x >= 3.6) p.state='waiting';
+    }
+    if(p && p.state==='waiting'){                 // stands clear and waves you through
+      pedIdleAnim(p, clockNow);
+      p.armR.rotation.z = -2.4 + Math.sin(clockNow*6)*0.3;
+    }
+    // worker waits near the racking at z=18; steps out based on your speed
+    if(p && p.state==='idle' && player.z>2 && player.z<16){
+      const dist = 18 - player.z;
+      if(player.speed>3.4 && (dist-2.45)/player.speed < 1.5){
+        p.state='cross'; seg.d.fast=true;
+        const offset = Math.max(1.2, 3.3 - player.x);    // ped walks -X into the truck's lane
+        p.spd = clamp(offset/Math.max(0.35,(dist-2.45)/player.speed), 1.0, 2.6);
+      } else if(player.z>12 && player.speed<=3.4){
+        p.state='cross'; seg.d.fast=false; p.spd = 1.3;
+      }
+    }
+    if(p && p.state==='idle') pedIdleAnim(p, clockNow);
+    if(p && p.state==='cross'){
+      p.group.position.x -= (p.spd||1.3)*dt;
+      pedWalkAnim(p, clockNow, 1);
+      if(p.group.position.x<-4) p.state='done';
+    }
+    /* Sliding past is not a pass. Missing someone by half a metre at speed is
+       a near miss, and near misses are exactly how struck-by incidents happen
+       — the person only has to step the other way. While they are moving in
+       the aisle you slow to a crawl, or you warned them early enough that
+       they never got there. Steering round them is neither. */
+    if(p && seg.state==='run' && (p.state==='cross' || p.state==='retreat')){
+      if(p.state==='cross' && !seg.d.crossWarn){
+        seg.d.crossWarn = true;
+        toast('⚠ Someone is crossing — SLOW RIGHT DOWN or sound the horn.', 2800);
+      }
+      const {lf,lr} = truckLocal(p.group.position.x, p.group.position.z);
+      // a retreating walker is already moving clear, so judge them a bit tighter
+      const side = p.state==='cross' ? 1.9 : 1.4;
+      if(lf > -2.0 && lf < 3.0 && Math.abs(lr) < side && player.speed > 1.6){
+        seg.state='failed'; player.frozen=true; player.speed=0;
+        AudioSys.whistle(); AudioSys.alarm(); flash('#e8a400',0.5,0.8); shake(0.07);
+        banner('&#9888;&#65039; <span class="em">NEAR MISS</span>', true);
+        setTimeout(()=>{
+          if(seg.mode!=='seg1') return;
+          showCard('bad','⚠️','You passed within touching distance.',
+            'They were still walking and you slid straight past at speed. Steering around a person is not a substitute for slowing down — one step the wrong way and it is a struck-by. Sound the horn early, then creep past or wait until they are clear.',
+            'TRY AGAIN', ()=>resetMoment());
+        }, 900);
+        return;
+      }
+    }
+    // a horn does not excuse driving into someone — they can still be struck
+    if(p && seg.state==='run' && (p.state==='cross' || p.state==='retreat')){
+      if(truckHitsPed(p) && player.speed>TUNE.strikeSpeed){
+        strike(p,'Speed made it unstoppable.',
+          'Stopping distance grows massively with speed. The limiter caps the pallet jack — but a SAFE speed is the driver’s choice.');
+      } else if(truckHitsPed(p,0.5) && player.speed<=TUNE.strikeSpeed){
+        player.speed=0;
+        safeMoment('You could stop — because you were slow.',
+          'At low speed you stop in under a metre. At full speed you need many metres. Choose the speed that lets you stop.',
+          ()=>advanceSeg1(5));
+      }
+    }
+    // anyone not standing in the lane counts as clear, so this can never dead-end
+    const pedClear = !p || p.state==='done' || p.state==='waiting' ||
+                     p.state==='retreat' || p.state==='idle';
+    if(seg.state==='run' && player.z>21 && pedClear){
+      if(seg.d.hornSafe) safeMoment('Horn used — and they stayed clear.',
+        'You warned them before you got there, so they held back and you passed safely. Sound the horn at crossings and blind spots every time — do not wait to be seen.',
+        ()=>advanceSeg1(5));
+      else safeMoment('Back at the dock — everyone safe.',
+        'You controlled your speed the whole way. That is what keeps stopping distance short. Next time sound the horn too, so people know you are coming.',
+        ()=>advanceSeg1(5));
+    }
+    return;
+  }
+
+  /* ---- moment 5: the drive is done ---- */
+  if(m===5){
+    setDots(5,5); showBtns({}); hideGuide();
+    showCard('good','🏁','That is the whole shift, driven safely.',
+      'Belted, horn at the corners, creep speed in reverse, a wide swing with the tail clear, and a speed you could stop from. Every one of those is a decision you make again tomorrow.',
+      'CONTINUE', finishGame);
+    seg.moment=99; // prevent re-fire
+    return;
+  }
+}
+function advanceSeg1(nextMoment){
+  console.info('[MHE] seg1 → moment', nextMoment);
+  removePeds(); clearBlood();
+  seg.moment=nextMoment; seg.state='enter'; seg.t=0; seg.d={};
+  if(nextMoment===2) setCheckpoint(player.x,player.z,player.heading,2);
+}
+
+/* seatbelt tap */
+bindTap($('actionBtn'), ()=>{ if(actionCb) actionCb(); });
+let actionCb = null;
+function onAction(cb){ actionCb=cb; }
+/* =========================================================
+   AI PALLET JACKS (segment 2)
+   ========================================================= */
+const aiTrucks = [];
+function approachAngle(cur, target, maxStep){
+  let d = ((target-cur) % TAU + TAU) % TAU; if(d>Math.PI) d-=TAU;
+  return cur + clamp(d, -maxStep, maxStep);
+}
+function addAI(x,z,heading){
+  const fk = buildPalletJack(true);      // seen from outside — needs a visible operator
+  const a = { fk, x, z, heading, speed:0, script:[], idx:0, wait:0,
+              reversing:false, circling:null, done:false };
+  scene.add(fk.group); aiTrucks.push(a); return a;
+}
+function clearAI(){ for(const a of aiTrucks) scene.remove(a.fk.group); aiTrucks.length=0; }
+function runAI(a, dt){
+  if(a.circling){
+    const c=a.circling; c.ang += c.w*dt;
+    a.x = c.cx + Math.sin(c.ang)*c.r;
+    a.z = c.cz + Math.cos(c.ang)*c.r;
+    a.heading = c.ang + (c.w>0? Math.PI/2 : -Math.PI/2) + Math.PI; // tangent
+    a.speed = Math.abs(c.w)*c.r; a.turning = true;
+  } else {
+    const s = a.script[a.idx];
+    a.turning = false;
+    if(!s){ a.speed=0; a.done=true; }
+    else if(s.type==='wait'){ a.speed=0; a.wait+=dt; if(a.wait>=s.t){ a.wait=0; a.idx++; } }
+    else if(s.type==='drive'){
+      const dx=s.to[0]-a.x, dz=s.to[1]-a.z, d=Math.hypot(dx,dz);
+      if(d<0.3) a.idx++;
+      else {
+        const th = Math.atan2(dx,-dz) + (s.rev?Math.PI:0);
+        a.heading = approachAngle(a.heading, th, 2.2*dt);
+        a.speed = s.speed; a.reversing = !!s.rev;
+        a.x += (dx/d)*a.speed*dt; a.z += (dz/d)*a.speed*dt;
+      }
+    }
+  }
+  a.fk.group.position.set(a.x,0,a.z);
+  a.fk.group.rotation.y = -a.heading;
+  setBeacon(a.fk, a.speed>0.05 || a.turning, clockNow);
+  setRevLights(a.fk, a.reversing && a.speed>0.05);
+  // distance-based reverse beep
+  if(a.reversing && a.speed>0.05){
+    const d = Math.hypot(player.x-a.x, player.z-a.z);
+    AudioSys.reverseBeep(dt, true, clamp(0.2 - d*0.006, 0.03, 0.2));
+  }
+}
+function aiHitsPlayer(a){
+  const dx=player.x-a.x, dz=player.z-a.z;
+  const fx=Math.sin(a.heading), fz=-Math.cos(a.heading);
+  const rx=Math.cos(a.heading), rz=Math.sin(a.heading);
+  const lf=dx*fx+dz*fz, lr=dx*rx+dz*rz;
+  return lf>-1.7 && lf<2.75 && Math.abs(lr)<1.1;
+}
+function aiTailNearPlayer(a, rad=0.85){
+  const rx=Math.cos(a.heading), rz=Math.sin(a.heading);
+  const bx=a.x - Math.sin(a.heading)*1.35, bz=a.z + Math.cos(a.heading)*1.35;
+  for(const s of [-0.72,0.72]){
+    const cx=bx+rx*s, cz=bz+rz*s;
+    const dx=player.x-cx, dz=player.z-cz;
+    if(dx*dx+dz*dz < rad*rad) return true;
+  }
+  return false;
+}
+
+/* =========================================================
+   SEGMENT 2 AMBIENCE — a live warehouse, not an empty one.
+   A background pallet jack works a staging zone off to the east
+   (it politely stops if you approach), and distant horns/beeps
+   play now and then.
+   ========================================================= */
+const ambient = { fk:null, on:false, ang:0, sndT:6 };
+function setAmbient(on){
+  if(on && !ambient.fk){ ambient.fk = buildPalletJack(true); scene.add(ambient.fk.group); }
+  if(ambient.fk) ambient.fk.group.visible = on;
+  ambient.on = on;
+}
+function updateAmbient(dt){
+  if(!ambient.on || !ambient.fk) return;
+  ambient.sndT -= dt;
+  if(ambient.sndT<=0){ AudioSys.hornFar(); ambient.sndT = 8+Math.random()*8; }
+  const cx=13, cz=-6, r=4;
+  const nextAng = ambient.ang + dt*0.4;
+  const nx = cx + Math.sin(nextAng)*r, nz = cz + Math.cos(nextAng)*r;
+  // a good driver stops when someone wanders close
+  if(Math.hypot(player.x-nx, player.z-nz) > 5) ambient.ang = nextAng;
+  const x = cx + Math.sin(ambient.ang)*r, z = cz + Math.cos(ambient.ang)*r;
+  ambient.fk.group.position.set(x,0,z);
+  ambient.fk.group.rotation.y = -(ambient.ang + Math.PI/2 + Math.PI);
+  setBeacon(ambient.fk, true, clockNow);
+}
+
+/* =========================================================
+   SEGMENT 2 SPOTTING — optional reportable floor hazards.
+   Walk close to a floating ⚠ marker and tap REPORT. Purely
+   bonus: never required to finish, never blocks progress.
+   ========================================================= */
+const tagAmberMat = new THREE.MeshStandardMaterial({ color:0xffb020, emissive:0xa06400, emissiveIntensity:1.1 });
+const tagLiveMat  = new THREE.MeshStandardMaterial({ color:0x35d97f, emissive:0x1d7a45, emissiveIntensity:1.6 });
+const hazMats = {
+  spill: new THREE.MeshStandardMaterial({ color:0x232c1c, roughness:0.12, metalness:0.3 }),
+  drum:  new THREE.MeshStandardMaterial({ color:0x2f7d4a, roughness:0.55, metalness:0.35 }),
+  cable: new THREE.MeshStandardMaterial({ color:0x14161a, roughness:0.85 }),
+  strap: new THREE.MeshStandardMaterial({ color:0xd8a712, roughness:0.7 }),
+};
+/* each hazard is a real object on the floor, not a marker floating over nothing */
+function buildSpill(g){
+  const p1 = new THREE.Mesh(new THREE.CircleGeometry(1.05,24), hazMats.spill);
+  p1.rotation.x=-Math.PI/2; p1.position.y=0.016; g.add(p1);
+  const p2 = new THREE.Mesh(new THREE.CircleGeometry(0.52,18), hazMats.spill);
+  p2.rotation.x=-Math.PI/2; p2.position.set(0.9,0.017,-0.55); g.add(p2);
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.82,14), hazMats.drum);
+  drum.rotation.z=Math.PI/2; drum.rotation.y=0.4;
+  drum.position.set(-0.8,0.28,0.3); drum.castShadow=true; g.add(drum);
+}
+function buildPallet(g){
+  const pal = new THREE.Mesh(new THREE.BoxGeometry(1.3,0.14,1.0), M.palletWd);
+  pal.position.y=0.07; pal.castShadow=true; g.add(pal);
+  const load = new THREE.Mesh(new THREE.BoxGeometry(1.05,0.95,0.86), M.wrap);
+  load.position.set(-0.52,0.64,0.06); load.rotation.z=0.44; load.castShadow=true; g.add(load);
+  const strap = new THREE.Mesh(new THREE.BoxGeometry(1.12,0.07,0.9), hazMats.strap);
+  strap.position.set(-0.52,0.78,0.06); strap.rotation.z=0.44; g.add(strap);
+}
+function buildCable(g){
+  for(let i=0;i<8;i++){
+    const link = new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.66,8), hazMats.cable);
+    link.rotation.z=Math.PI/2; link.rotation.y=Math.sin(i*0.85)*0.4;
+    link.position.set(-2.1+i*0.6, 0.055, Math.sin(i*0.85)*0.4); g.add(link);
+  }
+  const coil = new THREE.Mesh(new THREE.TorusGeometry(0.34,0.055,8,18), hazMats.cable);
+  coil.rotation.x=-Math.PI/2; coil.position.set(2.2,0.055,0.2); g.add(coil);
+}
+const hazardTags = [
+  { x:-8.6, z:14.5,  build:buildSpill,  title:'Spill beside the walkway',            zh:'人行道旁的洒漏' },
+  { x:-8.8, z:-2.0,  build:buildPallet, title:'Unstable load on a pallet',           zh:'托盘上不稳的货物' },
+  { x:-9.3, z:-22.5, build:buildCable,  title:'Cable trailing across the floor',     zh:'横跨地面的电缆' },
+].map(t=>{
+  const g=new THREE.Group();
+  t.build(g);                                   // the physical hazard itself
+  const marker=new THREE.Group();               // the reportable ⚠ indicator
+  const gem=new THREE.Mesh(new THREE.OctahedronGeometry(0.22), tagAmberMat);
+  gem.position.y=1.7; marker.add(gem);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(0.5,0.72,22),
+    new THREE.MeshBasicMaterial({ color:0xffb020, transparent:true, opacity:0.5, side:THREE.DoubleSide }));
+  ring.rotation.x=-Math.PI/2; ring.position.y=0.03; marker.add(ring);
+  t.ring = ring;
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,1.3,6),
+    new THREE.MeshBasicMaterial({ color:0xffb020, transparent:true, opacity:0.35 }));
+  stem.position.y=1.0; marker.add(stem);
+  g.add(marker);
+  g.position.set(t.x,0,t.z); g.visible=false; scene.add(g);
+  return Object.assign(t,{ group:g, marker, gem, found:false });
+});
+let tagNear=null, tagPromptShown=false;
+// the hazard object stays on the floor once reported; only the ⚠ marker clears
+function setTagsVisible(on){
+  for(const t of hazardTags){ t.group.visible = on; t.marker.visible = on && !t.found; }
+}
+function resetTags(){ for(const t of hazardTags){ t.found=false; t.marker.visible=true; } }
+const TAG_RANGE = 3.5;   // generous: the walkway runs ~2 m to the side of each hazard
+function updateTags(dt){
+  tagNear=null;
+  let bestD = 99;
+  for(const t of hazardTags){
+    if(t.found || !t.group.visible) continue;
+    t.gem.position.y = 1.7 + Math.sin(clockNow*2.6 + t.x)*0.12;
+    t.gem.rotation.y += dt*2;
+    const d = Math.hypot(player.x-t.group.position.x, player.z-t.group.position.z);
+    const inRange = d < TAG_RANGE;
+    // marker goes green and lifts once you are close enough to report it
+    t.gem.material = inRange ? tagLiveMat : tagAmberMat;
+    t.ring.material.color.setHex(inRange ? 0x35d97f : 0xffb020);
+    t.ring.material.opacity = inRange ? 0.75 : 0.45;
+    t.ring.scale.setScalar(inRange ? 1.25 : 1);
+    if(inRange && d < bestD){ bestD = d; tagNear = t; }
+  }
+  if(seg.d && seg.d.awaitEye){ tagPromptShown=false; return; }  // eye contact owns the button
+  if(tagNear && !tagPromptShown){ setAction('&#9888;&#65039; REPORT HAZARD', true); tagPromptShown=true; }
+  else if(!tagNear && tagPromptShown){ setAction(null,false); tagPromptShown=false; }
+}
+function reportTag(t){
+  t.found=true; t.marker.visible=false;
+  tagPromptShown=false; setAction(null,false);
+  AudioSys.chime();
+  const n = hazardTags.filter(x=>x.found).length;
+  const el=$('toast');
+  el.innerHTML = `✅ Reported ${n}/3: ${t.title}<span class="zh">✅ 已报告 ${n}/3：${t.zh}</span>`;
+  el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'), 3000);
+  console.info('[MHE] hazard reported:', t.title);
+}
+
+/* =========================================================
+   SEGMENT 2 — ON FOOT (pedestrian)
+   Moments: 0 blind crossing + eye contact · 1 reversing truck ·
+            2 swing-radius shortcut · 3 done
+   ========================================================= */
+const meetPoint = (()=>{  // glowing meeting point marker
+  const g = new THREE.Group();
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.06,24),
+    new THREE.MeshStandardMaterial({ color:0x2fae6a, emissive:0x1d7a45, emissiveIntensity:0.9 }));
+  disc.position.y=0.03; g.add(disc);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,2.4,8), M.steel);
+  pole.position.y=1.2; g.add(pole);
+  const flag = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.5,0.04),
+    new THREE.MeshStandardMaterial({ color:0x2fae6a, emissive:0x1d7a45, emissiveIntensity:0.8 }));
+  flag.position.set(0.4,2.1,0); g.add(flag);
+  g.position.set(-3.2,0,-24.5); g.visible=false; scene.add(g);
+  return g;
+})();
+// marked crossing near meeting point
+for(let x=-9.4;x<=-4.2;x+=0.8) { const p=paint(0.5,1.4,M.lineWhite,x,-25); }
+
+/* =========================================================
+   SEGMENT 2 TRAFFIC — working MHE shuttling up and down a lane right
+   beside the walkway. Unlike the polite background jack, these do NOT
+   stop for you: step off the yellow into their lane and you are struck.
+   That is the whole point — drivers look for people inside the lines.
+
+   The lane sits at x=-7.0, 2.7 m clear of the walkway edge, so you have
+   to leave the path deliberately. Both stretches are chosen to miss every
+   scripted route: the cross-aisle truck runs along z=7, the reversing one
+   at z=-8, and the circling one down at z=-19.5.
+   ========================================================= */
+const TRAFFIC_LANES = [
+  { x:-7.0, z0: 11.5, z1: 19.0, speed:1.7 },   // beside the opening walk
+  { x:-7.0, z0: -3.0, z1:  4.0, speed:1.5 }    // between the crossing and the reversing truck
+];
+const traffic = [];
+function clearTraffic(){
+  for(const t of traffic) scene.remove(t.fk.group);
+  traffic.length = 0;
+}
+function spawnTraffic(){
+  clearTraffic();
+  for(const L of TRAFFIC_LANES){
+    const fk = buildPalletJack(true);          // seen from outside — needs an operator
+    scene.add(fk.group);
+    traffic.push({ fk, L, x:L.x, z:(L.z0+L.z1)/2, heading:Math.PI, dir:1, wait:0, speed:0 });
+  }
+}
+function updateTraffic(dt){
+  for(const t of traffic){
+    if(t.wait > 0){ t.wait -= dt; t.speed = 0; }       // pause at the end of a run
+    else {
+      t.speed = t.L.speed;
+      t.z += t.dir * t.speed * dt;
+      if(t.z >= t.L.z1){ t.z = t.L.z1; t.dir = -1; t.wait = 1.2; }
+      else if(t.z <= t.L.z0){ t.z = t.L.z0; t.dir = 1; t.wait = 1.2; }
+    }
+    t.heading = t.dir > 0 ? Math.PI : 0;                // travelling +z or -z
+    t.fk.group.position.set(t.x, 0, t.z);
+    t.fk.group.rotation.y = -t.heading;
+    setBeacon(t.fk, true, clockNow);
+  }
+}
+let offPathWarned = false;
+function updateTrafficHits(dt){
+  if(!traffic.length) return;
+  // one warning the first time they stray off the walkway near a live lane
+  if(!offPathWarned && player.x > -9.3 && player.z > -6 && player.z < 21){
+    offPathWarned = true;
+    AudioSys.whistle();
+    toast('⚠ Off the walkway — MHE traffic runs here. Get back inside the yellow lines.', 3000);
+  }
+  if(seg.state === 'struck' || seg.state === 'cleared') return;
+  for(const t of traffic){
+    if(t.speed > 0.5 && aiHitsPlayer(t)){
+      strike(null, 'Struck by a moving MHE.',
+        'You stepped off the walkway into a traffic lane. Drivers expect people inside the yellow lines and look for them there — outside the lines, nobody is looking for you.');
+      return;
+    }
+  }
+}
+
+function startSeg2(){
+  clearBlood(); removePeds(); clearAI();
+  strikeAnim=null; bloodVignette(false);   // never inherit a knockdown camera
+  // entering ON FOOT straight from the title screen skips startSeg1, so the HUD
+  // must be shown here too — without this there are no on-screen controls at all
+  $('hud').classList.add('show');
+  seg.mode='seg2'; seg.moment=0; seg.state='enter'; seg.t=0; seg.d={};
+  player.mode='walk'; player.x=-10.5; player.z=20; player.heading=0;
+  player.speed=0; player.frozen=false;
+  playerTruck.group.visible=false;
+  setSwingBay(false);        // seg 2 walks across the bay floor — no fence here
+  clearWorkers();            // they belong to the driving segment
+  spawnTraffic(); offPathWarned = false;
+  AudioSys.roomTone(true);
+  $('beltStrap').classList.remove('show');
+  meetPoint.visible=true;
+  setDots(3,0);
+  setCheckpoint(-10.5,20,0,0);
+  showBtns({steerL:1,steerR:1,goPedal:1,brakePedal:1});
+  setAmbient(true);
+  resetTags(); setTagsVisible(true);
+  setTimeout(()=>{ if(seg.mode==='seg2') toast('💡 Spot a floating ⚠ ? Walk up and REPORT the hazard — bonus points for sharp eyes.', 3800); }, 2500);
+}
+
+function updateSeg2(dt){
+  seg.t += dt;
+  const m = seg.moment;
+  updateTraffic(dt);
+  updateTrafficHits(dt);
+  // universal strike check vs any moving AI truck
+  for(const a of aiTrucks){
+    if(seg.state!=='struck' && seg.state!=='cleared' && a.speed>0.5 && aiHitsPlayer(a)){
+      strike(null,'Struck by the pallet jack.', seg.d.strikeFact ||
+        'The driver never saw you. Stop at lines, listen for beeps and horns, and stay inside the yellow walkway.');
+      return;
+    }
+  }
+  if(seg.state==='struck') return;
+
+  /* ---- W0: blind crossing + eye contact ---- */
+  if(m===0){
+    if(seg.state==='enter'){
+      seg.state='walkTo'; setDots(3,0);
+      banner('Walk the <span class="em">yellow walkway</span>. STOP at the white line.');
+      setGuide(-10.5,10.6);
+      seg.d.strikeFact = 'You stepped into a pallet jack’s path at a crossing. Stop at the line, look, and let it pass.';
+    }
+    if(seg.state==='walkTo' && player.z<12.5){
+      seg.state='truck1';
+      const a = addAI(2,7,-Math.PI/2); // heading -X
+      a.script=[{type:'drive',to:[-17,7],speed:5.0}];
+      AudioSys.hornFar();
+      hideGuide();                                  // don't invite walking into it
+      toast('🚨 Truck crossing — STOP at the line and let it pass.',2400);
+      banner('&#9940; <span class="em">WAIT</span> &mdash; pallet jack crossing.', true);
+    }
+    if(seg.state==='truck1'){
+      const a = aiTrucks[0];
+      if(a && (a.done || a.x<-12)){
+        seg.state='truck2';
+        clearAI();
+        const b = addAI(8,7,-Math.PI/2);
+        b.script=[{type:'drive',to:[-4.5,7],speed:3.6},{type:'drive',to:[-6.0,7],speed:1.2},{type:'wait',t:99}];
+        banner('&#9940; <span class="em">WAIT</span> &mdash; a second pallet jack is slowing for you&hellip;', true);
+        toast('One more coming — it is braking for you.',2200);
+        seg.d.strikeFact = 'You crossed before the driver saw you. Wait until it stops AND the driver acknowledges you.';
+      }
+    }
+    if(seg.state==='truck2'){
+      if(seg.d.eyeDone) setGuide(-10.5,1.0);
+      const b = aiTrucks[0];
+      if(b && b.speed<0.05 && b.idx>=2 && !seg.d.awaitEye && player.z>4){
+        seg.d.awaitEye = true;
+        AudioSys.chime();
+        banner('It has stopped. <span class="em">Make eye contact</span> before you cross.');
+        toast('👀 Tap MAKE EYE CONTACT — then you can cross.',3000);
+        setAction('&#128064; MAKE EYE CONTACT', true);
+      }
+      if(seg.d.eyeDone && player.z<3.5){
+        safeMoment('Seen, acknowledged, safe.',
+          'Stop at the line. Wait for it to stop. Make eye contact so you KNOW the driver sees you. Then cross.',
+          ()=>advanceSeg2(1));
+      }
+      // crossing without eye contact (prompted or not) → near miss, lesson delivered.
+      // Also the fallback that guarantees this moment can always complete.
+      if(!seg.d.eyeDone && ((seg.d.awaitEye && player.z<9.6) || player.z<3.5)){
+        seg.d.awaitEye=false; setAction(null,false);
+        AudioSys.horn(); flash('#d33',0.4,0.7); shake(0.05);
+        toast('⚠ He did NOT see you! Always make eye contact.',2600);
+        seg.d.eyeDone=true; // let them continue, lesson delivered
+      }
+    }
+    return;
+  }
+
+  /* ---- W1: reversing truck across the walkway ---- */
+  if(m===1){
+    if(seg.state==='enter'){
+      seg.state='walk'; setDots(3,1);
+      banner('Walk on. <span class="em">Listen</span> for reverse beeps.');
+      setCheckpoint(-10.5,2.5,0,1);
+      setGuide(-10.5,-11);
+      seg.d.strikeFact='Struck by a reversing truck. Drivers can barely see behind — the beep IS the warning. Stop and stay clear.';
+    }
+    if(seg.state==='walk' && player.z<-2.5){
+      seg.state='reversing';
+      const a = addAI(-15.5,-8, Math.PI/2); // facing +X... heading PI/2 → fwd=(1,0) faces +X toward walkway
+      // backs clear across the walkway and parks — no long round trip to sit through
+      a.script=[{type:'wait',t:0.3},
+                {type:'drive',to:[-8.0,-8],speed:2.2,rev:true},
+                {type:'wait',t:0.9}];
+      hideGuide();
+      toast('🔊 Those beeps mean a truck is reversing. Stand back.',2600);
+      banner('&#9940; <span class="em">WAIT</span> &mdash; reverse beeps! A truck is backing across.', true);
+    }
+    if(seg.state==='reversing'){
+      const a = aiTrucks[0];
+      if(a && a.done){
+        safeMoment('You heard it, you stopped.',
+          'Reversing trucks cause many serious injuries. The beep and the white reverse lights mean: stand back.',
+          ()=>advanceSeg2(2));
+      }
+    }
+    return;
+  }
+
+  /* ---- W2: swing-radius shortcut temptation ---- */
+  if(m===2){
+    if(seg.state==='enter'){
+      seg.state='walk'; setDots(3,2);
+      banner('Almost there. <span class="em">Never cut behind a turning MHE.</span> Use the crossing.');
+      setCheckpoint(-10.5,-11,0,2);
+      setGuide(-3.2,-24.5);
+      const a = addAI(-6,-17.9, Math.PI);
+      a.circling = { cx:-6, cz:-19.5, r:1.6, w:0.85, ang:0 };
+      seg.d.strikeFact='The tail of a turning pallet jack swings WIDE — it hit you before the driver could know. Never walk behind or beside a turning pallet jack.';
+      seg.d.warned=false;
+    }
+    const a = aiTrucks[0];
+    if(a){
+      // tail sweep strike
+      if(aiTailNearPlayer(a, 0.7)){
+        strike(null,'The swinging tail hit you.', seg.d.strikeFact);
+        return;
+      }
+      // off-walkway warning (the temptation zone)
+      if(!seg.d.warned && player.x>-9.1 && player.z>-21 && player.z<-12){
+        seg.d.warned=true;
+        toast('⚠ You left the walkway — see the beacon? The tail swings here!',2600);
+      }
+    }
+    // reached the meeting point
+    const dx=player.x-(-3.2), dz=player.z-(-24.5);
+    if(dx*dx+dz*dz < 1.5){
+      setDots(3,3);
+      safeMoment('You made it — alert the whole way.',
+        'Yellow walkway, stop lines, eye contact, ears open, clear of the swing. That is how you stay safe around MHE.',
+        finishGame);
+      seg.moment=99;
+    }
+    return;
+  }
+}
+function advanceSeg2(next){
+  console.info('[MHE] seg2 → moment', next);
+  clearAI(); clearBlood();
+  seg.moment=next; seg.state='enter'; seg.t=0; seg.d={};
+}
+
+/* action button dispatcher (belt + eye contact) */
+onAction(()=>{
+  if(seg.mode==='seg1' && seg.moment===0){
+    AudioSys.buckle();
+    player.belted=true;
+    $('beltStrap').classList.add('show');
+    setAction(null,false);
+    toast('Interlock released — the truck can move now.',2400);
+    advanceSeg1(1);
+  } else if(seg.mode==='seg2' && seg.d.awaitEye){
+    seg.d.awaitEye=false; seg.d.eyeDone=true;
+    setAction(null,false);
+    AudioSys.hornFar(); AudioSys.click();
+    const b=aiTrucks[0]; if(b) setRevLights(b.fk,true), setTimeout(()=>{ if(aiTrucks[0]) setRevLights(aiTrucks[0].fk,false); },600);
+    banner('&#128077; The driver waves &mdash; <span class="em">cross now.</span>');
+    toast('👋 He sees you. Safe to cross.',2000);
+  } else if(seg.mode==='seg2' && tagNear && !tagNear.found){
+    reportTag(tagNear);
+  }
+});
+/* =========================================================
+   REVERSE toggle
+   ========================================================= */
+bindTap($('revBtn'), ()=>{
+  if(player.mode!=='drive' || player.frozen) return;
+  setGear(-player.gear);
+  AudioSys.click();
+});
+
+/* =========================================================
+   GAME FLOW
+   ========================================================= */
+function finishGame(){
+  seg.mode='finish';
+  $('hud').classList.remove('show');
+  showBtns({}); hideGuide();
+  clearAI(); removePeds(); clearBlood();
+  setAmbient(false); setTagsVisible(false);
+  document.querySelector('#finishScreen .sub').innerHTML =
+    'Five safeguards kept people safe today:' +
+    '<span class="zh">今天有五项防护措施保障了大家的安全：</span>';
+  $('finishScreen').classList.add('show');
+  AudioSys.chime();
+}
+function resetAll(){
+  clearAI(); removePeds(); clearWorkers(); clearTraffic(); clearBlood(); strikeAnim=null;
+  bloodVignette(false);
+  setAmbient(false); setTagsVisible(false); resetTags();
+  AudioSys.roomTone(false); AudioSys.nearHum(0); AudioSys.engine(0,false);
+  $('finishScreen').classList.remove('show');
+  $('howtoScreen').classList.remove('show');   // or it would sit over the title
+  $('cardWrap').classList.remove('show');
+  $('hud').classList.remove('show');
+  $('beltStrap').classList.remove('show');
+  meetPoint.visible=false; turnBox.visible=false; stagePad.visible=false;
+  swingPath.visible=false; bayMark.visible=false; hideGuide();
+  setSwingBay(false);
+  player.frozen=true; player.speed=0; player.belted=false; setGear(1);
+  playerTruck.group.visible=true;
+  seg.mode='title'; seg.moment=0; seg.state=''; seg.t=0; seg.d={};
+  held.go=held.brake=held.left=held.right=false;
+  $('titleScreen').classList.add('show');
+}
+let entryMode = 'drive';   // chosen on the title screen
+function beginFromTitle(mode){
+  entryMode = mode;
+  AudioSys.init(); AudioSys.resume(); AudioSys.click();
+  const el=document.documentElement;
+  if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+  $('titleScreen').classList.remove('show');
+  $('howtoScreen').classList.add('show');
+  seg.mode='howto';
+}
+bindTap($('startDriveBtn'), ()=>beginFromTitle('drive'));
+bindTap($('goBtn'), ()=>{
+  AudioSys.resume(); AudioSys.click();
+  $('howtoScreen').classList.remove('show');
+  if(entryMode==='walk') startSeg2(); else startSeg1();
+});
+bindTap($('againBtn'), ()=>{ AudioSys.click(); resetAll(); });
+
+/* =========================================================
+   IDLE NUDGES — never dead-end
+   ========================================================= */
+let waitNudgeT = -99;
+function updateNudge(){
+  if(seg.mode!=='seg1' && seg.mode!=='seg2') return;
+  if($('cardWrap').classList.contains('show')) { lastInput=clockNow; return; }
+  const idle = clockNow - lastInput;
+  /* standing still is the CORRECT action while a truck crosses — reassure the
+     player instead of nagging them to walk into it */
+  const eyeSettled = seg.d && (seg.d.awaitEye || seg.d.eyeDone);   // your turn to move
+  const holding = seg.mode==='seg2' && !eyeSettled &&
+    (seg.state==='truck1' || seg.state==='truck2' || seg.state==='reversing');
+  if(holding){
+    if(idle>4 && clockNow-waitNudgeT>6){
+      waitNudgeT = clockNow;
+      toast('⏳ Holding back is right — wait until it is clear.',2800);
+    }
+    return;
+  }
+  // acknowledged by the driver but still standing there — say so plainly
+  if(seg.mode==='seg2' && seg.d && seg.d.eyeDone && seg.state==='truck2' &&
+     idle>3.5 && clockNow-waitNudgeT>5){
+    waitNudgeT = clockNow;
+    toast('✅ The driver has seen you — cross now.',2800);
+    return;
+  }
+  if(idle>9 && !nudgeShown){
+    nudgeShown=true;
+    if(seg.mode==='seg1' && seg.moment===0){
+      toast('👉 Tap the big amber button to buckle up.',3200);
+      $('actionBtn').classList.add('pulse');
+    } else if(seg.d && seg.d.awaitEye){
+      toast('👉 Tap MAKE EYE CONTACT, then cross.',3200);
+    } else if(seg.mode==='seg1' && seg.moment===2 && seg.state==='loaded'){
+      toast('👉 Tap REVERSE, then hold GO to back out.',3200);
+    } else {
+      toast('👉 Hold the green GO button to move.',3200);
+      $('goPedal').classList.add('pulse');
+      setTimeout(()=>$('goPedal').classList.remove('pulse'),3200);
+    }
+    lastInput = clockNow; nudgeShown=false;
+  }
+}
+
+/* =========================================================
+   ATTRACT CAMERA (title / how-to)
+   ========================================================= */
+function attractCam(t){
+  const a = t*0.08;
+  camera.position.set(Math.sin(a)*16, 7.5, 10+Math.cos(a)*14);
+  camera.lookAt(0,1.2,0);
+}
+
+/* =========================================================
+   MAIN LOOP
+   ========================================================= */
+let clockNow=0, lastT=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05,(now-lastT)/1000); lastT=now;
+  tick(dt);
+}
+function tick(dt){
+  clockNow += dt;
+  checkResize();
+  updateGamepad();
+  updateAudioWatch(dt);
+  updateNearHum();
+
+  if(seg.mode==='title'||seg.mode==='howto'||seg.mode==='finish'){
+    attractCam(clockNow);
+    setBeacon(playerTruck,true,clockNow);
+    playerTruck.group.position.set(0,0,2);
+    playerTruck.group.rotation.y = clockNow*0.15;
+  }
+  else if(seg.mode==='seg1'){
+    updateDrive(dt);
+    updateSeg1(dt);
+    updateStuckGuard(dt);
+  }
+  else if(seg.mode==='seg2'){
+    updateWalk(dt);
+    for(const a of aiTrucks) runAI(a,dt);
+    updateSeg2(dt);
+    updateAmbient(dt);
+    updateTags(dt);
+    updateStuckGuard(dt);
+  }
+
+  // knockdown / camera-fall animation after a strike
+  if(strikeAnim){
+    if(strikeAnim.ped) pedKnockdown(strikeAnim.ped, dt, strikeAnim.dx, strikeAnim.dz);
+    if(strikeAnim.camFall!=null){
+      strikeAnim.camFall = Math.min(1, strikeAnim.camFall+dt*2.2);
+      const e = 1-Math.pow(1-strikeAnim.camFall,3);
+      camera.position.y = lerp(1.62,0.38,e);
+      camera.rotateZ(0.9*e);
+    }
+  }
+  // screen shake
+  if(shakeT>0){
+    shakeT -= dt;
+    const k = shakeAmp*(shakeT/0.55);
+    camera.position.x += (Math.random()-0.5)*k*2;
+    camera.position.y += (Math.random()-0.5)*k*2;
+  }
+
+  if(guide.visible){
+    const c=guide.children[0];
+    c.position.y = 2.7 + Math.sin(clockNow*3.2)*0.3;
+    c.rotation.y += dt*2.5;
+    guide.children[1].material.opacity = 0.4 + Math.sin(clockNow*3.2)*0.2;
+  }
+  updateBlood(dt);
+  updateDust(dt);
+  if(seg.mode==='seg1'||seg.mode==='seg2') updateSpeedHUD();
+  updateNudge();
+  renderer.render(scene,camera);
+  bootDone = true;
+}
+requestAnimationFrame(loop);
+// keep the simulation alive (real-time, substepped) if rAF is throttled
+setInterval(()=>{
+  const now = performance.now();
+  const elapsed = now - lastT;
+  if(elapsed > 100){
+    const steps = Math.min(5, Math.max(1, Math.round(elapsed/50)));
+    const dt = Math.min(0.05, elapsed/1000/steps);
+    lastT = now;
+    for(let i=0;i<steps;i++) tick(dt);
+  }
+}, 50);
+
+/* =========================================================
+   KEYBOARD — W/↑=GO · A/D/←/→=steer · X/S/↓=BRAKE · H/space=HORN ·
+   R=reverse · Enter=OK/next/report · C=reset · Esc=exit ·
+   1 = start, on the title screen.
+   The fallback if a controller fails, so every screen works from it.
+   ========================================================= */
+const KEYHOLD = { w:'go', a:'left', d:'right', x:'brake', s:'brake',
+                  arrowup:'go', arrowleft:'left', arrowright:'right', arrowdown:'brake' };
+function kbTap(id){
+  $(id).dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1}));
+}
+window.addEventListener('keydown', e=>{
+  const k = e.key.toLowerCase();
+  if(KEYHOLD[k] || k===' ') e.preventDefault();
+  if(e.repeat) return;
+  if(KEYHOLD[k]){ held[KEYHOLD[k]]=true; noteInput(); }
+  else if(k==='h' || k===' '){ if($('hornBtn').style.display==='flex') kbTap('hornBtn'); }
+  else if(k==='r'){ if($('revBtn').style.display==='flex') kbTap('revBtn'); }
+  else if(k==='c'){ if($('hud').classList.contains('show')) kbTap('resetBtn'); }
+  else if(k==='escape'){ if($('hud').classList.contains('show')) kbTap('exitBtn'); }
+  // title: 1 starts, same as ENTER — this build has only the driving seat
+  else if(k==='1'){
+    if($('titleScreen').classList.contains('show')) kbTap('startDriveBtn');
+  }
+  else if(k==='enter'){
+    if($('cardWrap').classList.contains('show')) kbTap('cardBtn');
+    else if($('actionBtn').style.display==='flex') kbTap('actionBtn');
+    else if($('titleScreen').classList.contains('show')) kbTap('startDriveBtn');
+    else if($('howtoScreen').classList.contains('show')) kbTap('goBtn');
+    else if($('finishScreen').classList.contains('show')) kbTap('againBtn');
+  }
+});
+window.addEventListener('keyup', e=>{
+  const k = e.key.toLowerCase();
+  if(KEYHOLD[k]) held[KEYHOLD[k]]=false;
+});
+
+/* =========================================================
+   GAMEPAD / JOYSTICK — polled each frame, every connected pad merged.
+   By standard-mapping index: stick or D-pad steers · 7/0 = GO ·
+   6/1 = BRAKE (0 and 1 swap on the Switch grip, so A drives) ·
+   2/5 = HORN · 3 = REVERSE · 2/3 = the on-screen action ·
+   any face button = continue a card / start / play again ·
+   the go face button starts from the title ·
+   8/4 = RESET · 9 = OK on menus, EXIT during play.
+   The letters printed on those buttons vary by controller — see
+   PAD_GLYPHS, which drives the on-screen badges. Writes to `held` only
+   on edges, so keyboard and touch keep working alongside it.
+   ========================================================= */
+const padHeld = { go:false, brake:false, left:false, right:false };
+const padTapPrev = {};
+let padScr = '', padScrAt = 0;           // which menu is up, and since when
+let padSeen = false;
+
+function padSetHold(key, on){
+  if(on === padHeld[key]) return;
+  padHeld[key] = on; held[key] = on;
+  if(on) noteInput();
+}
+function padTap(name, pressed, fn){
+  if(pressed && !padTapPrev[name]){ noteInput(); fn(); }
+  padTapPrev[name] = pressed;
+}
+function updateGamepad(){
+  let pads;
+  try { pads = navigator.getGamepads ? navigator.getGamepads() : null; }
+  catch(err){ return; }                       // some browsers throw when blocked
+  if(!pads) return;
+  /* Every connected pad is merged into one set of inputs. Two Joy-Cons in the
+     grip can arrive as two separate devices — the grip is only plastic, it is
+     the Switch console that normally fuses them — and reading just the first
+     would leave one whole hand dead. Merging also means it does not matter
+     which half a given button lives on. */
+  const all = [];
+  for(const p of pads) if(p && p.connected) all.push(p);
+  // When the browser fuses the grip into one two-stick pad it can leave the
+  // two halves listed as well. Read only the fused pad then, or every press
+  // lands twice under two different layouts — A would be GO and BRAKE at once.
+  const fused = all.filter(p => p.axes.length >= 4);
+  const live = (fused.length && fused.length < all.length) ? fused : all;
+  refreshPadBadges(live);
+  if(!live.length){
+    if(padSeen){ padSeen=false; for(const k in padHeld) padSetHold(k,false); }
+    return;
+  }
+  if(!padSeen){
+    padSeen = true;
+    console.info('[MHE] gamepad(s) connected:', live.map(p=>p.id).join(' + '));
+  }
+
+  const down = i => live.some(p =>
+    p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > 0.4));
+  // strongest deflection across the pads wins, so either stick can steer
+  const axis = i => {
+    let best = 0;
+    for(const p of live){
+      const v = p.axes.length > i ? (p.axes[i] || 0) : 0;
+      if(Math.abs(v) > Math.abs(best)) best = v;
+    }
+    return Math.abs(best) > 0.3 ? best : 0;
+  };
+
+  // steering: stick X (either stick), D-pad, or the right stick's X on a
+  // composite pad, where axis 2 is the second stick
+  const steer = axis(0) || axis(2);
+  padSetHold('left',  steer < -0.3 || down(14));
+  padSetHold('right', steer >  0.3 || down(15));
+  /* Nintendo prints A and B where Xbox prints B and A. On the Switch grip A
+     drives and B brakes — the Mario Kart layout its players already know —
+     so the two face buttons swap roles for that family only. Everything
+     else keeps the Xbox convention: bottom (A) drives, right (B) brakes. */
+  const nin = padFam === 'switch';
+  const GO_FACE = nin ? 1 : 0, BRAKE_FACE = nin ? 0 : 1;
+  // throttle: right trigger, the go face button, D-pad up, or a stick forward
+  padSetHold('go',    down(7) || down(GO_FACE)    || down(12) || axis(1) < -0.5 || axis(3) < -0.5);
+  // brake: left trigger, the brake face button, D-pad down, or a stick back
+  padSetHold('brake', down(6) || down(BRAKE_FACE) || down(13) || axis(1) >  0.5 || axis(3) >  0.5);
+
+  // a real press on the pad makes it the input the on-screen labels describe
+  let anyPress = false;
+  for(const p of live){
+    for(const b of p.buttons) if(b && (b.pressed || b.value > 0.4)){ anyPress = true; break; }
+    if(!anyPress) for(const a of p.axes) if(Math.abs(a || 0) > 0.6){ anyPress = true; break; }
+    if(anyPress) break;
+  }
+  if(anyPress) setInputMode('pad');
+
+  const vis = id => $(id).style.display === 'flex';
+  const cardUp   = $('cardWrap').classList.contains('show');
+  const onTitle  = $('titleScreen').classList.contains('show');
+  const onHowto  = $('howtoScreen').classList.contains('show');
+  const onFinish = $('finishScreen').classList.contains('show');
+  // a card takes controller presses only once it has been up a moment, so a
+  // button already being mashed when it pops cannot skip a lesson unread
+  const cardArmed = cardUp && performance.now() - cardShownAt > 900;
+  // the menus get the same guard, so the press that leaves one screen cannot
+  // also fire the next — pressing A twice quickly must not skip HOW TO PLAY
+  const scr = cardUp ? 'card' : onTitle ? 'title' : onHowto ? 'howto' : onFinish ? 'finish' : 'play';
+  if(scr !== padScr){ padScr = scr; padScrAt = performance.now(); }
+  const menuArmed = performance.now() - padScrAt > 600;
+
+  // 5 (RB/SR) doubles for the horn, and 4 (LB/SL) for reset: a lone Joy-Con has
+  // no Back/Select at all, so without these there is no way to recover from the
+  // controller — and recovery must always be reachable.
+  // Horn and reverse stand down while a card is open: pressing a face button
+  // to continue must not quietly drop the truck into reverse.
+  padTap('horn', down(2) || down(5), ()=>{ if(!cardUp && vis('hornBtn')) kbTap('hornBtn'); });
+  padTap('rev',  down(3), ()=>{ if(!cardUp && vis('revBtn'))  kbTap('revBtn'); });
+  padTap('reset',down(8) || down(4), ()=>{ if($('hud').classList.contains('show')) kbTap('resetBtn'); });
+  // The on-screen action — buckle up, report a hazard, make eye contact — is on
+  // the left/top face buttons. Those are the horn and reverse, which are never
+  // on screen at the same time as an action, so they cannot collide. It stays
+  // off GO: walking forward must never count as stopping for eye contact.
+  padTap('act',  down(2) || down(3), ()=>{ if(!cardUp && vis('actionBtn')) kbTap('actionBtn'); });
+  // title: the go button starts — this build has only the driving seat
+  padTap('drive', down(GO_FACE), ()=>{ if(onTitle && menuArmed) kbTap('startDriveBtn'); });
+  // any face button continues a card, starts from HOW TO PLAY, or plays again.
+  // The edge is tracked on the raw buttons, so a button held down as a screen
+  // arms does not fire — only a fresh press.
+  padTap('card', down(0) || down(1) || down(2) || down(3), ()=>{
+    if(cardUp){ if(cardArmed) kbTap('cardBtn'); }
+    else if(onHowto  && menuArmed) kbTap('goBtn');
+    else if(onFinish && menuArmed) kbTap('againBtn');
+  });
+  // + / Start confirms on the menus, and is EXIT during play — press twice,
+  // exactly like the on-screen button. It no longer doubles as the on-screen
+  // action: that is on X/Y, and + cannot mean "report" and "exit" at once.
+  padTap('ok',   down(9), ()=>{
+    if(cardUp){ if(cardArmed) kbTap('cardBtn'); }
+    else if(onTitle)  { if(menuArmed) kbTap('startDriveBtn'); }
+    else if(onHowto)  { if(menuArmed) kbTap('goBtn'); }
+    else if(onFinish) { if(menuArmed) kbTap('againBtn'); }
+    else if($('hud').classList.contains('show')) kbTap('exitBtn');
+  });
+}
+/* The API reports button POSITIONS, not labels, so the same index is printed
+   differently on every controller family: index 0 is the bottom face button,
+   which Xbox prints as A and a Switch Pro Controller prints as B. A lone right
+   Joy-Con held sideways rotates again — A=0, X=1, B=2, Y=3, measured on the
+   booth hardware. Telling a player the wrong letter is worse than telling them
+   nothing, so anything unrecognised gets described by position instead. */
+function padFamily(pads){
+  if(!pads.length) return null;
+  const ids = pads.map(p => (p.id||'').toLowerCase()).join(' ');
+  let axes = 0;
+  for(const p of pads) axes = Math.max(axes, p.axes.length);
+  if(!/057e|nintendo|joy-?con|pro controller/.test(ids)) return 'xbox';
+  /* The grip — whether the browser fuses the halves into one two-stick pad or
+     lists them as a pair — reports standard UPRIGHT positions: B=0, A=1, Y=2,
+     X=3. Observed on the booth grip: A fired index 1, X index 3, B index 0.
+     A lone Joy-Con is different, because the browser treats it as a sideways
+     mini-controller; the same right half measured A=0 on its own.
+
+     So a grip is decided by seeing BOTH halves, not by counting devices.
+     Windows happily pairs one Joy-Con twice and lists two "Joy-Con (R)",
+     one of them a phantom — counting devices then guessed "grip" and every
+     button did the wrong job. Two rights is still just a right. */
+  const hasL = /2006|joy-?con \(l\)/.test(ids);
+  const hasR = /2007|joy-?con \(r\)/.test(ids);
+  if(axes >= 4 || ids.includes('combined') || ids.includes('2009')) return 'switch';
+  if(hasL && hasR) return 'switch';                  // a real grip: both halves present
+  if(hasR)         return 'joycon';                  // right half only, sideways — measured
+  if(hasL)         return null;                      // left half only: unmeasured, label nothing
+  return pads.length > 1 ? 'switch' : null;
+}
+/* What is printed on the button that does each job. Every entry matches a
+   binding in updateGamepad — change one, change both. */
+const PAD_GLYPHS = {
+  // standard mapping: 0 bottom · 1 right · 2 left · 3 top · 4 LB · 6/7 triggers
+  // · 8 back · 9 start. drive/walk are the title-screen choices; start/again/ok
+  // take any face button, so they show the conventional confirm.
+  xbox:   { go:'RT', brake:'LT', horn:'X', rev:'Y', reset:'LB', action:'Y', ok:'A',
+            exit:'☰', drive:'A', walk:'B', start:'A', again:'A' },
+  // the Switch grip or a Pro Controller. A and B are swapped in updateGamepad
+  // for this family, so A drives and B brakes — the Mario Kart layout. ZR/ZL
+  // work too, but the face buttons are the ones confirmed on the booth grip.
+  switch: { go:'A',  brake:'B',  horn:'Y', rev:'X', reset:'−',  action:'X', ok:'A',
+            exit:'+', drive:'A', walk:'B', start:'A', again:'A' },
+  // a right Joy-Con held sideways — A=0, X=1, B=2, Y=3, SL=4, +=9, measured
+  joycon: { go:'A',  brake:'X',  horn:'B', rev:'Y', reset:'SL', action:'Y', ok:'A',
+            exit:'+', drive:'A', walk:'X', start:'A', again:'A' }
+};
+// the keyboard — the fallback if a controller fails, so it gets labels too
+const KEY_GLYPHS = { go:'↑', brake:'↓', horn:'H', rev:'R', reset:'C', action:'ENTER',
+                     ok:'ENTER', exit:'ESC', drive:'1', walk:'2', start:'ENTER', again:'ENTER' };
+/* The how-to diagram. Buttons are listed by POSITION, because which letter is
+   printed where changes between controller families — the same bottom button
+   is B on a Switch grip and A on an Xbox pad. Each entry is [letter, job]. */
+const PAD_DIAGRAM = {
+  switch: { cap:'Joy-Con grip 手柄', pink:true,
+            bottom:['B','BRAKE','刹车'], right:['A','GO','前进'],
+            left:['Y','HORN','喇叭'],   top:['X','REVERSE','倒车'],
+            minus:['−','RESET','重置'], plus:['+','EXIT','退出'],
+            lt:['ZL','BRAKE','刹车'],   rt:['ZR','GO','前进'] },
+  xbox:   { cap:'Controller 手柄',
+            bottom:['A','GO','前进'],   right:['B','BRAKE','刹车'],
+            left:['X','HORN','喇叭'],   top:['Y','REVERSE','倒车'],
+            minus:['⧉','RESET','重置'], plus:['☰','EXIT','退出'],
+            lt:['LT','BRAKE','刹车'],   rt:['RT','GO','前进'] },
+  joycon: { cap:'Single Joy-Con, held sideways 横握单个手柄', pink:true,
+            bottom:['A','GO','前进'],   right:['X','BRAKE','刹车'],
+            left:['B','HORN','喇叭'],   top:['Y','REVERSE','倒车'],
+            minus:['SL','RESET','重置'],plus:['+','EXIT','退出'],
+            lt:null,                    rt:['SR','HORN','喇叭'] }
+};
+function padDiagramSVG(d){
+  // one labelled button: circle with its letter, and the job beside it
+  const btn = (x,y,r,letter,fill) =>
+    `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="#0e1726" stroke-width="2"/>` +
+    `<text class="dgBtn" x="${x}" y="${y}">${letter}</text>`;
+  const lbl = (x,y,en,zh,anchor='start') =>
+    `<text class="dgLbl" x="${x}" y="${y}" text-anchor="${anchor}">${en}</text>` +
+    (zh ? `<text class="dgZh" x="${x}" y="${y+15}" text-anchor="${anchor}">${zh}</text>` : '');
+  const line = (x1,y1,x2,y2) =>
+    `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="#5c6f92" stroke-width="2" fill="none"/>`;
+  const L = d.pink ? '#efe2ec' : '#c9d2e0', R = d.pink ? '#e2564e' : '#c9d2e0';
+  let s = `<svg viewBox="0 0 700 300" role="img" aria-label="Controller button map">`;
+  // body: two grips either side of a dark centre
+  s += `<rect x="70" y="70" width="560" height="120" rx="34" fill="#2a3444"/>`;
+  s += `<path d="M110 150 h150 v70 a34 34 0 0 1-34 34 h-82 a34 34 0 0 1-34-34 z" fill="${L}"/>`;
+  s += `<rect x="86" y="70" width="174" height="110" rx="30" fill="${L}"/>`;
+  s += `<path d="M440 150 h150 v70 a34 34 0 0 1-34 34 h-82 a34 34 0 0 1-34-34 z" fill="${R}"/>`;
+  s += `<rect x="440" y="70" width="174" height="110" rx="30" fill="${R}"/>`;
+  s += `<rect x="262" y="70" width="176" height="120" rx="16" fill="#1c2534"/>`;
+  // shoulders
+  if(d.lt){ s += `<rect x="120" y="46" width="92" height="22" rx="11" fill="#3a465c"/>` +
+                 `<text class="dgBtn" x="166" y="57" style="font-size:14px;fill:#eaf2ff">${d.lt[0]}</text>` +
+                 lbl(166, 30, d.lt[1], d.lt[2], 'middle'); }
+  if(d.rt){ s += `<rect x="488" y="46" width="92" height="22" rx="11" fill="#3a465c"/>` +
+                 `<text class="dgBtn" x="534" y="57" style="font-size:14px;fill:#eaf2ff">${d.rt[0]}</text>` +
+                 lbl(534, 30, d.rt[1], d.rt[2], 'middle'); }
+  // left half: stick (steer) and the minus button
+  s += `<circle cx="150" cy="112" r="26" fill="#39424f" stroke="#0e1726" stroke-width="2"/>`;
+  s += `<circle cx="150" cy="112" r="15" fill="#20262f"/>`;
+  s += line(124,112, 66,112) + lbl(62, 108, 'STEER', '转向', 'end');
+  s += btn(226, 92, 15, d.minus[0], '#cfd8e6');
+  s += line(226, 77, 226, 40) + lbl(226, 32, d.minus[1], d.minus[2], 'middle');
+  // right half: the four face buttons, in their real diamond
+  const cx = 520, cy = 112, gap = 40, r = 21;
+  s += btn(cx, cy-gap, r, d.top[0], '#cfd8e6')    + line(cx+r+4, cy-gap-8, 616, 60) + lbl(622, 56, d.top[1], d.top[2]);
+  s += btn(cx+gap, cy, r, d.right[0], '#8fe6ad')  + line(cx+gap+r+4, cy, 646, 112)  + lbl(652, 108, d.right[1], d.right[2]);
+  s += btn(cx-gap, cy, r, d.left[0], '#ffd88a')   + line(cx-gap-r-4, cy, 400, 112)  + lbl(394, 108, d.left[1], d.left[2], 'end');
+  s += btn(cx, cy+gap, r, d.bottom[0], '#ff9a94') + line(cx+r+4, cy+gap+8, 616, 176) + lbl(622, 172, d.bottom[1], d.bottom[2]);
+  s += btn(454, 92, 15, d.plus[0], '#cfd8e6');
+  s += line(454, 77, 454, 40) + lbl(454, 32, d.plus[1], d.plus[2], 'middle');
+  s += `<text class="dgCap" x="350" y="288">${d.cap}</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+/* The same map, shrunk for the corner of the play screen. No words: each
+   button is painted the colour of the big on-screen button it works, so the
+   green one on the controller is plainly the green one on the display. */
+const MINI_COLOUR = { GO:'#3fae6a', BRAKE:'#e05450', HORN:'#f2a41c', REVERSE:'#5c6b82',
+                      ACTION:'#f2a41c', RESET:'#8fa3c8', EXIT:'#8fa3c8' };
+const MINI_ZH = { GO:'前进', BRAKE:'刹车', HORN:'喇叭', REVERSE:'倒车',
+                  ACTION:'操作', RESET:'重置', EXIT:'退出' };
+function padBigSVG(d, walking){
+  const col = job => MINI_COLOUR[job] || '#cfd8e6';
+  /* On foot there is no horn or reverse — those same two buttons work the
+     on-screen action instead (report a hazard, make eye contact), so the map
+     must relabel or it would be telling a lie. */
+  const top  = walking ? [d.top[0],  'ACTION'] : d.top;
+  const left = walking ? [d.left[0], 'ACTION'] : d.left;
+  const btn = (x,y,r,letter,job,cls='pBtn') =>
+    `<circle cx="${x}" cy="${y}" r="${r}" fill="${col(job)}" stroke="#0b111c" stroke-width="2.5"/>` +
+    `<text class="${cls}" x="${x}" y="${y}">${letter}</text>`;
+  /* Deliberately sparse: the stick and the four buttons, nothing else. An
+     earlier version drew the shoulders and the −/+ too and read as clutter. */
+  let s = `<svg viewBox="0 0 460 212" role="img" aria-label="Controller map">`;
+  // ---- the controller, left side, drawn big ----
+  s += `<rect x="14" y="30" width="268" height="124" rx="38" fill="#2a3444"/>`;
+  s += `<rect x="14" y="30" width="104" height="124" rx="36" fill="${d.pink?'#efe2ec':'#c9d2e0'}"/>`;
+  s += `<rect x="178" y="30" width="104" height="124" rx="36" fill="${d.pink?'#e2564e':'#c9d2e0'}"/>`;
+  s += `<rect x="118" y="30" width="60" height="124" fill="#1c2534"/>`;
+  // left stick, with arrows to say it steers
+  s += `<circle cx="66" cy="92" r="34" fill="#39424f" stroke="#0b111c" stroke-width="3"/>`;
+  s += `<circle cx="66" cy="92" r="18" fill="#20262f"/>`;
+  s += `<path d="M16 92 l13 -9 v18 z M116 92 l-13 -9 v18 z" fill="#9fb3d1"/>`;
+  s += `<text class="pCap" x="66" y="176">STEER 转向</text>`;   // below the body, not on the pale half
+  // the four face buttons, in their real diamond
+  const cx = 230, cy = 92, g = 40, r = 25;
+  s += btn(cx, cy-g, r, top[0], top[1]);
+  s += btn(cx+g, cy, r, d.right[0], d.right[1]);
+  s += btn(cx-g, cy, r, left[0], left[1]);
+  s += btn(cx, cy+g, r, d.bottom[0], d.bottom[1]);
+  // ---- legend, right side: same colour, spelled out ----
+  [ d.right, d.bottom, left, top ].forEach((row, i) => {
+    const y = 32 + i*44;
+    s += btn(320, y, 19, row[0], row[1]);
+    s += `<text class="pEn" x="350" y="${y-1}">${row[1]}</text>`;
+    s += `<text class="pZh" x="350" y="${y+17}">${MINI_ZH[row[1]] || ''}</text>`;
+  });
+  s += `<text class="pCap" x="230" y="202">${d.minus[0]} = RESET 重置 &#160;·&#160; ${d.plus[0]} = EXIT 退出</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+const BADGED = { goPedal:'go', brakePedal:'brake', hornBtn:'horn', revBtn:'rev',
+                 resetBtn:'reset', actionBtn:'action', cardBtn:'ok', exitBtn:'exit',
+                 startDriveBtn:'drive', goBtn:'start', againBtn:'again' };
+
+/* Which labels to show follows whatever the player used LAST — controller,
+   keyboard or touch. That is what makes the keyboard a real fallback: if the
+   controller dies mid-session, the first key pressed switches every label to
+   keys. Touch players never see labels at all. */
+let inputMode = (window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches)
+                ? 'key' : 'touch';
+function setInputMode(m){
+  if(m === inputMode) return;
+  inputMode = m; refreshBadges();
+}
+window.addEventListener('keydown', ()=>setInputMode('key'), true);
+window.addEventListener('pointerdown', e=>{
+  if(!e.isTrusted) return;               // kbTap's synthetic presses are not a device
+  setInputMode(e.pointerType === 'touch' || e.pointerType === 'pen' ? 'touch' : 'key');
+}, true);
+
+let badgeSig = null, padFam = null;
+function refreshPadBadges(pads){
+  const sig = pads.map(p => p.id + '/' + p.axes.length).join('|');
+  if(sig === badgeSig) return;                       // only on connect / disconnect
+  badgeSig = sig;
+  padFam = padFamily(pads);                          // updateGamepad maps by this
+  refreshBadges();
+}
+function refreshBadges(){
+  // a wrong letter is worse than none, so an unrecognised pad gets no badges
+  const g = inputMode === 'pad' ? (padFam && PAD_GLYPHS[padFam])
+          : inputMode === 'key' ? KEY_GLYPHS : null;
+  for(const id in BADGED){
+    const el = $(id);
+    if(!el) continue;
+    if(g) el.setAttribute('data-pad', g[BADGED[id]]);
+    else  el.removeAttribute('data-pad');
+  }
+  // the how-to screen's controller line, written for the pad actually connected
+  const dd = padFam && PAD_DIAGRAM[padFam];
+  const dg = $('padDiagram');
+  if(dg){
+    dg.hidden = !dd;
+    if(dd) dg.innerHTML = padDiagramSVG(dd);
+  }
+  refreshPadMini();
+  // the written controller line is redundant once the picture is up, and the
+  // how-to has to fit a 720p booth screen without scrolling
+  const hp = $('hintPad'), pg = padFam && PAD_GLYPHS[padFam];
+  if(hp){
+    hp.hidden = !pg || !!dd;
+    if(pg) hp.innerHTML = '&#127918; Controller 手柄: stick steers &nbsp;&middot;&nbsp; ' +
+      [['go','GO'],['brake','BRAKE'],['horn','HORN'],['rev','REVERSE'],
+       ['action','report'],['reset','RESET'],['exit','EXIT']]
+        .map(([k,n]) => pg[k] + ' = ' + n).join(' &nbsp;&middot;&nbsp; ');
+  }
+}
+function padHint(pads){
+  const f = padFamily(pads), g = f && PAD_GLYPHS[f];
+  if(!g) return 'bottom button = GO, right button = BRAKE';
+  return g.go + ' = GO, ' + g.brake + ' = BRAKE, ' + g.horn + ' = HORN, ' + g.rev + ' = REVERSE';
+}
+let padToastT = null;
+window.addEventListener('gamepadconnected', e=>{
+  console.info('[MHE] gamepad connected:', e.gamepad && e.gamepad.id);
+  // the two halves of a grip announce themselves separately — wait for both
+  // before naming buttons, or the advice is written for half a controller
+  clearTimeout(padToastT);
+  padToastT = setTimeout(()=>{
+    let pads = [];
+    try {
+      const all = navigator.getGamepads ? navigator.getGamepads() : [];
+      for(const p of all) if(p && p.connected) pads.push(p);
+    } catch(err){ return; }
+    if(!pads.length) return;
+    toast('🎮 Controller connected — stick steers, ' + padHint(pads) + '.', 3600);
+  }, 700);
+});
+window.addEventListener('gamepaddisconnected', ()=>{
+  for(const k in padHeld) padSetHold(k,false);
+  console.info('[MHE] gamepad disconnected');
+});
+
+// paint the keyboard labels on a laptop before anything has been pressed
+refreshBadges();
+
+/* block context menu / double-tap zoom on the kiosk */
+document.addEventListener('contextmenu', e=>e.preventDefault());
+document.addEventListener('dblclick', e=>e.preventDefault());
+
+</script>
+</body>
+</html>
