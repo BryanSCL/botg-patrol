@@ -1832,10 +1832,25 @@
     endScreen.classList.remove("hidden");
   }
 
+  // Restart: abandon the run and go back to the landing page so the player can
+  // pick a patrol officer again. The game stays idle until Start Patrol is hit.
+  function returnToStart() {
+    resetState();
+    state.started = false;
+    state.keys = {};
+    player.hitCooldown = 0;
+    player.moving = false;
+    document.getElementById("toast").classList.add("hidden");
+    toastHideAt = 0;
+    hazardModal.classList.add("hidden");
+    endScreen.classList.add("hidden");
+    startScreen.classList.remove("hidden");
+  }
+
   document.getElementById("startBtn").addEventListener("click", startGame);
   document.getElementById("playAgainBtn").addEventListener("click", startGame);
   document.getElementById("restartBtn").addEventListener("click", () => {
-    if (state.started) startGame();
+    if (state.started) returnToStart();
   });
 
   /* ================================ BOOT =================================== */
