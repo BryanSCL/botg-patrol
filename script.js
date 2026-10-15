@@ -890,7 +890,7 @@
         // stencil
         g.fillStyle = "rgba(255,255,255,0.5)";
         g.font = "bold 8px Consolas, monospace";
-        g.fillText("GDC-3PDC", o.x + 8, o.y + o.h - 8);
+        g.fillText("BOTG-04", o.x + 8, o.y + o.h - 8);
         break;
       }
       case "suspendedLoad": {

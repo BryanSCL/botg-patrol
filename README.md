@@ -31,8 +31,8 @@ Two independent, self-contained browser safety games live in this folder:
 
 # BotG Patrol: Spot the Contact Risk
 
-A self-contained, mobile-first browser game built for a Google Data Centre
-safety campaign on **Bodily Contact** hazards. Built with plain HTML, CSS,
+A self-contained, mobile-first browser game built for a safety campaign on
+**Bodily Contact** hazards. Built with plain HTML, CSS,
 and JavaScript — no external libraries, fonts, or images.
 
 ## How to run
