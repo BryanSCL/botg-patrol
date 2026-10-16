@@ -2,7 +2,7 @@
 
 Two independent, self-contained browser safety games live in this folder:
 
-1. **BotG Patrol: Spot the Contact Risk** — `index.html` (+ `style.css`, `script.js`), documented below.
+1. **Hazard Patrol: Spot the Contact Risk** — `index.html` (+ `style.css`, `script.js`), documented below.
 2. **Stay Alert Around MHE** — `stay-alert-around-mhe/stay-alert-around-mhe.html`, a single-file 3D
    pallet-jack safety kiosk game (AnjouHealth × SATS, STOP SIF Campaign FY26–27).
    Open the file in Chrome — desktop or tablet (landscape). It needs internet
@@ -29,7 +29,7 @@ Two independent, self-contained browser safety games live in this folder:
    D-pad steers, A or RT = go, B or LT = brake, X = horn, Y = reverse,
    Start = confirm, Back = reset.
 
-# BotG Patrol: Spot the Contact Risk
+# Hazard Patrol: Spot the Contact Risk
 
 A self-contained, mobile-first browser game built for a safety campaign on
 **Bodily Contact** hazards. Built with plain HTML, CSS,
@@ -66,7 +66,7 @@ Files:
 ## Game mechanics
 
 - **Goal:** patrol a data centre floor, find all 8 Bodily Contact hazards,
-  and log the sharpest BotG observation for each before the 40-second timer
+  and log the sharpest hazard observation for each before the 40-second timer
   runs out.
 - **Movement:** `WASD`/Arrow Keys on desktop, or the on-screen D-pad on
   touch devices — 8-directional, with collision against walls, server
@@ -74,8 +74,8 @@ Files:
 - **Inspect a hazard:** walk within range of a pulsing warning marker (it
   turns yellow once you're close enough) and press `SPACE`/`ENTER`, tap the
   INSPECT button, or click the marker directly.
-- **Answer the question:** each hazard asks *"What should be logged in
-  BotG?"* with 3 options:
+- **Answer the question:** each hazard asks *"How should this hazard be
+  logged?"* with 3 options:
   - Correct, specific observation → **+10**
   - Vague/partially correct observation → **+5**
   - Wrong/irrelevant observation → **+0**
@@ -98,13 +98,13 @@ Files:
 - **Congratulations screen:** if you log all 8 hazards before time runs out,
   you get a dedicated 🎉 **Congratulations!** screen instead of the neutral
   "Time's Up" ending, along with your score, accuracy, and rating:
-  - **80–100%** → BotG Safety Champion
+  - **80–100%** → Hazard Safety Champion
   - **50–79%** → Sharp Observer
   - **Below 50%** → Needs More Floor Awareness
 
 ## Hazards included (8) and their Bodily Contact sub-category
 
-Mapped from the BotG Guidance "Bodily Contact" reference. Trimmed from a
+Mapped from the campaign's "Bodily Contact" hazard guidance reference. Trimmed from a
 wider 12-hazard set down to the 8 most distinct, high-value scenarios for a
 fast phone session — no two hazards teach the same lesson.
 
@@ -125,7 +125,7 @@ fast phone session — no two hazards teach the same lesson.
   something."
 - Hazards are usually visible *before* an incident — the game rewards
   noticing them early.
-- A good BotG observation names the specific unsafe condition or behaviour,
+- A good hazard observation names the specific unsafe condition or behaviour,
   not a vague generality (reflected directly in the +10/+5/0 scoring).
 - Small, easily-missed details (a missing label, an unmarked hot pipe, a
   blind spot) are exactly what serious incidents trace back to.

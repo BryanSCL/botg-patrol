@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BotG PATROL — Spot the Contact Risk
+   HAZARD PATROL — Spot the Contact Risk
    Self-contained canvas game for the Bodily Contact safety campaign.
    Mobile-first: portrait layout, on-screen touch controls, no external
    assets/libraries — all art is drawn with canvas primitives.
@@ -14,7 +14,7 @@
      CONFIG        tunable constants
      STATE         mutable game state
      MAP DATA      obstacles / zones for the floor layout (portrait)
-     HAZARD DATA   the 8 inspectable hazards + BotG quiz content
+     HAZARD DATA   the 8 inspectable hazards + quiz content
      ENTITIES      player + characters + moving forklift/vehicle
      INPUT         keyboard / touch / mouse handling
      UPDATE        per-frame simulation
@@ -129,7 +129,7 @@
 
   /* ============================ HAZARD DATA ==============================
      8 hazards, each mapped to an official Bodily Contact sub-category from
-     the BotG Guidance reference document.
+     the campaign's hazard guidance reference document.
        type: "correct" (+10) | "partial" (+5) | "wrong" (0)
   ======================================================================== */
   const HAZARDS = [
@@ -890,7 +890,7 @@
         // stencil
         g.fillStyle = "rgba(255,255,255,0.5)";
         g.font = "bold 8px Consolas, monospace";
-        g.fillText("BOTG-04", o.x + 8, o.y + o.h - 8);
+        g.fillText("HZD-04", o.x + 8, o.y + o.h - 8);
         break;
       }
       case "suspendedLoad": {
@@ -1803,7 +1803,7 @@
     const remaining = Math.ceil(state.timeLeft);
 
     let rating;
-    if (pct >= 80) rating = "BotG Safety Champion";
+    if (pct >= 80) rating = "Hazard Safety Champion";
     else if (pct >= 50) rating = "Sharp Observer";
     else rating = "Needs More Floor Awareness";
 
@@ -1814,7 +1814,7 @@
       message = `You spotted and logged every Bodily Contact hazard on the floor${spare}. ${
         pct >= 80
           ? "Sharp eyes and sharp write-ups — exactly the floor awareness that stops incidents before they start."
-          : "Great awareness — now aim for more specific, actionable BotG observations to push your accuracy even higher."
+          : "Great awareness — now aim for more specific, actionable hazard observations to push your accuracy even higher."
       }`;
     } else {
       headline = "Time's Up";
