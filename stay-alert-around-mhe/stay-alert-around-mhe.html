@@ -274,7 +274,10 @@
   /* rotate-device overlay — touch devices only (never block a desktop window) */
   #rotate { position:fixed; inset:0; z-index:300; background:#0b1220; color:#fff; display:none;
       align-items:center; justify-content:center; font-size:34px; font-weight:800; text-align:center; }
-  @media (orientation:portrait) and (pointer:coarse) { #rotate { display:flex; } }
+  /* driven from JS, not a media query: embedded in a tall iframe the viewport
+     is portrait while the device is not, and a media query would wrongly
+     block the game behind "turn your screen" */
+  #rotate.show { display:flex; }
 
   /* recovery controls (always visible during play) */
   #resetBtn { position:fixed; right:22px; top:58px; z-index:56; pointer-events:auto;
@@ -1040,6 +1043,27 @@ function onResize(){
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', onResize); onResize();
+
+/* "Turn the screen sideways" is only true when the DEVICE is portrait. Framed
+   in a tall iframe the viewport is portrait while the screen is not, and the
+   old media query latched the overlay on and blocked the game for good. */
+const inFrame = (() => { try { return window.self !== window.top; } catch(e){ return true; } })();
+function updateRotateOverlay(){
+  const coarse = window.matchMedia && matchMedia("(pointer:coarse)").matches;
+  const viewportPortrait = window.innerHeight > window.innerWidth;
+  const devicePortrait = !window.screen || !screen.width ? viewportPortrait
+                                                         : screen.height > screen.width;
+  $("rotate").classList.toggle("show", !!coarse && viewportPortrait && devicePortrait);
+}
+window.addEventListener("resize", updateRotateOverlay);
+window.addEventListener("orientationchange", updateRotateOverlay);
+updateRotateOverlay();
+
+/* Framed, a click lands in the iframe but the keyboard can still be pointing at
+   the parent page, so keys would do nothing until the user clicked twice. */
+if(inFrame) window.addEventListener("pointerdown", e => {
+  if(e.isTrusted) { try { window.focus(); } catch(err){} }
+}, {capture:true, passive:true});
 // watchdog: some environments miss the resize event — check each frame
 function checkResize(){
   if(window.innerWidth!==viewW || window.innerHeight!==viewH) onResize();
