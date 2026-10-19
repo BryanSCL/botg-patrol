@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/stay-alert-around-mhe.html" }
+    { "source": "/", "destination": "/driving-mhe.html" }
   ],
   "headers": [
     {
